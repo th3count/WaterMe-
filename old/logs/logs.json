@@ -1,0 +1,1009 @@
+[
+  {
+    "timestamp": "2025-07-15T16:13:09.169392",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.179588",
+    "event_type": "invalid_date_activated",
+    "source": "scheduler",
+    "severity": "warning",
+    "payload": {
+      "zone": "4"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.185919",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.190881",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.196942",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.205283",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.210221",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.216245",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.223617",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.228569",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.235008",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.242574",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.247645",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.254063",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.261974",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.266837",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.273461",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.280914",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.286257",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.292803",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.301128",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.306335",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.312447",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.320067",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.325040",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.331514",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.339161",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.344073",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.350064",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.357839",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.364080",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.373423",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.383660",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.390075",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.400777",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.411169",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.417306",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.424681",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.432412",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.437448",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.443497",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.451153",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.456279",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.462329",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.469897",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.474862",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.480965",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.490490",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.495379",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.501236",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.508844",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.513807",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.519698",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.527191",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.532124",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.538140",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.545813",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.550860",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.557432",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.565223",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.570080",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.576405",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.584431",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.589442",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.595897",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.603915",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.608839",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.615509",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.623340",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.628245",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.634364",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.641759",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.647170",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.653948",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.661573",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.666534",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.673008",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.680739",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.685725",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.691726",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.699329",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.704404",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.710635",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.718585",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.723569",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.729700",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.737241",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.742199",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.748199",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.755980",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.760898",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.767327",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.775036",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.779879",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:13:09.786251",
+    "event_type": "json_io_error",
+    "source": "scheduler",
+    "severity": "error",
+    "payload": {
+      "file": "library",
+      "error": "[Errno 21] Is a directory: 'library'"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:14:33.623913",
+    "event_type": "config_warning",
+    "source": "scheduler",
+    "severity": "warning",
+    "payload": {
+      "msg": "Using fallback Time & Location parameters (check settings.cfg)",
+      "timezone": "UTC",
+      "lat": 0.0,
+      "lon": 0.0
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:15:12.792110",
+    "event_type": "config_warning",
+    "source": "scheduler",
+    "severity": "warning",
+    "payload": {
+      "msg": "Using fallback Time & Location parameters (check settings.cfg)",
+      "timezone": "UTC",
+      "lat": 0.0,
+      "lon": 0.0
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:16:26.877519",
+    "event_type": "config_warning",
+    "source": "scheduler",
+    "severity": "warning",
+    "payload": {
+      "msg": "Using fallback Time & Location parameters (check settings.cfg)",
+      "timezone": "UTC",
+      "lat": 0.0,
+      "lon": 0.0
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:21:50.009337",
+    "event_type": "settings_warning",
+    "source": "scheduler",
+    "severity": "warning",
+    "payload": {
+      "msg": "GPS coordinates not found \u2011 using (0,0). Check settings.cfg",
+      "path": "/home/th3count/settings.cfg"
+    }
+  },
+  {
+    "timestamp": "2025-07-15T16:23:14.610795",
+    "event_type": "settings_warning",
+    "source": "scheduler",
+    "severity": "warning",
+    "payload": {
+      "msg": "GPS coordinates not found - using (0,0). Check settings.cfg",
+      "path": "/home/th3count/settings.cfg",
+      "lat": 0.0,
+      "lon": 0.0
+    }
+  }
+]

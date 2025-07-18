@@ -1,0 +1,14 @@
+[
+  {
+    "location_id": 2,
+    "name": "orchard",
+    "description": "berries",
+    "zones": [1, 2, 5]
+  },
+  {
+    "location_id": 3,
+    "name": "perimiter",
+    "description": "fenceline ",
+    "zones": [3, 4]
+  }
+]

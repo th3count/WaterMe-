@@ -1,0 +1,88 @@
+{
+  "1": [
+    {
+      "instance_id": 1,
+      "library_book": "fruitbushes",
+      "plant_id": 5,
+      "quantity": 5,
+      "mode": "Manual",
+      "comments": "auroras",
+      "location_id": 2,
+      "zone_id": 1,
+      "emitter_size": 4,
+      "planted_date": "2025-07-18 04:21:09",
+      "time_to_maturity": null
+    },
+    {
+      "instance_id": 2,
+      "library_book": "fruitbushes",
+      "plant_id": 5,
+      "quantity": 11,
+      "mode": "Manual",
+      "comments": "polies",
+      "location_id": 2,
+      "zone_id": 1,
+      "emitter_size": 8,
+      "planted_date": "2025-07-18 04:21:09",
+      "time_to_maturity": null
+    }
+  ],
+  "2": [
+    {
+      "instance_id": 3,
+      "library_book": "fruitbushes",
+      "plant_id": 19,
+      "quantity": 3,
+      "mode": "Manual",
+      "comments": "hedge",
+      "location_id": 2,
+      "zone_id": 2,
+      "emitter_size": 12,
+      "planted_date": "2025-07-18 04:21:09",
+      "time_to_maturity": null
+    }
+  ],
+  "3": [
+    {
+      "instance_id": 5,
+      "library_book": "fruitbushes",
+      "plant_id": 6,
+      "quantity": 5,
+      "mode": "Manual",
+      "comments": "",
+      "location_id": 3,
+      "zone_id": 3,
+      "emitter_size": 4,
+      "planted_date": "2025-07-18 04:21:09",
+      "time_to_maturity": null
+    },
+    {
+      "instance_id": 6,
+      "library_book": "fruitbushes",
+      "plant_id": 15,
+      "quantity": 40,
+      "mode": "Manual",
+      "comments": "perimi",
+      "location_id": 3,
+      "zone_id": 3,
+      "emitter_size": 10,
+      "planted_date": "2025-07-18 04:21:09",
+      "time_to_maturity": null
+    }
+  ],
+  "5": [
+    {
+      "instance_id": 4,
+      "library_book": "fruitbushes",
+      "plant_id": 19,
+      "quantity": 1,
+      "mode": "Manual",
+      "comments": "wine",
+      "location_id": 2,
+      "zone_id": 5,
+      "emitter_size": 12,
+      "planted_date": "2025-07-18 04:21:09",
+      "time_to_maturity": null
+    }
+  ]
+}

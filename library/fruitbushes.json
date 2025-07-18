@@ -1,0 +1,585 @@
+{
+  "Book Name": "Fruit Bushes",
+  "plants": [
+    {
+      "plant_id": 1,
+      "common_name": "Strawberry, Red",
+      "alternative_name": "",
+      "latin_name": "Fragaria \u00d7 ananassa",
+      "watering_frequency": [
+        "W2"
+      ],
+      "compatible_watering_frequencies": [
+        "D1"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 0.45,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.05,
+      "tolerance_max_in_week": 1.95,
+      "usda_zones": "3-9",
+      "soil_preference": "Sandy loam, pH 5.5-6.5",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "June",
+      "planting_time": "Early Spring",
+      "spacing_inches": 12,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 2,
+      "common_name": "Raspberry, Red",
+      "alternative_name": "",
+      "latin_name": "Rubus idaeus",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W3"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 1.8,
+      "water_optimal_in_week": 1.0,
+      "tolerance_min_in_week": 0.7,
+      "tolerance_max_in_week": 1.3,
+      "usda_zones": "3-8",
+      "soil_preference": "Loam, pH 5.6-6.2",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Jul-Aug",
+      "planting_time": "Early Spring",
+      "spacing_inches": 24,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 3,
+      "common_name": "Blackberry",
+      "alternative_name": "",
+      "latin_name": "Rubus fruticosus",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 4.05,
+      "water_optimal_in_week": 1.0,
+      "tolerance_min_in_week": 0.7,
+      "tolerance_max_in_week": 1.3,
+      "usda_zones": "5-9",
+      "soil_preference": "Loam, pH 5.5-6.5",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Jul-Aug",
+      "planting_time": "Early Spring",
+      "spacing_inches": 36,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 4,
+      "common_name": "Blueberry, Highbush",
+      "alternative_name": "",
+      "latin_name": "Vaccinium corymbosum",
+      "watering_frequency": [
+        "W2"
+      ],
+      "compatible_watering_frequencies": [
+        "W3"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 7.2,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.05,
+      "tolerance_max_in_week": 1.95,
+      "usda_zones": "4-7",
+      "soil_preference": "Acidic, pH 4-5.5",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Jun-Aug",
+      "planting_time": "Early Spring",
+      "spacing_inches": 48,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 5,
+      "common_name": "Haskap",
+      "alternative_name": "",
+      "latin_name": "Lonicera caerulea",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 4.05,
+      "water_optimal_in_week": 1.0,
+      "tolerance_min_in_week": 0.7,
+      "tolerance_max_in_week": 1.3,
+      "usda_zones": "2-7",
+      "soil_preference": "Well\u2011drained",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "June",
+      "planting_time": "Early Spring",
+      "spacing_inches": 36,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 6,
+      "common_name": "Currant, Red",
+      "alternative_name": "",
+      "latin_name": "Ribes rubrum",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 7.2,
+      "water_optimal_in_week": 1.0,
+      "tolerance_min_in_week": 0.7,
+      "tolerance_max_in_week": 1.3,
+      "usda_zones": "3-7",
+      "soil_preference": "Moist",
+      "sun_exposure": "Full Sun/Part Shade",
+      "fruiting_period": "July",
+      "planting_time": "Early Spring",
+      "spacing_inches": 48,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 7,
+      "common_name": "Currant, Black",
+      "alternative_name": "",
+      "latin_name": "Ribes nigrum",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 7.2,
+      "water_optimal_in_week": 1.0,
+      "tolerance_min_in_week": 0.7,
+      "tolerance_max_in_week": 1.3,
+      "usda_zones": "3-7",
+      "soil_preference": "Moist",
+      "sun_exposure": "Full Sun/Part Shade",
+      "fruiting_period": "July",
+      "planting_time": "Early Spring",
+      "spacing_inches": 48,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 8,
+      "common_name": "Gooseberry",
+      "alternative_name": "",
+      "latin_name": "Ribes uva-crispa",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 7.2,
+      "water_optimal_in_week": 1.0,
+      "tolerance_min_in_week": 0.7,
+      "tolerance_max_in_week": 1.3,
+      "usda_zones": "3-8",
+      "soil_preference": "Moist",
+      "sun_exposure": "Full Sun/Part Shade",
+      "fruiting_period": "Jun-Jul",
+      "planting_time": "Early Spring",
+      "spacing_inches": 48,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 9,
+      "common_name": "Elderberry",
+      "alternative_name": "",
+      "latin_name": "Sambucus nigra",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 11.25,
+      "water_optimal_in_week": 1.0,
+      "tolerance_min_in_week": 0.7,
+      "tolerance_max_in_week": 1.3,
+      "usda_zones": "4-8",
+      "soil_preference": "Moist",
+      "sun_exposure": "Full Sun/Part Shade",
+      "fruiting_period": "Aug",
+      "planting_time": "Spring/Fall",
+      "spacing_inches": 60,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 10,
+      "common_name": "Aronia (Chokeberry)",
+      "alternative_name": "",
+      "latin_name": "Aronia melanocarpa",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 7.2,
+      "water_optimal_in_week": 0.8,
+      "tolerance_min_in_week": 0.56,
+      "tolerance_max_in_week": 1.04,
+      "usda_zones": "3-8",
+      "soil_preference": "Moist",
+      "sun_exposure": "Full Sun/Part Shade",
+      "fruiting_period": "Aug-Sep",
+      "planting_time": "Early Spring",
+      "spacing_inches": 48,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 11,
+      "common_name": "Sea Buckthorn",
+      "alternative_name": "",
+      "latin_name": "Hippophae rhamnoides",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 16.2,
+      "water_optimal_in_week": 0.8,
+      "tolerance_min_in_week": 0.56,
+      "tolerance_max_in_week": 1.04,
+      "usda_zones": "3-7",
+      "soil_preference": "Sandy",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Aug-Sep",
+      "planting_time": "Early Spring",
+      "spacing_inches": 72,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 12,
+      "common_name": "Lingonberry",
+      "alternative_name": "",
+      "latin_name": "Vaccinium vitis-idaea",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 1.01,
+      "water_optimal_in_week": 1.0,
+      "tolerance_min_in_week": 0.7,
+      "tolerance_max_in_week": 1.3,
+      "usda_zones": "2-8",
+      "soil_preference": "Acidic",
+      "sun_exposure": "Full Sun/Part Shade",
+      "fruiting_period": "Aug-Sep",
+      "planting_time": "Early Spring",
+      "spacing_inches": 18,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 13,
+      "common_name": "Cranberry",
+      "alternative_name": "",
+      "latin_name": "Vaccinium macrocarpon",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 0.45,
+      "water_optimal_in_week": 2.0,
+      "tolerance_min_in_week": 1.4,
+      "tolerance_max_in_week": 2.6,
+      "usda_zones": "2-7",
+      "soil_preference": "Acidic bog",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Sep-Oct",
+      "planting_time": "Spring",
+      "spacing_inches": 12,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 14,
+      "common_name": "Dewberry",
+      "alternative_name": "",
+      "latin_name": "Rubus caesius",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 4.05,
+      "water_optimal_in_week": 1.0,
+      "tolerance_min_in_week": 0.7,
+      "tolerance_max_in_week": 1.3,
+      "usda_zones": "5-9",
+      "soil_preference": "Well\u2011drained",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Jun-Jul",
+      "planting_time": "Early Spring",
+      "spacing_inches": 36,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 15,
+      "common_name": "Boysenberry",
+      "alternative_name": "",
+      "latin_name": "Rubus ursinus \u00d7 idaeus",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 4.05,
+      "water_optimal_in_week": 1.0,
+      "tolerance_min_in_week": 0.7,
+      "tolerance_max_in_week": 1.3,
+      "usda_zones": "5-9",
+      "soil_preference": "Well\u2011drained",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Jun-Jul",
+      "planting_time": "Early Spring",
+      "spacing_inches": 36,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 16,
+      "common_name": "Jostaberry",
+      "alternative_name": "",
+      "latin_name": "Ribes \u00d7 nidigrolaria",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 7.2,
+      "water_optimal_in_week": 1.0,
+      "tolerance_min_in_week": 0.7,
+      "tolerance_max_in_week": 1.3,
+      "usda_zones": "4-8",
+      "soil_preference": "Moist",
+      "sun_exposure": "Full Sun/Part Shade",
+      "fruiting_period": "July",
+      "planting_time": "Early Spring",
+      "spacing_inches": 48,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 17,
+      "common_name": "Salmonberry",
+      "alternative_name": "",
+      "latin_name": "Rubus spectabilis",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 7.2,
+      "water_optimal_in_week": 1.0,
+      "tolerance_min_in_week": 0.7,
+      "tolerance_max_in_week": 1.3,
+      "usda_zones": "5-9",
+      "soil_preference": "Moist",
+      "sun_exposure": "Part Shade",
+      "fruiting_period": "Jun-Jul",
+      "planting_time": "Early Spring",
+      "spacing_inches": 48,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 18,
+      "common_name": "Cloudberry",
+      "alternative_name": "",
+      "latin_name": "Rubus chamaemorus",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 1.8,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.05,
+      "tolerance_max_in_week": 1.95,
+      "usda_zones": "2-7",
+      "soil_preference": "Acidic bog",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Jul-Aug",
+      "planting_time": "Spring",
+      "spacing_inches": 24,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 19,
+      "common_name": "Wineberry",
+      "alternative_name": "",
+      "latin_name": "Rubus phoenicolasius",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 4.05,
+      "water_optimal_in_week": 1.0,
+      "tolerance_min_in_week": 0.7,
+      "tolerance_max_in_week": 1.3,
+      "usda_zones": "5-8",
+      "soil_preference": "Well\u2011drained",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "July",
+      "planting_time": "Early Spring",
+      "spacing_inches": 36,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 20,
+      "common_name": "Marionberry",
+      "alternative_name": "",
+      "latin_name": "Rubus 'Marion'",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 4.05,
+      "water_optimal_in_week": 1.0,
+      "tolerance_min_in_week": 0.7,
+      "tolerance_max_in_week": 1.3,
+      "usda_zones": "6-9",
+      "soil_preference": "Well\u2011drained",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Jul-Aug",
+      "planting_time": "Early Spring",
+      "spacing_inches": 36,
+      "growth_type": "Perennial"
+    }
+  ]
+}

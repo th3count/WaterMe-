@@ -1,0 +1,166 @@
+[
+  {
+    "zone_id": 1,
+    "pin": 3,
+    "mode": "manual",
+    "period": "D",
+    "cycles": 1,
+    "times": [
+      {
+        "value": "0600",
+        "duration": "010000"
+      }
+    ],
+    "time": {
+      "value": "0600",
+      "duration": ""
+    },
+    "startDay": "2025-07-19",
+    "comment": "Grass"
+  },
+  {
+    "zone_id": 2,
+    "pin": 4,
+    "mode": "manual",
+    "period": "D",
+    "cycles": 2,
+    "times": [
+      {
+        "value": "SUNRISE-30",
+        "duration": "002000"
+      },
+      {
+        "value": "SUNSET+30",
+        "duration": "002000"
+      }
+    ],
+    "time": {
+      "value": "0600",
+      "duration": ""
+    },
+    "startDay": "2025-07-19",
+    "comment": "Fruit"
+  },
+  {
+    "zone_id": 3,
+    "pin": 18,
+    "mode": "manual",
+    "period": "W",
+    "cycles": 1,
+    "times": [
+      {
+        "value": "0600",
+        "duration": ""
+      }
+    ],
+    "time": {
+      "value": "SUNRISE",
+      "duration": "010000"
+    },
+    "startDay": "2025-07-19",
+    "comment": "Hedges"
+  },
+  {
+    "zone_id": 4,
+    "pin": 20,
+    "mode": "manual",
+    "period": "M",
+    "cycles": 1,
+    "times": [
+      {
+        "value": "0600",
+        "duration": ""
+      }
+    ],
+    "time": {
+      "value": "0800",
+      "duration": "020000"
+    },
+    "startDay": "2025-07-19",
+    "comment": "big trees"
+  },
+  {
+    "zone_id": 5,
+    "pin": 21,
+    "mode": "manual",
+    "period": "D",
+    "cycles": 3,
+    "times": [
+      {
+        "value": "SUNRISE",
+        "duration": "001500"
+      },
+      {
+        "value": "ZENITH",
+        "duration": "001500"
+      },
+      {
+        "value": "SUNSET",
+        "duration": "001500"
+      }
+    ],
+    "time": {
+      "value": "0600",
+      "duration": ""
+    },
+    "startDay": "2025-07-19",
+    "comment": "veg"
+  },
+  {
+    "zone_id": 6,
+    "pin": 19,
+    "mode": "disabled",
+    "period": "D",
+    "cycles": 1,
+    "times": [
+      {
+        "value": "0600",
+        "duration": ""
+      }
+    ],
+    "time": {
+      "value": "0600",
+      "duration": ""
+    },
+    "startDay": "2025-07-19",
+    "comment": ""
+  },
+  {
+    "zone_id": 7,
+    "pin": 15,
+    "mode": "disabled",
+    "period": "D",
+    "cycles": 1,
+    "times": [
+      {
+        "value": "0600",
+        "duration": ""
+      }
+    ],
+    "time": {
+      "value": "0600",
+      "duration": ""
+    },
+    "startDay": "2025-07-19",
+    "comment": ""
+  },
+  {
+    "zone_id": 8,
+    "pin": 2,
+    "mode": "disabled",
+    "period": "D",
+    "cycles": 1,
+    "times": [
+      {
+        "value": "0600",
+        "duration": ""
+      }
+    ],
+    "time": {
+      "value": "0600",
+      "duration": ""
+    },
+    "startDay": "2025-07-19",
+    "comment": ""
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "1": { "pin": 17, "state": "LOW", "is_pump": false },
+  "2": { "pin": 18, "state": "LOW", "is_pump": false },
+  "3": { "pin": 27, "state": "LOW", "is_pump": false },
+  "4": { "pin": 22, "state": "LOW", "is_pump": false },
+  "5": { "pin": 23, "state": "LOW", "is_pump": false },
+  "6": { "pin": 24, "state": "LOW", "is_pump": false },
+  "7": { "pin": 25, "state": "LOW", "is_pump": false },
+  "8": { "pin": 4,  "state": "LOW", "is_pump": true }
+}

@@ -1,0 +1,130 @@
+{
+  "1": [
+    {
+      "instance_id": 1,
+      "library_book": "5_fruitbushes",
+      "plant_id": 1,
+      "quantity": 1,
+      "mode": "Smart",
+      "comments": "batch add 1",
+      "time_to_maturity": 6,
+      "zone_id": 1,
+      "emitter_size": 1.0,
+      "planted_date": "2025-07-11 22:10:44"
+    },
+    {
+      "instance_id": 3,
+      "library_book": "5_fruitbushes",
+      "plant_id": 3,
+      "quantity": 3,
+      "mode": "Smart",
+      "comments": "batch add 3",
+      "time_to_maturity": 8,
+      "zone_id": 1,
+      "emitter_size": 2.0,
+      "planted_date": "2025-07-11 22:10:44"
+    },
+    {
+      "instance_id": 4,
+      "library_book": "5_fruitbushes",
+      "plant_id": 4,
+      "quantity": 4,
+      "mode": "Smart",
+      "comments": "batch add 4",
+      "time_to_maturity": 9,
+      "zone_id": 1,
+      "emitter_size": 3.0,
+      "planted_date": "2025-07-11 22:10:44"
+    },
+    {
+      "instance_id": 8,
+      "library_book": "5_fruitbushes",
+      "plant_id": 8,
+      "quantity": 8,
+      "mode": "Smart",
+      "comments": "batch add 8",
+      "time_to_maturity": 3,
+      "zone_id": 1,
+      "emitter_size": 4.0,
+      "planted_date": "2025-07-11 22:10:44"
+    },
+    {
+      "instance_id": 9,
+      "library_book": "5_fruitbushes",
+      "plant_id": 9,
+      "quantity": 9,
+      "mode": "Smart",
+      "comments": "batch add 9",
+      "time_to_maturity": 4,
+      "zone_id": 1,
+      "emitter_size": 5.0,
+      "planted_date": "2025-07-11 22:10:44"
+    }
+  ],
+  "2": [
+    {
+      "instance_id": 7,
+      "library_book": "5_fruitbushes",
+      "plant_id": 7,
+      "quantity": 7,
+      "mode": "Smart",
+      "comments": "batch add 7",
+      "time_to_maturity": 12,
+      "zone_id": 2,
+      "emitter_size": 6.0,
+      "planted_date": "2025-07-11 22:10:44"
+    }
+  ],
+  "3": [
+    {
+      "instance_id": 5,
+      "library_book": "5_fruitbushes",
+      "plant_id": 5,
+      "quantity": 5,
+      "mode": "Smart",
+      "comments": "batch add 5",
+      "time_to_maturity": 10,
+      "zone_id": 3,
+      "emitter_size": 7.0,
+      "planted_date": "2025-07-11 22:10:44"
+    }
+  ],
+  "4": [
+    {
+      "instance_id": 2,
+      "library_book": "5_fruitbushes",
+      "plant_id": 2,
+      "quantity": 2,
+      "mode": "Smart",
+      "comments": "batch add 2",
+      "time_to_maturity": 7,
+      "zone_id": 4,
+      "emitter_size": 9.0,
+      "planted_date": "2025-07-11 22:10:44"
+    },
+    {
+      "instance_id": 6,
+      "library_book": "5_fruitbushes",
+      "plant_id": 6,
+      "quantity": 6,
+      "mode": "Smart",
+      "comments": "batch add 6",
+      "time_to_maturity": 11,
+      "zone_id": 4,
+      "emitter_size": 10.0,
+      "planted_date": "2025-07-11 22:10:44"
+    },
+    {
+      "instance_id": 10,
+      "library_book": "5_fruitbushes",
+      "plant_id": 10,
+      "quantity": 10,
+      "mode": "Smart",
+      "comments": "batch add 10",
+      "time_to_maturity": 5,
+      "zone_id": 4,
+      "emitter_size": 11.0,
+      "planted_date": "2025-07-11 22:10:44"
+    }
+  ]
+}
