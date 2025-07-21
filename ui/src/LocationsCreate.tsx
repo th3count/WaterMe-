@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { getApiBaseUrl } from './utils';
 
 /**
  * LOCATION MANAGEMENT & DATA RELATIONSHIPS
@@ -94,17 +95,17 @@ export default function LocationsCreate() {
     const loadData = async () => {
       try {
         // Load pump index from GPIO config
-        const gpioResp = await fetch('http://127.0.0.1:5000/config/gpio.cfg');
+        const gpioResp = await fetch(`${getApiBaseUrl()}/config/gpio.cfg`);
         const gpioData = await gpioResp.json();
         // Convert 1-based pump index from config to 0-based for frontend
         setPumpIndex(gpioData.pumpIndex !== undefined && gpioData.pumpIndex > 0 ? gpioData.pumpIndex - 1 : null);
         
         // Load zones
-        const scheduleResp = await fetch('http://127.0.0.1:5000/api/schedule');
+        const scheduleResp = await fetch(`${getApiBaseUrl()}/api/schedule`);
         const data = await scheduleResp.json();
         setZones(data);
         // For each zone, resolve times
-        const settingsResp = await fetch('http://127.0.0.1:5000/config/settings.cfg');
+        const settingsResp = await fetch(`${getApiBaseUrl()}/config/settings.cfg`);
         const settings = await settingsResp.json();
         const coords = settings.coords || [0, 0];
         const lat = coords[1], lon = coords[0];
@@ -120,7 +121,7 @@ export default function LocationsCreate() {
           if (codes.length) {
             try {
               const query = { codes, date, lat, lon };
-              const resp = await fetch('http://127.0.0.1:5000/api/resolve_times', {
+              const resp = await fetch(`${getApiBaseUrl()}/api/resolve_times`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(query)
@@ -141,8 +142,8 @@ export default function LocationsCreate() {
         
         // Load map data and plant library
         const [mapResp, libraryFilesResp] = await Promise.all([
-          fetch('http://127.0.0.1:5000/api/map'),
-          fetch('http://127.0.0.1:5000/api/library-files')
+          fetch(`${getApiBaseUrl()}/api/map`),
+          fetch(`${getApiBaseUrl()}/api/library-files`)
         ]);
         
         const mapData = await mapResp.json();
@@ -153,7 +154,7 @@ export default function LocationsCreate() {
         const lookup: Record<string, Record<number, string>> = {};
         await Promise.all(libraryFiles.map(async (fileObj: any) => {
           const filename = fileObj.filename;
-          const resp = await fetch(`http://127.0.0.1:5000/library/${filename}`);
+          const resp = await fetch(`${getApiBaseUrl()}/library/${filename}`);
           if (!resp.ok) return;
           const data = await resp.json();
           let book: Record<number, string> = {};
@@ -179,7 +180,7 @@ export default function LocationsCreate() {
 
   // Load existing locations
   useEffect(() => {
-    fetch('http://127.0.0.1:5000/api/locations')
+    fetch(`${getApiBaseUrl()}/api/locations`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
@@ -249,7 +250,7 @@ export default function LocationsCreate() {
       );
 
       // Save all locations to backend
-      const response = await fetch('http://127.0.0.1:5000/api/locations', {
+      const response = await fetch(`${getApiBaseUrl()}/api/locations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -303,7 +304,7 @@ export default function LocationsCreate() {
       const updatedLocations = [...locations, newLocation];
 
       // Save all locations to backend (including the new one)
-      const response = await fetch('http://127.0.0.1:5000/api/locations', {
+      const response = await fetch(`${getApiBaseUrl()}/api/locations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -339,7 +340,7 @@ export default function LocationsCreate() {
 
     try {
       // Remove from backend
-      const response = await fetch(`http://127.0.0.1:5000/api/locations/${locationId}`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/locations/${locationId}`, {
         method: 'DELETE'
       });
 
@@ -365,7 +366,7 @@ export default function LocationsCreate() {
     setSaving(true);
     try {
       // Save all locations to backend
-      const response = await fetch('http://127.0.0.1:5000/api/locations', {
+      const response = await fetch(`${getApiBaseUrl()}/api/locations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -394,7 +395,7 @@ export default function LocationsCreate() {
       setSaving(true);
       
       // Reassign the plant to this location
-      const reassignResponse = await fetch(`http://127.0.0.1:5000/api/map/${reassignInstanceId}/reassign`, {
+      const reassignResponse = await fetch(`${getApiBaseUrl()}/api/map/${reassignInstanceId}/reassign`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

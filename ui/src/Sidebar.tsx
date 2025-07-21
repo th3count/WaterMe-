@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { getApiBaseUrl } from './utils';
 
 export default function Sidebar() {
   const [healthStatus, setHealthStatus] = useState<'good' | 'warning' | 'error'>('good');
@@ -9,9 +10,9 @@ export default function Sidebar() {
     const fetchHealthStatus = async () => {
       try {
         const [locationsRes, mapRes, alertsRes] = await Promise.all([
-          fetch('http://127.0.0.1:5000/api/locations'),
-          fetch('http://127.0.0.1:5000/api/map'),
-          fetch('http://127.0.0.1:5000/api/health/alerts')
+          fetch(`${getApiBaseUrl()}/api/locations`),
+          fetch(`${getApiBaseUrl()}/api/map`),
+          fetch(`${getApiBaseUrl()}/api/health/alerts`)
         ]);
 
         const [locations, map, alertsData] = await Promise.all([

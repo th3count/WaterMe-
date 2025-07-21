@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getApiBaseUrl } from './utils';
 
 interface LogEntry {
   timestamp: string;
@@ -44,7 +45,7 @@ function Logs() {
   const loadLogFiles = async () => {
     try {
       console.log('Loading log files...');
-      const response = await fetch('http://127.0.0.1:5000/api/logs/files');
+      const response = await fetch(`${getApiBaseUrl()}/api/logs/files`);
       console.log(`Log files response status: ${response.status}`);
       if (response.ok) {
         const data = await response.json();
@@ -93,8 +94,8 @@ function Logs() {
       if (filters.category) params.append('category', filters.category);
       if (filters.search) params.append('search', filters.search);
 
-      console.log(`Making request to: http://127.0.0.1:5000/api/logs?${params}`);
-      const response = await fetch(`http://127.0.0.1:5000/api/logs?${params}`);
+      console.log(`Making request to: ${getApiBaseUrl()}/api/logs?${params}`);
+      const response = await fetch(`${getApiBaseUrl()}/api/logs?${params}`);
       console.log(`Response status: ${response.status}`);
       if (response.ok) {
         const data = await response.json();
@@ -136,7 +137,7 @@ function Logs() {
         return;
       }
       
-      const response = await fetch(`http://127.0.0.1:5000/api/logs/download/${filename}`);
+      const response = await fetch(`${getApiBaseUrl()}/api/logs/download/${filename}`);
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -159,7 +160,7 @@ function Logs() {
   // Clear old logs
   const clearOldLogs = async (days: number = 30) => {
     try {
-      const response = await fetch('http://127.0.0.1:5000/api/logs/clear', {
+      const response = await fetch(`${getApiBaseUrl()}/api/logs/clear`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

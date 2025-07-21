@@ -11,6 +11,7 @@ import Library from './Library';
 import Logs from './Logs';
 import Settings from './Settings';
 import Sidebar from './Sidebar';
+import { getApiBaseUrl } from './utils';
 
 const OPENCAGE_API_KEY = '2e52d2925b4a4575a786f4ba0ae2b6cc';
 
@@ -65,7 +66,7 @@ function CreateGarden() {
     const loadGPIOConfig = async () => {
       try {
         console.log('Loading GPIO config...');
-        const resp = await fetch('http://127.0.0.1:5000/config/gpio.cfg');
+        const resp = await fetch(`${getApiBaseUrl()}/config/gpio.cfg`);
         console.log('GPIO config response status:', resp.status);
         if (resp.ok) {
           const config = await resp.json();
@@ -94,7 +95,7 @@ function CreateGarden() {
   useEffect(() => {
     const loadGardenConfig = async () => {
       try {
-        const resp = await fetch('http://127.0.0.1:5000/config/settings.cfg');
+        const resp = await fetch(`${getApiBaseUrl()}/config/settings.cfg`);
         if (resp.ok) {
           const config = await resp.json();
           setGardenName(config.name || config.garden_name || '');
@@ -161,7 +162,7 @@ function CreateGarden() {
       const configPumpIndex = pumpIndex !== null ? pumpIndex + 1 : 0;
       const config = { zoneCount, pins, pumpIndex: configPumpIndex, activeLow };
       console.log('Saving GPIO config:', config);
-      const resp = await fetch('http://127.0.0.1:5000/api/gpio', {
+      const resp = await fetch(`${getApiBaseUrl()}/api/gpio`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),
@@ -200,7 +201,7 @@ function CreateGarden() {
     };
 
     try {
-      const resp = await fetch('http://127.0.0.1:5000/api/garden', {
+      const resp = await fetch(`${getApiBaseUrl()}/api/garden`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getApiBaseUrl } from './utils';
 
 interface GardenSettings {
   garden_name: string;
@@ -82,9 +83,9 @@ export default function Settings() {
     try {
       setLoading(true);
       const [gardenResp, gpioResp, backupResp] = await Promise.all([
-        fetch('http://127.0.0.1:5000/config/settings.cfg'),
-        fetch('http://127.0.0.1:5000/config/gpio.cfg'),
-        fetch('http://127.0.0.1:5000/api/backup/info')
+        fetch(`${getApiBaseUrl()}/config/settings.cfg`),
+        fetch(`${getApiBaseUrl()}/config/gpio.cfg`),
+        fetch(`${getApiBaseUrl()}/api/backup/info`)
       ]);
 
       if (gardenResp.ok) {
@@ -144,7 +145,7 @@ export default function Settings() {
       setError('');
       setSuccess('');
 
-      const response = await fetch('http://127.0.0.1:5000/api/garden', {
+      const response = await fetch(`${getApiBaseUrl()}/api/garden`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(gardenSettings)
@@ -180,7 +181,7 @@ export default function Settings() {
         activeLow: gpioConfig.activeLow ?? true,
         mode: gpioConfig.mode ?? 'BCM'
       };
-      const response = await fetch('http://127.0.0.1:5000/api/gpio', {
+      const response = await fetch(`${getApiBaseUrl()}/api/gpio`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -205,7 +206,7 @@ export default function Settings() {
       setError('');
       setSuccess('');
 
-      const response = await fetch('http://127.0.0.1:5000/api/backup/create', {
+      const response = await fetch(`${getApiBaseUrl()}/api/backup/create`, {
         method: 'POST'
       });
 
@@ -246,7 +247,7 @@ export default function Settings() {
       const formData = new FormData();
       formData.append('backup_file', selectedFile);
 
-      const response = await fetch('http://127.0.0.1:5000/api/backup/restore', {
+      const response = await fetch(`${getApiBaseUrl()}/api/backup/restore`, {
         method: 'POST',
         body: formData
       });
