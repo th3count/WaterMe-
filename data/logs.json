@@ -1,0 +1,10 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "created": "2025-01-27T00:00:00Z",
+    "last_cleanup": "2025-01-27T00:00:00Z",
+    "retention_days": 30,
+    "max_entries": 10000
+  },
+  "logs": []
+} 

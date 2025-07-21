@@ -1,0 +1,12 @@
+{
+  "backend_port": 5000,
+  "ui_port": 3000,
+  "host": "0.0.0.0",
+  "debug": false,
+  "auto_start_ui": true,
+  "log_level": "INFO",
+  "system_name": "WaterMe! Smart Garden",
+  "version": "1.0.0",
+  "network_access": true,
+  "allow_external_connections": true
+} 

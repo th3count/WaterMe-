@@ -1,16 +1,16 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const PERIODS = [
-  { label: 'Daily', code: 'D', maxCycles: 7 },
-  { label: 'Weekly', code: 'W', maxCycles: 7 },
-  { label: 'Monthly', code: 'M', maxCycles: 3 },
+  { label: 'Daily', code: 'D', maxCycles: 10 },
+  { label: 'Weekly', code: 'W', maxCycles: 10 },
+  { label: 'Monthly', code: 'M', maxCycles: 10 },
   { label: 'Specific (future)', code: 'S', maxCycles: 1, disabled: true },
   { label: 'Intervals (future)', code: 'I', maxCycles: 1, disabled: true }
 ];
 
 function defaultTime() {
-  return { value: '0600', duration: '' };
+  return { value: '0600', duration: '010000' };
 }
 
 function getTomorrow() {
@@ -19,11 +19,10 @@ function getTomorrow() {
   return d.toISOString().slice(0, 10);
 }
 
-// Remove DurationInput component
-
 export default function ZoneSchedule() {
   const [zones, setZones] = useState<any[]>([]);
   const [pumpIndex, setPumpIndex] = useState<number | null>(null);
+  const [gpioPins, setGpioPins] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -31,30 +30,72 @@ export default function ZoneSchedule() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Fetch GPIO config from backend
-    fetch('http://127.0.0.1:5000/config/gpio.cfg')
-      .then(res => res.json())
-      .then(data => {
-        const zoneCount = data.zoneCount || (data.pins ? data.pins.length : 0);
-        setPumpIndex(data.pumpIndex ?? null);
+    const loadZoneData = async () => {
+      try {
+        // First load GPIO config to get zone count and pump index
+        const gpioResp = await fetch('http://127.0.0.1:5000/config/gpio.cfg');
+        const gpioData = await gpioResp.json();
+        const zoneCount = gpioData.zoneCount || (gpioData.pins ? gpioData.pins.length : 0);
+        // Convert 1-based pump index from config to 0-based for frontend
+        setPumpIndex(gpioData.pumpIndex !== undefined && gpioData.pumpIndex > 0 ? gpioData.pumpIndex - 1 : null);
+        setGpioPins(gpioData.pins || []);
+
+        // Then load existing schedule data
+        const scheduleResp = await fetch('http://127.0.0.1:5000/api/schedule');
+        console.log('Schedule response status:', scheduleResp.status);
+        if (scheduleResp.ok) {
+          const scheduleData = await scheduleResp.json();
+          console.log('Loaded schedule data:', scheduleData);
+          setZones(scheduleData);
+        } else {
+          console.log('API failed, trying direct file access...');
+          // Try loading from the data file directly
+          try {
+            const fileResp = await fetch('http://127.0.0.1:5000/data/schedule.json');
+            if (fileResp.ok) {
+              const fileData = await fileResp.json();
+              console.log('Loaded from file:', fileData);
+              setZones(fileData);
+            } else {
+              console.log('File also failed, creating default zones');
+              // If no schedule data exists, create default zones
+              setZones(
+                Array.from({ length: zoneCount }, (_, idx) => ({
+                  zone_id: idx + 1,
+                  mode: 'disabled',
+                  period: PERIODS[0].code,
+                  cycles: 1,
+                  times: [defaultTime()],
+                  startDay: getTomorrow(),
+                  comment: '',
+                }))
+              );
+            }
+          } catch (fileErr) {
+            console.log('File access failed:', fileErr);
+            // If no schedule data exists, create default zones
         setZones(
           Array.from({ length: zoneCount }, (_, idx) => ({
-            pin: data.pins ? data.pins[idx] : undefined,
+                zone_id: idx + 1,
             mode: 'disabled',
             period: PERIODS[0].code,
             cycles: 1,
-            times: [defaultTime()], // for daily, one per cycle
-            time: defaultTime(),    // for non-daily
+                times: [defaultTime()],
             startDay: getTomorrow(),
             comment: '',
           }))
         );
+          }
+        }
         setLoading(false);
-      })
-      .catch(() => {
-        setError('Failed to load GPIO config.');
+      } catch (err) {
+        console.error('Failed to load zone data:', err);
+        setError('Failed to load zone configuration.');
         setLoading(false);
-      });
+      }
+    };
+
+    loadZoneData();
   }, []);
 
   const handleZoneChange = (idx: number, field: string, value: any) => {
@@ -79,16 +120,22 @@ export default function ZoneSchedule() {
     setZones(zones => zones.map((z, i) => {
       if (i !== zoneIdx) return z;
       const times = [...(z.times || [])];
-      times[timeIdx] = { value };
+      times[timeIdx] = { ...times[timeIdx], value };
       return { ...z, times };
     }));
   };
 
-  // For non-daily, update the single time
+  // For non-daily, update the single time (first time in times array)
   const handleSingleTimeChange = (zoneIdx: number, value: string) => {
     setZones(zones => zones.map((z, i) => {
       if (i !== zoneIdx) return z;
-      return { ...z, time: { value } };
+      const times = [...(z.times || [])];
+      if (times.length > 0) {
+        times[0] = { ...times[0], value };
+      } else {
+        times.push({ value, duration: '010000' });
+      }
+      return { ...z, times };
     }));
   };
 
@@ -106,369 +153,540 @@ export default function ZoneSchedule() {
     return /^\d{6}$/.test(val);
   }
 
-  function handleDurationChange(zoneIdx: number, timeIdx: number | null, slotIdx: number, value: string) {
-    if (!/^[0-9]?$/.test(value)) return; // Only allow single digit or empty
-    setZones(zones => zones.map((z, i) => {
-      if (i !== zoneIdx) return z;
-      if (timeIdx !== null) {
-        // Daily, multiple cycles
-        const times = [...(z.times || [])];
-        let dur = times[timeIdx]?.duration || '000000';
-        dur = dur.padEnd(6, '0').slice(0, 6);
-        dur = dur.substring(0, slotIdx) + (value || '0') + dur.substring(slotIdx + 1);
-        times[timeIdx] = { ...times[timeIdx], duration: dur };
-        return { ...z, times };
-      } else {
-        // Non-daily
-        let dur = z.time?.duration || '000000';
-        dur = dur.padEnd(6, '0').slice(0, 6);
-        dur = dur.substring(0, slotIdx) + (value || '0') + dur.substring(slotIdx + 1);
-        return { ...z, time: { ...z.time, duration: dur } };
-      }
-    }));
-  }
+
 
   const handleContinue = async () => {
     setSaving(true);
     setError('');
     try {
-      // Add zone_id to each zone before saving (one-based)
-      const zonesWithId = zones.map((z, idx) => ({ ...z, zone_id: idx + 1 }));
+      // Preserve exact data structure to avoid breaking other systems
+      const zonesToSave = zones.map(zone => {
+        // Keep all existing fields exactly as they are
+        const zoneToSave = { ...zone };
+        
+        // Only ensure required fields exist with safe defaults
+        if (!zoneToSave.times) zoneToSave.times = [{ value: '0600', duration: '010000' }];
+        if (!zoneToSave.startDay) zoneToSave.startDay = getTomorrow();
+        if (!zoneToSave.comment) zoneToSave.comment = '';
+        
+        return zoneToSave;
+      });
+
+      console.log('Saving zones:', zonesToSave);
+      
       const resp = await fetch('http://127.0.0.1:5000/api/schedule', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(zonesWithId)
+        body: JSON.stringify(zonesToSave)
       });
-      if (!resp.ok) throw new Error('Failed to save schedule');
-      navigate('/locations');
+      
+      if (!resp.ok) {
+        const errorText = await resp.text();
+        throw new Error(`Failed to save schedule: ${errorText}`);
+      }
+      
+      console.log('Schedule saved successfully');
+      
+      // Show success message
+      alert('Zone schedule saved successfully!');
+      
     } catch (err) {
-      setError('Failed to save schedule.');
+      console.error('Save error:', err);
+      setError(`Failed to save schedule: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
     setSaving(false);
   };
 
   if (loading) {
-    return <div style={{ color: '#fff', textAlign: 'center', marginTop: '4rem' }}>Loading zone configuration...</div>;
+    return (
+      <div style={{
+        minHeight: '100vh',
+        minWidth: '100vw',
+        background: '#181f2a',
+        padding: '0 0 0 20px',
+        marginLeft: '150px',
+        boxSizing: 'border-box',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{ color: '#00bcd4', fontSize: '18px' }}>Loading zone configuration...</div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div style={{ color: '#ff512f', textAlign: 'center', marginTop: '4rem' }}>{error}</div>;
+  return (
+      <div style={{
+        minHeight: '100vh',
+        minWidth: '100vw',
+        background: '#181f2a',
+        padding: '0 0 0 20px',
+        marginLeft: '150px',
+        boxSizing: 'border-box',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{ color: '#ff512f', fontSize: '18px' }}>{error}</div>
+      </div>
+    );
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)',
-        color: '#fff',
-        textAlign: 'center'
-      }}
-    >
-      <style>{`
-        .zone-panel {
-          transition: max-height 0.8s cubic-bezier(0.4,0,0.2,1), opacity 0.5s;
-          overflow: hidden;
-          opacity: 0;
-          max-height: 0;
-        }
-        .zone-panel.expanded {
-          opacity: 1;
-          max-height: 1000px;
-        }
-        .duration-input-box {
-          position: relative;
-          display: inline-block;
-        }
-        .duration-placeholder {
-          position: absolute;
-          left: 0;
-          top: 0;
-          width: 100%;
-          height: 100%;
-          pointer-events: none;
-          color: #bdbdbd;
-          opacity: 0.4;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 15px;
-          font-family: inherit;
-          z-index: 1;
-        }
-        .duration-input {
-          background: transparent;
-          color: #fff;
-          border-radius: 4px;
-          border: 1px solid #ff9800;
-          width: 70px;
-          text-align: center;
-          padding: 4px;
-          font-size: 15px;
-          position: relative;
-          z-index: 2;
-          caret-color: #fff;
-        }
-      `}</style>
-      <div style={{ width: '100%' }}>
-        <div style={{ margin: '2rem auto', maxWidth: 500, background: 'rgba(30,20,50,0.95)', borderRadius: 12, padding: 24 }}>
-          <h2 style={{ color: '#ff9800', fontWeight: 700, marginTop: 0 }}>Zone Scheduling</h2>
-          <>
+    <div style={{
+      minHeight: '100vh',
+      minWidth: '100vw',
+      background: '#181f2a',
+      padding: '0 0 0 20px',
+      marginLeft: '150px',
+      boxSizing: 'border-box',
+      overflowX: 'hidden'
+    }}>
+      <div style={{
+        maxWidth: '1200px',
+        marginLeft: 0,
+        marginRight: 0,
+        padding: '20px 20px 20px 0',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          marginBottom: '20px',
+          alignItems: 'center',
+          gap: '12px',
+          height: '30px'
+        }}>
+          {/* Invisible spacer to match other pages layout */}
+        </div>
+        
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '24px'
+        }}>
+          
+
+          {/* Zone Configuration Cards */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
             {zones.map((zone, idx) => {
               const periodObj = PERIODS.find(p => p.code === zone.period) || PERIODS[0];
               const expanded = expandedZoneIdx === idx;
               return (
                 <div
                   key={idx}
-                  style={{ marginBottom: 32, borderBottom: '1px solid #444', paddingBottom: 16 }}
+                  style={{
+                    background: '#232b3b',
+                    borderRadius: '16px',
+                    padding: '20px',
+                    boxShadow: '0 4px 24px rgba(24,31,42,0.18)',
+                    border: '1px solid #1a1f2a'
+                  }}
                 >
                   <div
-                    style={{ fontWeight: 600, color: '#ff9800', marginBottom: expanded ? 8 : 0, cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      cursor: 'pointer',
+                      marginBottom: expanded ? '16px' : 0
+                    }}
                     onClick={() => setExpandedZoneIdx(expanded ? null : idx)}
                   >
-                    <span>Zone {idx + 1} (GPIO {zone.pin})</span>
-                    <span style={{ fontSize: 16, color: '#bdbdbd', marginLeft: 8 }}>{expanded ? '▼' : '▶'}</span>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px'
+                    }}>
+                      <span style={{
+                        color: '#00bcd4',
+                        fontWeight: 700,
+                        fontSize: '18px'
+                      }}>
+                        Zone {zone.zone_id} (GPIO {gpioPins[zone.zone_id - 1] || 'N/A'})
+                      </span>
+                      {zone.comment && (
+                        <span style={{
+                          color: '#bdbdbd',
+                          fontSize: '14px',
+                          fontStyle: 'italic'
+                        }}>
+                          - {zone.comment}
+                        </span>
+                      )}
+                    </div>
+                    <span style={{
+                      fontSize: '16px',
+                      color: '#00bcd4',
+                      transition: 'transform 0.2s',
+                      transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)'
+                    }}>
+                      ▶
+                    </span>
                   </div>
-                  <div className={`zone-panel${expanded ? ' expanded' : ''}`}>
+
                     {expanded && (
-                      <>
-                        {pumpIndex === idx ? (
-                          <div style={{ color: '#bdbdbd', marginBottom: 8 }}>This zone is configured as the pump and does not require scheduling.</div>
+                    <div style={{
+                      borderTop: '1px solid #1a1f2a',
+                      paddingTop: '16px'
+                    }}>
+                      {pumpIndex === zone.zone_id - 1 ? (
+                        <div style={{
+                          color: '#bdbdbd',
+                          padding: '12px',
+                          background: '#1a1f2a',
+                          borderRadius: '8px',
+                          fontSize: '14px'
+                        }}>
+                          This zone is configured as the pump and does not require scheduling.
+                        </div>
                         ) : (
-                          <>
-                            {/* Mode Slider */}
-                            <div style={{ marginBottom: 12 }}>
-                              <span style={{ color: '#fff', marginRight: 12 }}>Mode:</span>
-                              <label style={{ color: zone.mode === 'manual' ? '#ff9800' : '#fff', marginRight: 8 }}>
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '16px'
+                        }}>
+                          {/* Mode Selection */}
+                          <div>
+                            <label style={{
+                              color: '#f4f4f4',
+                              fontSize: '14px',
+                              fontWeight: 600,
+                              marginBottom: '8px',
+                              display: 'block'
+                            }}>
+                              Mode:
+                              </label>
+                            <div style={{
+                              display: 'flex',
+                              gap: '16px'
+                            }}>
+                              {['manual', 'smart', 'disabled'].map(mode => (
+                                <label key={mode} style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  cursor: 'pointer',
+                                  color: zone.mode === mode ? '#00bcd4' : '#bdbdbd'
+                                }}>
                                 <input
                                   type="radio"
-                                  checked={zone.mode === 'manual'}
-                                  onChange={() => handleZoneChange(idx, 'mode', 'manual')}
-                                  style={{ marginRight: 4 }}
+                                    checked={zone.mode === mode}
+                                    onChange={() => handleZoneChange(idx, 'mode', mode)}
+                                    style={{
+                                      accentColor: '#00bcd4'
+                                    }}
                                 />
-                                Manual
+                                  <span style={{
+                                    textTransform: 'capitalize',
+                                    fontSize: '14px'
+                                  }}>
+                                    {mode === 'smart' ? 'Smart (coming soon)' : mode}
+                                  </span>
                               </label>
-                              <label style={{ color: '#bdbdbd', opacity: 0.5, marginRight: 8 }}>
-                                <input
-                                  type="radio"
-                                  checked={zone.mode === 'smart'}
-                                  disabled
-                                  style={{ marginRight: 4 }}
-                                />
-                                Smart (coming soon)
-                              </label>
-                              <label style={{ color: zone.mode === 'disabled' ? '#ff9800' : '#fff' }}>
-                                <input
-                                  type="radio"
-                                  checked={zone.mode === 'disabled'}
-                                  onChange={() => handleZoneChange(idx, 'mode', 'disabled')}
-                                  style={{ marginRight: 4 }}
-                                />
-                                Disabled
-                              </label>
+                              ))}
                             </div>
-                            {/* Collapse scheduling controls if disabled */}
-                            {zone.mode !== 'disabled' && (
-                              <>
-                                {/* Period and Cycles Controls */}
-                                <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                  <label style={{ marginRight: 8 }}>
-                                    Period:&nbsp;
+                          </div>
+
+                          {/* Period Selection */}
+                          <div>
+                            <label style={{
+                              color: '#f4f4f4',
+                              fontSize: '14px',
+                              fontWeight: 600,
+                              marginBottom: '8px',
+                              display: 'block'
+                            }}>
+                              Period:
+                            </label>
                                     <select
                                       value={zone.period}
-                                      onChange={e => handleZoneChange(idx, 'period', e.target.value)}
-                                      style={{ padding: 4, borderRadius: 6, border: '1px solid #ff9800', background: '#2d2350', color: '#fff' }}
+                              onChange={(e) => handleZoneChange(idx, 'period', e.target.value)}
+                              style={{
+                                background: '#1a1f2a',
+                                color: '#f4f4f4',
+                                border: '1px solid #00bcd4',
+                                borderRadius: '6px',
+                                padding: '8px 12px',
+                                fontSize: '14px',
+                                minWidth: '120px'
+                              }}
                                     >
-                                      {PERIODS.map(opt => (
-                                        <option key={opt.code} value={opt.code} disabled={!!opt.disabled} style={opt.disabled ? { color: '#bdbdbd' } : {}}>{opt.label}</option>
+                              {PERIODS.map(period => (
+                                <option
+                                  key={period.code}
+                                  value={period.code}
+                                  disabled={period.disabled}
+                                >
+                                  {period.label}
+                                </option>
                                       ))}
                                     </select>
+                          </div>
+
+                          {/* Cycles Selection */}
+                          <div>
+                            <label style={{
+                              color: '#f4f4f4',
+                              fontSize: '14px',
+                              fontWeight: 600,
+                              marginBottom: '8px',
+                              display: 'block'
+                            }}>
+                              Cycles: {zone.cycles}
                                   </label>
-                                  <label>
-                                    Cycles:&nbsp;
-                                    {zone.period === 'D' ? (
                                       <input
-                                        type="number"
-                                        min={1}
+                              type="range"
+                              min="1"
                                         max={periodObj.maxCycles}
                                         value={zone.cycles}
-                                        onChange={e => handleCyclesChange(idx, Number(e.target.value))}
-                                        style={{ width: 60, padding: 4, borderRadius: 6, border: '1px solid #ff9800', background: '#2d2350', color: '#fff' }}
+                              onChange={(e) => handleCyclesChange(idx, parseInt(e.target.value))}
+                              style={{
+                                width: '100%',
+                                accentColor: '#00bcd4'
+                              }}
                                       />
-                                    ) : (
-                                      <select
-                                        value={zone.cycles}
-                                        onChange={e => handleZoneChange(idx, 'cycles', Number(e.target.value))}
-                                        style={{ padding: 4, borderRadius: 6, border: '1px solid #ff9800', background: '#2d2350', color: '#fff' }}
-                                      >
-                                        {Array.from({
-                                          length: zone.period === 'W' ? 6 : zone.period === 'M' ? 3 : periodObj.maxCycles
-                                        }, (_, i) => i + 1).map(n => (
-                                          <option key={n} value={n}>{n}</option>
-                                        ))}
-                                      </select>
-                                    )}
+                          </div>
+
+                          {/* Time Configuration */}
+                          <div>
+                            <label style={{
+                              color: '#f4f4f4',
+                              fontSize: '14px',
+                              fontWeight: 600,
+                              marginBottom: '8px',
+                              display: 'block'
+                            }}>
+                              Schedule:
                                   </label>
-                                </div>
-                                {/* Start day calendar */}
-                                <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                  <label style={{ marginRight: 8 }}>
-                                    Start day:&nbsp;
+                            {zone.period === 'D' ? (
+                              // Daily - multiple times
+                              <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '12px'
+                              }}>
+                                {zone.times?.map((time: any, timeIdx: number) => (
+                                  <div key={timeIdx} style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    padding: '12px',
+                                    background: '#1a1f2a',
+                                    borderRadius: '8px'
+                                  }}>
+                                    <span style={{
+                                      color: '#bdbdbd',
+                                      fontSize: '14px',
+                                      minWidth: '60px'
+                                    }}>
+                                      Time {timeIdx + 1}:
+                                    </span>
                                     <input
-                                      type="date"
-                                      value={zone.startDay}
-                                      onChange={e => handleZoneChange(idx, 'startDay', e.target.value)}
-                                      style={{ padding: 4, borderRadius: 6, border: '1px solid #ff9800', background: '#2d2350', color: '#fff' }}
+                                      type="text"
+                                      value={time.value}
+                                      onChange={(e) => handleTimeChange(idx, timeIdx, e.target.value)}
+                                      placeholder="0600 or SUNRISE"
+                                      style={{
+                                        background: '#232b3b',
+                                        color: '#f4f4f4',
+                                        border: '1px solid #00bcd4',
+                                        borderRadius: '4px',
+                                        padding: '6px 8px',
+                                        fontSize: '14px',
+                                        width: '100px'
+                                      }}
                                     />
-                                  </label>
-                                </div>
-                                {/* Mini-manual always below period/cycle, above time */}
-                                {zone.period === 'D' && (
-                                  <div style={{ color: '#bdbdbd', fontSize: 13, marginTop: 0, marginBottom: 8 }}>
-                                    <b>Time format:</b> HHMM (24-hour, e.g. 0600, 1830) or use aliases:<br />
-                                    <b>SUNRISE</b>, <b>SUNSET</b>, <b>ZENITH</b> (optionally + or - minutes, e.g. SUNRISE+30, SUNSET-15)<br />
-                                    <br />
-                                    <b>Duration format:</b> HHMMSS (e.g. 010000 = 1h, 003000 = 30m, 012345 = 1h23m45s)
-                                  </div>
-                                )}
-                                {zone.period !== 'D' && (
-                                  <div style={{ color: '#bdbdbd', fontSize: 13, marginTop: 0, marginBottom: 8 }}>
-                                    <b>Time format:</b> HHMM (24-hour) or SUNRISE, SUNSET, ZENITH (+/- minutes)<br />
-                                    <br />
-                                    <b>Duration format:</b> HHMMSS (e.g. 010000 = 1h, 003000 = 30m, 012345 = 1h23m45s)
-                                  </div>
-                                )}
-                                {zone.period === 'S' && (
-                                  <div style={{ color: '#bdbdbd', fontSize: 13, marginTop: 0, marginBottom: 8 }}>
-                                    <b>Specific</b> scheduling is a future feature (TODO).
-                                  </div>
-                                )}
-                                {/* For daily, show a time text box for each cycle */}
-                                {zone.period === 'D' ? (
-                                  <div style={{ marginBottom: 12 }}>
-                                    {Array.from({ length: zone.cycles }).map((_, cidx) => {
-                                      const val = zone.times[cidx]?.value || '';
-                                      const durationVal = zone.times[cidx]?.duration || '';
-                                      const invalid = val && !isValidTimeInput(val);
-                                      const invalidDuration = durationVal && !isValidDurationInput(durationVal);
-                                      return (
-                                        <div key={cidx} style={{ marginBottom: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                          <label style={{ marginRight: 8 }}>
-                                            Time for cycle {cidx + 1}:&nbsp;
+                                    <span style={{
+                                      color: '#bdbdbd',
+                                      fontSize: '14px'
+                                    }}>
+                                      Duration:
+                                    </span>
                                             <input
                                               type="text"
-                                              value={val}
-                                              onChange={e => handleTimeChange(idx, cidx, e.target.value)}
-                                              placeholder="e.g. 0600, 1830, SUNRISE+30, SUNSET-15, ZENITH"
-                                              style={{ width: 120, padding: 4, borderRadius: 6, border: invalid ? '1px solid #ff512f' : '1px solid #ff9800', background: '#2d2350', color: '#fff' }}
-                                            />
-                                          </label>
-                                          <div className="duration-input-box" style={{ marginRight: 8 }}>
-                                            <input
-                                              type="text"
-                                              maxLength={6}
-                                              value={durationVal || ''}
-                                              onChange={e => {
+                                       value={time.duration || ''}
+                                       onChange={(e) => {
                                                 const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
                                                 setZones(zones => zones.map((z, i) => {
                                                   if (i !== idx) return z;
                                                   const times = [...(z.times || [])];
-                                                  times[cidx] = { ...times[cidx], duration: val };
+                                           times[timeIdx] = { ...times[timeIdx], duration: val };
                                                   return { ...z, times };
                                                 }));
                                               }}
-                                              className="duration-input"
-                                              style={{ border: invalidDuration ? '1px solid #ff512f' : '1px solid #ff9800' }}
-                                            />
-                                            {(!durationVal) && (
-                                              <span className="duration-placeholder">HHMMSS</span>
-                                            )}
-                                          </div>
-                                          {invalid && <span style={{ color: '#ff512f', fontSize: 13 }}>Invalid</span>}
-                                          {invalidDuration && <span style={{ color: '#ff512f', fontSize: 13 }}>Invalid duration</span>}
+                                       style={{
+                                         background: '#232b3b',
+                                         color: '#f4f4f4',
+                                         border: '1px solid #00bcd4',
+                                         borderRadius: '4px',
+                                         padding: '6px 8px',
+                                         fontSize: '14px',
+                                         width: '100px'
+                                       }}
+                                     />
+                                     <span style={{
+                                       color: '#bdbdbd',
+                                       fontSize: '12px'
+                                     }}>
+                                       HHMMSS
+                                     </span>
                                         </div>
-                                      );
-                                    })}
+                                ))}
                                   </div>
                                 ) : (
-                                  <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <label style={{ marginRight: 8 }}>
-                                      Time:&nbsp;
+                              // Non-daily - single time
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                padding: '12px',
+                                background: '#1a1f2a',
+                                borderRadius: '8px'
+                              }}>
+                                <span style={{
+                                  color: '#bdbdbd',
+                                  fontSize: '14px'
+                                }}>
+                                  Time:
+                                </span>
+                                                                      <input
+                                  type="text"
+                                  value={zone.times?.[0]?.value || ''}
+                                  onChange={(e) => handleSingleTimeChange(idx, e.target.value)}
+                                  placeholder="0600 or SUNRISE"
+                                  style={{
+                                    background: '#232b3b',
+                                    color: '#f4f4f4',
+                                    border: '1px solid #00bcd4',
+                                    borderRadius: '4px',
+                                    padding: '6px 8px',
+                                    fontSize: '14px',
+                                    width: '100px'
+                                  }}
+                                />
+                                <span style={{
+                                  color: '#bdbdbd',
+                                  fontSize: '14px'
+                                }}>
+                                  Duration:
+                                </span>
                                       <input
                                         type="text"
-                                        value={zone.time.value}
-                                        onChange={e => handleSingleTimeChange(idx, e.target.value)}
-                                        placeholder="e.g. 0600, 1830, SUNRISE+30, SUNSET-15, ZENITH"
-                                        style={{ width: 120, padding: 4, borderRadius: 6, border: isValidTimeInput(zone.time.value) ? '1px solid #ff9800' : '1px solid #ff512f', background: '#2d2350', color: '#fff' }}
-                                      />
-                                    </label>
-                                    <div className="duration-input-box" style={{ marginRight: 8 }}>
-                                      <input
-                                        type="text"
-                                        maxLength={6}
-                                        value={zone.time.duration || ''}
-                                        onChange={e => {
+                                   value={zone.times?.[0]?.duration || ''}
+                                   onChange={(e) => {
                                           const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
                                           setZones(zones => zones.map((z, i) => {
                                             if (i !== idx) return z;
-                                            return { ...z, time: { ...z.time, duration: val } };
+                                            const times = [...(z.times || [])];
+                                            if (times.length > 0) {
+                                              times[0] = { ...times[0], duration: val };
+                                            } else {
+                                              times.push({ value: '0600', duration: val });
+                                            }
+                                            return { ...z, times };
                                           }));
                                         }}
-                                        className="duration-input"
-                                        style={{ border: zone.time.duration && !isValidDurationInput(zone.time.duration) ? '1px solid #ff512f' : '1px solid #ff9800' }}
+                                   style={{
+                                     background: '#232b3b',
+                                     color: '#f4f4f4',
+                                     border: '1px solid #00bcd4',
+                                     borderRadius: '4px',
+                                     padding: '6px 8px',
+                                     fontSize: '14px',
+                                     width: '100px'
+                                   }}
                                       />
-                                      {(!zone.time.duration) && (
-                                        <span className="duration-placeholder">HHMMSS</span>
+                                 <span style={{
+                                   color: '#bdbdbd',
+                                   fontSize: '12px'
+                                 }}>
+                                   HHMMSS
+                                 </span>
+                              </div>
                                       )}
                                     </div>
-                                    {!isValidTimeInput(zone.time.value) && <span style={{ color: '#ff512f', fontSize: 13 }}>Invalid</span>}
-                                    {zone.time.duration && !isValidDurationInput(zone.time.duration) && <span style={{ color: '#ff512f', fontSize: 13 }}>Invalid duration</span>}
-                                  </div>
-                                )}
-                                {/* Comments/Description */}
-                                <div style={{ marginBottom: 0 }}>
-                                  <label>
-                                    Comments/Description:&nbsp;
+
+                          {/* Comment */}
+                          <div>
+                            <label style={{
+                              color: '#f4f4f4',
+                              fontSize: '14px',
+                              fontWeight: 600,
+                              marginBottom: '8px',
+                              display: 'block'
+                            }}>
+                              Comment:
+                            </label>
                                     <input
                                       type="text"
-                                      value={zone.comment}
-                                      onChange={e => handleZoneChange(idx, 'comment', e.target.value)}
-                                      style={{ width: 220, padding: 4, borderRadius: 6, border: '1px solid #ff9800', background: '#2d2350', color: '#fff' }}
+                              value={zone.comment || ''}
+                              onChange={(e) => handleZoneChange(idx, 'comment', e.target.value)}
+                              placeholder="Optional description"
+                              style={{
+                                background: '#1a1f2a',
+                                color: '#f4f4f4',
+                                border: '1px solid #00bcd4',
+                                borderRadius: '6px',
+                                padding: '8px 12px',
+                                fontSize: '14px',
+                                width: '100%',
+                                boxSizing: 'border-box'
+                              }}
                                     />
-                                  </label>
+                          </div>
                                 </div>
-                              </>
-                            )}
-                          </>
-                        )}
-                      </>
                     )}
                   </div>
+                  )}
                 </div>
               );
             })}
+          </div>
+
+          {/* Continue Button */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            marginTop: '32px'
+          }}>
             <button
               onClick={handleContinue}
               disabled={saving}
               style={{
-                width: '100%',
-                padding: '0.75rem',
-                marginTop: 12,
-                background: 'linear-gradient(90deg, #ff9800 0%, #ff512f 100%)',
-                color: '#fff',
+                background: '#00bcd4',
+                color: '#181f2a',
                 border: 'none',
-                borderRadius: 8,
+                borderRadius: '8px',
+                padding: '12px 32px',
+                fontSize: '16px',
                 fontWeight: 600,
-                fontSize: 16,
-                cursor: 'pointer',
-                transition: 'background 0.2s'
+                cursor: saving ? 'not-allowed' : 'pointer',
+                opacity: saving ? 0.6 : 1,
+                transition: 'opacity 0.2s'
               }}
             >
-              {saving ? 'Saving...' : 'Continue'}
+                              {saving ? 'Saving...' : 'Save'}
             </button>
-          </>
+          </div>
+
+          {error && (
+            <div style={{
+              color: '#ff512f',
+              textAlign: 'center',
+              padding: '12px',
+              background: '#1a1f2a',
+              borderRadius: '8px',
+              fontSize: '14px'
+            }}>
+              {error}
+            </div>
+          )}
         </div>
       </div>
     </div>

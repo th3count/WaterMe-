@@ -1,14 +1,32 @@
-[
-  {
-    "location_id": 2,
+{
+  "2": {
     "name": "orchard",
     "description": "berries",
-    "zones": [1, 2, 5]
+    "zones": [
+      1,
+      2,
+      3,
+      5
+    ]
   },
-  {
-    "location_id": 3,
-    "name": "perimiter",
-    "description": "fenceline ",
-    "zones": [3, 4]
+  "4": {
+    "name": "gotitall",
+    "description": "gotitall",
+    "zones": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  "5": {
+    "name": "t2t",
+    "description": "2t23",
+    "zones": [
+      1,
+      2,
+      3
+    ]
   }
-]
+}
