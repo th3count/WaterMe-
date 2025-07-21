@@ -943,28 +943,6 @@ export default function Settings() {
                 </select>
               </div>
               
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <input
-                  type="checkbox"
-                  id="isPump"
-                  checked={gpioConfig.pumpIndex === (gpioConfig.zoneCount || 8)}
-                  onChange={(e) => {
-                    const highestZone = gpioConfig.zoneCount || 8;
-                    setGpioConfig({
-                      ...gpioConfig,
-                      pumpIndex: e.target.checked ? highestZone : 0
-                    });
-                  }}
-                  style={{
-                    width: '16px',
-                    height: '16px',
-                    accentColor: '#00bcd4'
-                  }}
-                />
-                <label htmlFor="isPump" style={{ color: '#f4f4f4', fontSize: '14px', cursor: 'pointer' }}>
-                  Use highest zone (Zone {gpioConfig.zoneCount || 8}) as pump
-                </label>
-              </div>
             </div>
           </ExpandableSection>
 
@@ -1020,6 +998,46 @@ export default function Settings() {
                   />
                 </div>
               ))}
+            </div>
+            
+            {/* Pump Zone Selector */}
+            <div style={{
+              marginTop: '16px',
+              background: '#2d3748',
+              padding: '12px',
+              borderRadius: '6px',
+              border: '1px solid #4a5568'
+            }}>
+              <label style={{
+                color: '#f4f4f4',
+                fontSize: '14px',
+                fontWeight: 600,
+                marginBottom: '8px',
+                display: 'block'
+              }}>
+                Pump Zone:
+              </label>
+              <select
+                value={gpioConfig.pumpIndex || 0}
+                onChange={(e) => setGpioConfig({
+                  ...gpioConfig,
+                  pumpIndex: Number(e.target.value)
+                })}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  borderRadius: '4px',
+                  border: '1px solid #4a5568',
+                  background: '#2d3748',
+                  color: '#f4f4f4',
+                  fontSize: '14px'
+                }}
+              >
+                <option value={0}>Disabled</option>
+                {Array.from({ length: gpioConfig.zoneCount || 8 }, (_, i) => i + 1).map(zone => (
+                  <option key={zone} value={zone}>Zone {zone}</option>
+                ))}
+              </select>
             </div>
           </ExpandableSection>
 
