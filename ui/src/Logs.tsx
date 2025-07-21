@@ -37,7 +37,7 @@ export default function Logs() {
     limit: 100,
     search: ''
   });
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [autoRefresh, setAutoRefresh] = useState(false); // Changed from true to false
   const [refreshInterval, setRefreshInterval] = useState(5000); // 5 seconds
   const [scrollPosition, setScrollPosition] = useState(0);
 
@@ -240,7 +240,7 @@ export default function Logs() {
           }
         `}
       </style>
-      <div className="logs-page" style={{ padding: '24px' }}>
+      <div className="logs-page" style={{ padding: '24px', minWidth: '1200px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <h2 style={{ margin: 0 }}>Logs</h2>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -309,15 +309,15 @@ export default function Logs() {
           <div style={{
             background: '#1a1f2a',
             borderRadius: '8px',
-            padding: '16px',
+            padding: '20px',
             marginBottom: '16px',
             border: '1px solid #2d3748'
           }}>
             <div style={{
-              display: 'flex',
-              gap: '16px',
-              alignItems: 'center',
-              flexWrap: 'wrap'
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '20px',
+              alignItems: 'end'
             }}>
               {/* Refreshing indicator only when actually refreshing */}
               {refreshing && (
@@ -330,7 +330,8 @@ export default function Logs() {
                   fontWeight: 600,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px'
+                  gap: '4px',
+                  gridColumn: '1 / -1'
                 }}>
                   <span style={{ animation: 'pulse 2s infinite' }}>🔄</span>
                   Refreshing...
@@ -356,6 +357,7 @@ export default function Logs() {
                     borderRadius: '4px',
                     padding: '8px 12px',
                     fontSize: '14px',
+                    width: '100%',
                     minWidth: '150px'
                   }}
                 >
@@ -388,6 +390,7 @@ export default function Logs() {
                     borderRadius: '4px',
                     padding: '8px 12px',
                     fontSize: '14px',
+                    width: '100%',
                     minWidth: '120px'
                   }}
                 >
@@ -420,6 +423,7 @@ export default function Logs() {
                     borderRadius: '4px',
                     padding: '8px 12px',
                     fontSize: '14px',
+                    width: '100%',
                     minWidth: '120px'
                   }}
                 >
@@ -454,6 +458,7 @@ export default function Logs() {
                     borderRadius: '4px',
                     padding: '8px 12px',
                     fontSize: '14px',
+                    width: '100%',
                     minWidth: '100px'
                   }}
                 >
@@ -486,6 +491,7 @@ export default function Logs() {
                     borderRadius: '4px',
                     padding: '8px 12px',
                     fontSize: '14px',
+                    width: '100%',
                     minWidth: '200px'
                   }}
                 />
@@ -497,7 +503,7 @@ export default function Logs() {
               display: 'flex',
               gap: '16px',
               alignItems: 'center',
-              marginTop: '16px',
+              marginTop: '20px',
               paddingTop: '16px',
               borderTop: '1px solid #2d3748'
             }}>
@@ -633,23 +639,23 @@ export default function Logs() {
                         {entry.category}
                       </span>
                       
-                                         <span style={{
-                           color: '#f4f4f4',
-                           flex: 1,
-                           wordBreak: 'break-word'
-                         }}>
-                           {entry.message}
-                           {entry.file && entry.file !== selectedFile && (
-                             <span style={{
-                               color: '#6c757d',
-                               fontSize: '11px',
-                               marginLeft: '8px',
-                               fontStyle: 'italic'
-                             }}>
-                               [{entry.file}]
-                             </span>
-                           )}
-                         </span>
+                      <span style={{
+                        color: '#f4f4f4',
+                        flex: 1,
+                        wordBreak: 'break-word'
+                      }}>
+                        {entry.message}
+                        {entry.file && entry.file !== selectedFile && (
+                          <span style={{
+                            color: '#6c757d',
+                            fontSize: '11px',
+                            marginLeft: '8px',
+                            fontStyle: 'italic'
+                          }}>
+                            [{entry.file}]
+                          </span>
+                        )}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -662,7 +668,7 @@ export default function Logs() {
             marginTop: '24px',
             background: '#1a1f2a',
             borderRadius: '8px',
-            padding: '16px',
+            padding: '20px',
             border: '1px solid #2d3748'
           }}>
             <h3 style={{
@@ -676,25 +682,28 @@ export default function Logs() {
             
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: '12px'
+              gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+              gap: '16px'
             }}>
               {logFiles.map(file => (
                 <div
                   key={file.filename}
                   style={{
                     background: '#2d3748',
-                    padding: '12px',
+                    padding: '16px',
                     borderRadius: '6px',
                     border: selectedFile === file.filename ? '2px solid #00bcd4' : '1px solid #4a5568',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    minWidth: '300px'
                   }}
                   onClick={() => setSelectedFile(file.filename)}
                 >
                   <div style={{
                     color: '#f4f4f4',
                     fontWeight: 600,
-                    marginBottom: '4px'
+                    marginBottom: '8px',
+                    fontSize: '14px',
+                    wordBreak: 'break-word'
                   }}>
                     {file.filename}
                   </div>

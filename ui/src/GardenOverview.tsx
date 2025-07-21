@@ -45,6 +45,9 @@ export default function GardenOverview() {
   const [orphanedPlants, setOrphanedPlants] = useState<any[]>([]);
   const [ignoredAlerts, setIgnoredAlerts] = useState<Set<string>>(new Set());
 
+  // New state for real zone statuses
+  const [zoneStatuses, setZoneStatuses] = useState<Record<string, { active: boolean, remaining: number }>>({});
+
   useEffect(() => {
     fetch(`${getApiBaseUrl()}/api/locations`)
       .then(res => res.json())
@@ -182,6 +185,31 @@ export default function GardenOverview() {
         setHealthStatus('good');
         setOrphanedPlants([]);
       });
+  }, []);
+
+  // Fetch real zone statuses every second
+  useEffect(() => {
+    const fetchZoneStatuses = async () => {
+      try {
+        const resp = await fetch(`${getApiBaseUrl()}/api/gpio/status`);
+        const data = await resp.json();
+        const statuses: Record<string, { active: boolean, remaining: number }> = {};
+        Object.entries(data).forEach(([key, value]: [string, any]) => {
+          const zoneId = parseInt(key.split('_')[1]);
+          statuses[zoneId] = {
+            active: value.active,
+            remaining: value.remaining || 0
+          };
+        });
+        setZoneStatuses(statuses);
+      } catch (error) {
+        console.error('Error fetching zone statuses:', error);
+      }
+    };
+
+    fetchZoneStatuses();
+    const interval = setInterval(fetchZoneStatuses, 1000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -780,8 +808,9 @@ export default function GardenOverview() {
             {zones
               .filter(z => z && typeof z.zone_id === 'number' && z.mode !== 'disabled')
               .map(z => {
-                const remaining = getZoneRemainingTime(z);
-                const isOn = remaining > 0;
+                const realStatus = zoneStatuses[z.zone_id] || { active: false, remaining: 0 };
+                const isOn = realStatus.active;
+                const remaining = realStatus.remaining;
                 const rowNumber = Math.floor((z.zone_id - 1) / 4);
                 const isExpanded = expandedRow === rowNumber;
                 return (

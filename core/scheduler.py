@@ -601,10 +601,10 @@ class WateringScheduler:
                         print(f"Duration parse failed: {e}, using default 1 min")
                         duration = timedelta(minutes=1)
                     
-                    # Check if it's time to start this event (within 1 second tolerance)
-                    time_diff = abs((start_time - dt).total_seconds())
-                    if time_diff <= 1:  # Start within 1 second of scheduled time
-                        print(f"Scheduled event triggered for zone {zone_id} at {start_time}")
+                    # Check if it's time to start this event (within 5 seconds after start time)
+                    time_since_start = (dt - start_time).total_seconds()
+                    if 0 <= time_since_start < 5:  # Trigger within 5 seconds after scheduled time
+                        print(f"Scheduled event triggered for zone {zone_id} at {start_time} (detected {time_since_start:.1f}s after)")
                         success = self.activate_zone_direct(zone_id, int(duration.total_seconds()), 'scheduled')
                         if success:
                             self._setup_logging()
