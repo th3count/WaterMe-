@@ -602,15 +602,10 @@ export default function Logs() {
                   No log entries found
                 </div>
               ) : (
-                <div 
-                  className="log-entries-container"
-                  style={{
-                    maxHeight: '600px',
-                    overflowY: 'auto',
-                    opacity: refreshing ? 0.7 : 1,
-                    transition: 'opacity 0.2s ease-in-out'
-                  }}
-                >
+                <div style={{
+                  opacity: refreshing ? 0.7 : 1,
+                  transition: 'opacity 0.2s ease-in-out'
+                }}>
                   {logEntries.map((entry, index) => (
                     <div
                       key={index}
