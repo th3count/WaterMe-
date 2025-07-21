@@ -1,4 +1,4 @@
-// Utility to get API base URL
+// utils.ts
 export function getApiBaseUrl() {
   const envUrl = import.meta.env.VITE_API_BASE_URL;
   if (envUrl) return envUrl;
