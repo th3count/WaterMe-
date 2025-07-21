@@ -15,6 +15,67 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from api import activate_channel, deactivate_channel, log_event, watering_logger, user_logger
 
 class WateringScheduler:
+    def catch_up_missed_events(self):
+        """On startup, catch up on any missed watering events that are still within their window."""
+        try:
+            import json
+            from datetime import datetime, timedelta
+            # Load schedule
+            if not os.path.exists(self.schedule_file):
+                return
+            with open(self.schedule_file, 'r') as f:
+                schedule = json.load(f)
+            now = datetime.now()
+            for zone_id_str, zone_data in schedule.items():
+                zone_id = int(zone_id_str)
+                times = zone_data.get('times', [])
+                for event in times:
+                    # Parse start time
+                    # Support both absolute (HHMM) and relative (e.g., SUNRISE-30) times
+                    value = event.get('value')
+                    duration_str = event.get('duration', '000100')  # Default 1 min
+                    # Try to parse as HHMM
+                    try:
+                        if value and value.isdigit() and len(value) == 4:
+                            hour = int(value[:2])
+                            minute = int(value[2:])
+                            start_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+                            # If the event is scheduled for earlier today
+                            if start_time > now:
+                                start_time -= timedelta(days=1)
+                        else:
+                            # For SUNRISE/SUNSET codes, skip catch-up (future: resolve these)
+                            continue
+                    except Exception:
+                        continue
+                    # Parse duration (HHMMSS or MMSS)
+                    try:
+                        if len(duration_str) == 6:
+                            h = int(duration_str[:2])
+                            m = int(duration_str[2:4])
+                            s = int(duration_str[4:])
+                            duration = timedelta(hours=h, minutes=m, seconds=s)
+                        elif len(duration_str) == 4:
+                            m = int(duration_str[:2])
+                            s = int(duration_str[2:])
+                            duration = timedelta(minutes=m, seconds=s)
+                        else:
+                            duration = timedelta(minutes=1)
+                    except Exception:
+                        duration = timedelta(minutes=1)
+                    end_time = start_time + duration
+                    if start_time < now < end_time:
+                        remaining = (end_time - now).total_seconds()
+                        if remaining > 0:
+                            # Only start if not already active
+                            if not self.is_zone_active(zone_id):
+                                from api import activate_channel, log_event, watering_logger
+                                activate_channel(zone_id)
+                                self.add_manual_timer(zone_id, int(remaining))
+                                log_event(watering_logger, 'INFO', f'Catch-up: Started missed watering event', zone_id=zone_id, remaining=int(remaining))
+        except Exception as e:
+            print(f"Error in catch_up_missed_events: {e}")
+
     def __init__(self):
         self.schedule_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "schedule.json")
         self.settings_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "settings.cfg")
@@ -22,9 +83,10 @@ class WateringScheduler:
         self.active_zones = {}  # zone_id -> end_time
         self.active_zones_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "active_zones.json")
         self.thread = None
-        
         # Load any existing active zones from persistent storage
         self.load_active_zones()
+        # Catch up on missed events
+        self.catch_up_missed_events()
     
     def load_active_zones(self):
         """Load active zones from persistent storage"""

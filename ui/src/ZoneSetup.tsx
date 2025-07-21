@@ -199,44 +199,46 @@ export default function ZoneSetup() {
                 </label>
               </div>
               <div style={{ textAlign: 'left' }}>
-                {Array.from({ length: zoneCount }).map((_, idx) => (
-                  <div key={idx} style={{ 
-                    marginBottom: 12, 
-                    display: 'flex', 
-                    alignItems: 'center',
+                {pins.map((pin, idx) => (
+                  <div key={idx} className="zone-config-row" style={{
                     background: '#232b3b',
-                    padding: 12,
+                    padding: 16,
                     borderRadius: 8,
-                    border: '1px solid #1a1f2a'
+                    border: '1px solid #1a1f2a',
+                    marginBottom: 12,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    position: 'relative'
                   }}>
-                    <label style={{ color: '#fff', display: 'flex', alignItems: 'center' }}>
-                      Zone {idx + 1} GPIO Pin:&nbsp;
-                      <select
-                        value={pins[idx]}
-                        onChange={e => handlePinChange(idx, Number(e.target.value))}
-                        style={{ 
-                          padding: 6, 
-                          borderRadius: 6, 
-                          border: '1px solid #00bcd4', 
-                          background: '#232b3b', 
-                          color: '#fff',
-                          marginLeft: 8
-                        }}
-                      >
-                        {AVAILABLE_GPIO_PINS.map(pin => (
-                          <option key={pin} value={pin}>{pin}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label style={{ marginLeft: 16, display: 'flex', alignItems: 'center', color: '#00bcd4', fontWeight: 500 }}>
-                      <input
-                        type="checkbox"
-                        checked={pumpIndex === idx}
-                        onChange={() => setPumpIndex(pumpIndex === idx ? null : idx)}
-                        style={{ marginRight: 6 }}
-                      />
-                      Is pump
-                    </label>
+                    <label style={{ color: '#fff', fontWeight: 600, marginBottom: 6 }}>Zone {idx + 1}:</label>
+                    <input
+                      type="number"
+                      value={pin}
+                      onChange={e => handlePinChange(idx, Number(e.target.value))}
+                      className="zone-pin-input"
+                      style={{
+                        width: 80,
+                        padding: 8,
+                        borderRadius: 6,
+                        border: '1px solid #00bcd4',
+                        background: '#232b3b',
+                        color: '#fff',
+                        fontSize: 16
+                      }}
+                    />
+                    {/* Place 'Is Pump' checkbox inside the card for the highest zone */}
+                    {idx === pins.length - 1 && (
+                      <label style={{ marginTop: 10, color: '#00bcd4', fontWeight: 500, display: 'flex', alignItems: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={pumpIndex === idx + 1}
+                          onChange={e => handlePumpChange(e.target.checked ? idx + 1 : 0)}
+                          style={{ marginRight: 8 }}
+                        />
+                        Is Pump
+                      </label>
+                    )}
                   </div>
                 ))}
               </div>
