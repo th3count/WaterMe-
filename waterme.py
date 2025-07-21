@@ -403,6 +403,7 @@ class WaterMeSystem:
         """Turn off all relays and clean up GPIO through scheduler"""
         try:
             print("🔌 Turning off all relays through scheduler...")
+            print("DEBUG: cleanup_gpio called - about to call scheduler.shutdown()")
             # Use scheduler for proper GPIO control
             from core.scheduler import scheduler
             
@@ -426,6 +427,8 @@ class WaterMeSystem:
                 print(f"⚠️  Error during fallback GPIO cleanup: {e}")
         except Exception as e:
             print(f"⚠️  Error during scheduler cleanup: {e}")
+            import traceback
+            traceback.print_exc()
     
     def restart(self):
         """Restart the complete system"""
@@ -531,9 +534,12 @@ class WaterMeSystem:
     def signal_handler(self, signum, frame):
         """Handle shutdown signals"""
         print(f"\n🛑 Received signal {signum}, shutting down...")
+        print(f"DEBUG: signal_handler called - about to call cleanup_gpio()")
         # Ensure GPIO cleanup happens on Ctrl-C
         self.cleanup_gpio()
+        print(f"DEBUG: cleanup_gpio() completed - about to call self.stop()")
         self.stop()
+        print(f"DEBUG: self.stop() completed - about to exit")
         sys.exit(0)
 
 def main():
