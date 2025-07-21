@@ -227,20 +227,39 @@ export default function ZoneSetup() {
                         fontSize: 16
                       }}
                     />
-                    {/* Place 'Is Pump' checkbox inside the card for the highest zone */}
-                    {idx === pins.length - 1 && (
-                      <label style={{ marginTop: 10, color: '#00bcd4', fontWeight: 500, display: 'flex', alignItems: 'center' }}>
-                        <input
-                          type="checkbox"
-                          checked={pumpIndex === idx + 1}
-                          onChange={e => handlePumpChange(e.target.checked ? idx + 1 : 0)}
-                          style={{ marginRight: 8 }}
-                        />
-                        Is Pump
-                      </label>
-                    )}
                   </div>
                 ))}
+              </div>
+              <div className="zone-config-row" style={{
+                background: '#232b3b',
+                padding: 16,
+                borderRadius: 8,
+                border: '1px solid #1a1f2a',
+                marginBottom: 12,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                position: 'relative'
+              }}>
+                <label style={{ color: '#fff', fontWeight: 600, marginBottom: 6 }}>Pump Zone:</label>
+                <select
+                  value={pumpIndex || 0}
+                  onChange={e => handlePumpChange(Number(e.target.value))}
+                  style={{
+                    width: 200,
+                    padding: 8,
+                    borderRadius: 6,
+                    border: '1px solid #00bcd4',
+                    background: '#232b3b',
+                    color: '#fff',
+                    fontSize: 16
+                  }}
+                >
+                  <option value={0}>Disabled</option>
+                  {Array.from({ length: zoneCount }).map((_, idx) => (
+                    <option key={idx} value={idx + 1}>Zone {idx + 1}</option>
+                  ))}
+                </select>
               </div>
             </>
           ) : (
