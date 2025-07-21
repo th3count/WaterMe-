@@ -313,24 +313,6 @@ def validate_time_code(code):
     return False
 
 # GPIO Control Functions
-def setup_gpio():
-    """Initialize GPIO pins based on configuration"""
-    try:
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setwarnings(False)
-        
-        config = load_ini_gpio()
-        pins = config.get('pins', [])
-        
-        for pin in pins:
-            GPIO.setup(pin, GPIO.OUT)
-            GPIO.output(pin, GPIO.LOW)  # Start with all pins LOW
-                
-        return True
-    except Exception as e:
-        print(f"GPIO setup error: {e}")
-        return False
-
 def get_pin_for_channel(channel):
     """Get GPIO pin number for a given channel (1-indexed)"""
     try:
@@ -2077,6 +2059,9 @@ def get_backup_info():
         return jsonify({'error': 'Failed to get backup info'}), 500
 
 if __name__ == '__main__':
+    # Initialize GPIO
+    setup_gpio()
+    
     # Start the scheduled watering system
     try:
         from core.scheduler import scheduler
