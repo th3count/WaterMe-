@@ -202,6 +202,16 @@ export default function GardenOverview() {
           };
         });
         setZoneStatuses(statuses);
+        
+        // Sync manual timers with backend zone status
+        const newManualTimers: Record<number, number> = {};
+        Object.entries(data).forEach(([key, value]: [string, any]) => {
+          const zoneId = parseInt(key.split('_')[1]);
+          if (value.active && value.remaining && value.remaining > 0) {
+            newManualTimers[zoneId] = value.remaining;
+          }
+        });
+        setManualTimers(newManualTimers);
       } catch (error) {
         console.error('Error fetching zone statuses:', error);
       }
@@ -507,20 +517,7 @@ export default function GardenOverview() {
   const [manualInputError, setManualInputError] = useState<Record<number, string>>({});
   const [confirmCancelZone, setConfirmCancelZone] = useState<number | null>(null);
 
-  // Manual timer countdown effect
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setManualTimers(prev => {
-        const updated: Record<number, number> = { ...prev };
-        Object.keys(updated).forEach(zid => {
-          if (updated[Number(zid)] > 0) updated[Number(zid)] -= 1;
-          if (updated[Number(zid)] <= 0) delete updated[Number(zid)];
-        });
-        return updated;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+  // Manual timer countdown effect - REMOVED: now synced with backend
 
   // Helper: get remaining time for a zone (manual overrides schedule)
   function getZoneRemainingTime(z: any): number {
@@ -580,8 +577,7 @@ export default function GardenOverview() {
     })
     .then(response => {
       if (response.ok) {
-        // Manual timers use the exact time specified (no multiplier applied)
-        setManualTimers(prev => ({ ...prev, [zone_id]: seconds }));
+        // Backend sync will update manualTimers state
         setShowManualControl(null);
       } else {
         console.error('Failed to start manual timer');
@@ -623,11 +619,7 @@ export default function GardenOverview() {
     })
     .then(response => {
       if (response.ok) {
-        setManualTimers(prev => {
-          const updated = { ...prev };
-          delete updated[zone_id];
-          return updated;
-        });
+        // Backend sync will update manualTimers state
         setConfirmCancelZone(null);
       } else {
         console.error('Failed to cancel manual timer');

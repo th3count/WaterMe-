@@ -512,10 +512,19 @@ class WateringScheduler:
                     data = json.load(f)
                     print(f"Debug: Found {len(data)} active zones in file: {data}")
                     
-                    # Convert string timestamps back to datetime objects
-                    for zone_id, end_time_str in data.items():
+                    # Handle both old format (string) and new format (dict)
+                    for zone_id, zone_data in data.items():
+                        # Handle old format where zone_data is just a string
+                        if isinstance(zone_data, str):
+                            end_time_str = zone_data
+                            event_type = 'manual'  # Default for old format
+                        else:
+                            # New format where zone_data is a dict
+                            end_time_str = zone_data.get('end_time')
+                            event_type = zone_data.get('type', 'manual')
+                        
                         end_time = datetime.fromisoformat(end_time_str)
-                        print(f"Debug: Zone {zone_id} end time: {end_time} (now: {datetime.now()})")
+                        print(f"Debug: Zone {zone_id} end time: {end_time}, type: {event_type} (now: {datetime.now()})")
                         
                         # Only restore if the timer hasn't expired
                         if end_time > datetime.now():
@@ -523,15 +532,15 @@ class WateringScheduler:
                             self.active_zones[zone_id_int] = end_time
                             # Activate the hardware
                             activate_zone(zone_id_int)
-                            # Update zone state
+                            # Update zone state with the correct event type
                             remaining = int((end_time - datetime.now()).total_seconds())
                             self.zone_states[zone_id_int] = {
                                 'active': True,
                                 'end_time': end_time,
-                                'type': 'restored',
+                                'type': event_type,  # Use the saved event type
                                 'remaining': remaining
                             }
-                            print(f"✅ Restored active zone {zone_id} with end time {end_time} (remaining: {remaining}s)")
+                            print(f"✅ Restored active zone {zone_id} with end time {end_time}, type: {event_type} (remaining: {remaining}s)")
                         else:
                             print(f"⚠️  Zone {zone_id} timer expired at {end_time}, not restoring")
             else:
@@ -548,10 +557,15 @@ class WateringScheduler:
             print(f"DEBUG: Saving {len(self.active_zones)} active zones to {self.active_zones_file}")
             print(f"DEBUG: Active zones: {self.active_zones}")
             
-            # Convert datetime objects to ISO format strings for JSON serialization
+            # Save both end_time and event_type for each zone
             data = {}
             for zone_id, end_time in self.active_zones.items():
-                data[str(zone_id)] = end_time.isoformat()
+                zone_state = self.zone_states.get(zone_id, {})
+                event_type = zone_state.get('type', 'manual')  # Default to manual if not set
+                data[str(zone_id)] = {
+                    'end_time': end_time.isoformat(),
+                    'type': event_type
+                }
             
             print(f"DEBUG: Saving data: {data}")
             
