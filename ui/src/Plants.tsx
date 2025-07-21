@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
+import { getApiBaseUrl } from './utils';
 
 /**
  * CRITICAL DATA RELATIONSHIPS & ID SYSTEM
@@ -126,7 +127,7 @@ export default function Plants() {
 
   // Load locations and zones from backend
   useEffect(() => {
-    fetch('http://127.0.0.1:5000/api/library-files')
+    fetch(`${getApiBaseUrl()}/api/library-files`)
       .then(res => res.json())
       .then(async files => {
         // Extract filenames from the response objects
@@ -155,7 +156,7 @@ export default function Plants() {
         const books: Record<string, PlantBook> = {};
         await Promise.all(sortedFiles.map(async (file: string) => {
           try {
-            const resp = await fetch(`http://127.0.0.1:5000/library/${file}`);
+            const resp = await fetch(`${getApiBaseUrl()}/library/${file}`);
             if (!resp.ok) return;
             const data = await resp.json();
             let bookName = file.replace('.json', '');
@@ -186,17 +187,17 @@ export default function Plants() {
       console.log('Plants component useEffect starting...');
   // Load locations and map data together to ensure proper order
   Promise.all([
-    fetch('http://127.0.0.1:5000/api/locations').then(res => res.json()),
-    fetch('http://127.0.0.1:5000/api/map').then(res => res.json())
+    fetch(`${getApiBaseUrl()}/api/locations`).then(res => res.json()),
+    fetch(`${getApiBaseUrl()}/api/map`).then(res => res.json())
   ]).then(async ([locationsData, mapData]) => {
       // Load plant library data to get plant names
       const plantLibraryData: Record<string, Record<number, string>> = {};
       try {
-        const libraryFiles = await fetch('http://127.0.0.1:5000/api/library-files').then(res => res.json());
+        const libraryFiles = await fetch(`${getApiBaseUrl()}/api/library-files`).then(res => res.json());
         const filenames = libraryFiles.map((fileObj: any) => fileObj.filename);
         await Promise.all(filenames.map(async (file: string) => {
           try {
-            const resp = await fetch(`http://127.0.0.1:5000/library/${file}`);
+            const resp = await fetch(`${getApiBaseUrl()}/library/${file}`);
             if (!resp.ok) return;
             const data = await resp.json();
             let book: Record<number, string> = {};
@@ -269,7 +270,7 @@ export default function Plants() {
       console.log('Failed to load locations or plant assignments:', err);
     });
     // Load zones
-    fetch('http://127.0.0.1:5000/api/schedule')
+    fetch(`${getApiBaseUrl()}/api/schedule`)
       .then(res => res.json())
       .then(data => {
         setZones(data.map((z: any) => ({
@@ -351,7 +352,7 @@ export default function Plants() {
 
     try {
       // Remove from backend
-      const response = await fetch(`http://127.0.0.1:5000/api/map/${instanceId}`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/map/${instanceId}`, {
         method: 'DELETE'
       });
 
@@ -399,7 +400,7 @@ export default function Plants() {
       };
 
       // Save to backend
-      const response = await fetch('http://127.0.0.1:5000/api/map/save', {
+      const response = await fetch(`${getApiBaseUrl()}/api/map/save`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

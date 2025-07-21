@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { getApiBaseUrl } from './utils';
 
 // Health status icons component
 const HealthIcon = ({ status }: { status: 'good' | 'warning' | 'error' }) => {
@@ -73,12 +74,12 @@ export default function Health() {
 
   useEffect(() => {
     // Load locations and map data
-    fetch('http://127.0.0.1:5000/api/locations')
+    fetch(`${getApiBaseUrl()}/api/locations`)
       .then(res => res.json())
       .then(data => setLocations(data))
       .catch(() => setLocations([]));
 
-    fetch('http://127.0.0.1:5000/api/map')
+    fetch(`${getApiBaseUrl()}/api/map`)
       .then(res => res.json())
       .then(data => {
         setMap(data);
@@ -86,13 +87,13 @@ export default function Health() {
       .catch(() => setMap({}));
     
     // Load plant library for common names
-    fetch('http://127.0.0.1:5000/api/library-files')
+    fetch(`${getApiBaseUrl()}/api/library-files`)
       .then(res => res.json())
       .then(async (files: any[]) => {
         const lookup: Record<string, Record<number, string>> = {};
         await Promise.all(files.map(async (fileObj: any) => {
           const filename = fileObj.filename;
-          const resp = await fetch(`http://127.0.0.1:5000/library/${filename}`);
+          const resp = await fetch(`${getApiBaseUrl()}/library/${filename}`);
           if (!resp.ok) return;
           const data = await resp.json();
           let book: Record<number, string> = {};
@@ -112,7 +113,7 @@ export default function Health() {
       .catch(() => setPlantNames({}));
     
     // Load ignored alerts
-    fetch('http://127.0.0.1:5000/api/health/alerts')
+    fetch(`${getApiBaseUrl()}/api/health/alerts`)
       .then(res => res.json())
       .then(data => {
         setIgnoredAlertsData(data.ignored_alerts || []);
@@ -163,7 +164,7 @@ export default function Health() {
   // Function to ignore an alert
   const ignoreAlert = async (alertType: string, alertId: string) => {
     try {
-      const response = await fetch('http://127.0.0.1:5000/api/health/alerts/ignore', {
+      const response = await fetch(`${getApiBaseUrl()}/api/health/alerts/ignore`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ alert_type: alertType, alert_id: alertId })
@@ -172,7 +173,7 @@ export default function Health() {
       if (response.ok) {
         setIgnoredAlerts(prev => new Set([...prev, `${alertType}-${alertId}`]));
         // Reload ignored alerts data
-        const alertsResponse = await fetch('http://127.0.0.1:5000/api/health/alerts');
+        const alertsResponse = await fetch(`${getApiBaseUrl()}/api/health/alerts`);
         const alertsData = await alertsResponse.json();
         setIgnoredAlertsData(alertsData.ignored_alerts || []);
       }
@@ -184,7 +185,7 @@ export default function Health() {
   // Function to unignore an alert
   const unignoreAlert = async (alertType: string, alertId: string) => {
     try {
-      const response = await fetch('http://127.0.0.1:5000/api/health/alerts/unignore', {
+      const response = await fetch(`${getApiBaseUrl()}/api/health/alerts/unignore`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ alert_type: alertType, alert_id: alertId })
@@ -197,7 +198,7 @@ export default function Health() {
           return newSet;
         });
         // Reload ignored alerts data
-        const alertsResponse = await fetch('http://127.0.0.1:5000/api/health/alerts');
+        const alertsResponse = await fetch(`${getApiBaseUrl()}/api/health/alerts`);
         const alertsData = await alertsResponse.json();
         setIgnoredAlertsData(alertsData.ignored_alerts || []);
       }

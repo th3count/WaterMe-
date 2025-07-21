@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getApiBaseUrl } from './utils';
 
 const PERIODS = [
   { label: 'Daily', code: 'D', maxCycles: 10 },
@@ -33,7 +34,7 @@ export default function ZoneSchedule() {
     const loadZoneData = async () => {
       try {
         // First load GPIO config to get zone count and pump index
-        const gpioResp = await fetch('http://127.0.0.1:5000/config/gpio.cfg');
+        const gpioResp = await fetch(`${getApiBaseUrl()}/config/gpio.cfg`);
         const gpioData = await gpioResp.json();
         const zoneCount = gpioData.zoneCount || (gpioData.pins ? gpioData.pins.length : 0);
         // Convert 1-based pump index from config to 0-based for frontend
@@ -41,7 +42,7 @@ export default function ZoneSchedule() {
         setGpioPins(gpioData.pins || []);
 
         // Then load existing schedule data
-        const scheduleResp = await fetch('http://127.0.0.1:5000/api/schedule');
+        const scheduleResp = await fetch(`${getApiBaseUrl()}/api/schedule`);
         console.log('Schedule response status:', scheduleResp.status);
         if (scheduleResp.ok) {
           const scheduleData = await scheduleResp.json();
@@ -51,7 +52,7 @@ export default function ZoneSchedule() {
           console.log('API failed, trying direct file access...');
           // Try loading from the data file directly
           try {
-            const fileResp = await fetch('http://127.0.0.1:5000/data/schedule.json');
+            const fileResp = await fetch(`${getApiBaseUrl()}/data/schedule.json`);
             if (fileResp.ok) {
               const fileData = await fileResp.json();
               console.log('Loaded from file:', fileData);
@@ -174,7 +175,7 @@ export default function ZoneSchedule() {
 
       console.log('Saving zones:', zonesToSave);
       
-      const resp = await fetch('http://127.0.0.1:5000/api/schedule', {
+      const resp = await fetch(`${getApiBaseUrl()}/api/schedule`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(zonesToSave)

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getApiBaseUrl } from './utils';
 
 const AVAILABLE_GPIO_PINS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27];
 
@@ -17,7 +18,7 @@ export default function ZoneSetup() {
   useEffect(() => {
     const loadGPIOConfig = async () => {
       try {
-        const resp = await fetch('http://127.0.0.1:5000/api/gpio');
+        const resp = await fetch(`${getApiBaseUrl()}/api/gpio`);
         if (resp.ok) {
           const config = await resp.json();
           setZoneCount(config.zoneCount || 1);
@@ -77,7 +78,7 @@ export default function ZoneSetup() {
       // Convert 0-based pump index back to 1-based for config
       const configPumpIndex = pumpIndex !== null ? pumpIndex + 1 : 0;
       const config = { zoneCount, pins, pumpIndex: configPumpIndex };
-      const resp = await fetch('http://127.0.0.1:5000/api/gpio', {
+      const resp = await fetch(`${getApiBaseUrl()}/api/gpio`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),

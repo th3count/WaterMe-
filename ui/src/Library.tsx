@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getApiBaseUrl } from './utils';
 
 interface Plant {
   plant_id: number;
@@ -243,7 +244,7 @@ export default function Library() {
   const loadLibraryFiles = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://127.0.0.1:5000/api/library-files');
+      const response = await fetch(`${getApiBaseUrl()}/api/library-files`);
       if (!response.ok) {
         throw new Error('Failed to load library files');
       }
@@ -444,7 +445,7 @@ export default function Library() {
         plant_id: Date.now()
       } as Plant;
 
-      const endpoint = isEditing && editingSourceFile === 'custom.json' ? 'http://127.0.0.1:5000/api/library/custom/update' : 'http://127.0.0.1:5000/api/library/custom/add';
+      const endpoint = isEditing && editingSourceFile === 'custom.json' ? `${getApiBaseUrl()}/api/library/custom/update` : `${getApiBaseUrl()}/api/library/custom/add`;
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -530,7 +531,7 @@ export default function Library() {
       const updatedPlants = customFile.plants.filter(p => p.plant_id !== plant.plant_id);
 
       // Save the updated custom library
-      const response = await fetch('http://127.0.0.1:5000/library/custom.json', {
+      const response = await fetch(`${getApiBaseUrl()}/library/custom.json`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

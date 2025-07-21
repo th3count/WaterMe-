@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { getApiBaseUrl } from './utils';
 
 interface PlantInstance {
   instance_id: number;
@@ -45,13 +46,13 @@ export default function GardenOverview() {
   const [ignoredAlerts, setIgnoredAlerts] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    fetch('http://127.0.0.1:5000/api/locations')
+    fetch(`${getApiBaseUrl()}/api/locations`)
       .then(res => res.json())
       .then(data => setLocations(data));
-    fetch('http://127.0.0.1:5000/api/map')
+    fetch(`${getApiBaseUrl()}/api/map`)
       .then(res => res.json())
       .then(data => setMap(data));
-    fetch('http://127.0.0.1:5000/api/schedule')
+    fetch(`${getApiBaseUrl()}/api/schedule`)
       .then(res => res.json())
       .then(data => {
         setZones(data);
@@ -65,7 +66,7 @@ export default function GardenOverview() {
           }
           if (codes.length) {
             try {
-              const settingsResp = await fetch('http://127.0.0.1:5000/config/settings.cfg');
+              const settingsResp = await fetch(`${getApiBaseUrl()}/config/settings.cfg`);
               const settings = await settingsResp.json();
               // Check for new format first (gps_lat, gps_lon)
               let lat, lon;
@@ -79,7 +80,7 @@ export default function GardenOverview() {
                 lon = coords[0];
               }
               const query = { codes, date, lat, lon };
-              const resp = await fetch('http://127.0.0.1:5000/api/resolve_times', {
+              const resp = await fetch(`${getApiBaseUrl()}/api/resolve_times`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(query)
@@ -98,14 +99,14 @@ export default function GardenOverview() {
         });
       });
     // Fetch plant library files and build lookup
-    fetch('http://127.0.0.1:5000/api/library-files')
+    fetch(`${getApiBaseUrl()}/api/library-files`)
       .then(res => res.json())
       .then(async (files: any[]) => {
         const lookup: Record<string, Record<number, string>> = {};
         const latinLookup: Record<string, Record<number, string>> = {};
         await Promise.all(files.map(async (fileObj: any) => {
           const filename = fileObj.filename;
-          const resp = await fetch(`http://127.0.0.1:5000/library/${filename}`);
+          const resp = await fetch(`${getApiBaseUrl()}/library/${filename}`);
           if (!resp.ok) return;
           const data = await resp.json();
           let book: Record<number, string> = {};
@@ -129,13 +130,13 @@ export default function GardenOverview() {
       });
     
     // Load timer multiplier from settings
-    fetch('http://127.0.0.1:5000/config/settings.cfg')
+    fetch(`${getApiBaseUrl()}/config/settings.cfg`)
       .then(res => res.json())
       .then(data => setTimerMultiplier(data.timer_multiplier || 1.0))
       .catch(() => setTimerMultiplier(1.0));
     
     // Load pump information from GPIO config
-    fetch('http://127.0.0.1:5000/config/gpio.cfg')
+    fetch(`${getApiBaseUrl()}/config/gpio.cfg`)
       .then(res => res.json())
       .then(data => {
         const pumpIndex = data.pumpIndex && data.pumpIndex > 0 ? data.pumpIndex : null;
@@ -145,7 +146,7 @@ export default function GardenOverview() {
       .catch(() => setPumpInfo(prev => ({ ...prev, pumpIndex: null })));
 
     // Load health alerts
-    fetch('http://127.0.0.1:5000/api/health/alerts')
+    fetch(`${getApiBaseUrl()}/api/health/alerts`)
       .then(res => res.json())
       .then(data => {
         const ignoredAlertsSet = new Set<string>(
@@ -354,7 +355,7 @@ export default function GardenOverview() {
   // Helper: resolve time code for a specific date
   async function resolveTimeForDate(zone: any, timeCode: string, targetDate: Date): Promise<string> {
     try {
-      const settingsResp = await fetch('http://127.0.0.1:5000/config/settings.cfg');
+      const settingsResp = await fetch(`${getApiBaseUrl()}/config/settings.cfg`);
       const settings = await settingsResp.json();
       // Check for new format first (gps_lat, gps_lon)
       let lat, lon;
@@ -370,7 +371,7 @@ export default function GardenOverview() {
       const date = targetDate.toISOString().slice(0, 10);
       const query = { codes: [timeCode], date, lat, lon };
       
-      const resp = await fetch('http://127.0.0.1:5000/api/resolve_times', {
+      const resp = await fetch(`${getApiBaseUrl()}/api/resolve_times`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(query)
@@ -544,7 +545,7 @@ export default function GardenOverview() {
   // Handler to start a manual timer
   function startManualTimer(zone_id: number, seconds: number) {
     // Call backend to activate the zone
-    fetch(`http://127.0.0.1:5000/api/manual-timer/${zone_id}`, {
+    fetch(`${getApiBaseUrl()}/api/manual-timer/${zone_id}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ duration: seconds })
@@ -593,7 +594,7 @@ export default function GardenOverview() {
       return;
     }
 
-    fetch(`http://127.0.0.1:5000/api/manual-timer/${zone_id}`, {
+    fetch(`${getApiBaseUrl()}/api/manual-timer/${zone_id}`, {
       method: 'DELETE'
     })
     .then(response => {
