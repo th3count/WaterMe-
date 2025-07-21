@@ -406,16 +406,9 @@ class WaterMeSystem:
             # Use scheduler for proper GPIO control
             from core.scheduler import scheduler
             
-            # Emergency stop all zones through scheduler
-            success = scheduler.emergency_stop_all_zones()
-            if success:
-                print("✅ All relays turned off through scheduler")
-            else:
-                print("⚠️  Some relays may not have been properly turned off")
-            
-            # Stop the scheduler (this will also clean up GPIO)
-            scheduler.stop()
-            print("✅ Scheduler stopped and GPIO cleaned up")
+            # Use the new shutdown method that preserves active zones
+            scheduler.shutdown()
+            print("✅ Scheduler shutdown complete - active zones saved for restoration")
             
         except ImportError:
             print("   Scheduler module not available (development mode)")

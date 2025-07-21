@@ -453,12 +453,17 @@ class WateringScheduler:
     def load_active_zones(self):
         """Load active zones from persistent storage"""
         try:
+            print(f"Debug: Loading active zones from {self.active_zones_file}")
             if os.path.exists(self.active_zones_file):
                 with open(self.active_zones_file, 'r') as f:
                     data = json.load(f)
+                    print(f"Debug: Found {len(data)} active zones in file: {data}")
+                    
                     # Convert string timestamps back to datetime objects
                     for zone_id, end_time_str in data.items():
                         end_time = datetime.fromisoformat(end_time_str)
+                        print(f"Debug: Zone {zone_id} end time: {end_time} (now: {datetime.now()})")
+                        
                         # Only restore if the timer hasn't expired
                         if end_time > datetime.now():
                             zone_id_int = int(zone_id)
@@ -473,24 +478,37 @@ class WateringScheduler:
                                 'type': 'restored',
                                 'remaining': remaining
                             }
-                            print(f"Restored active zone {zone_id} with end time {end_time}")
+                            print(f"✅ Restored active zone {zone_id} with end time {end_time} (remaining: {remaining}s)")
                         else:
-                            print(f"Zone {zone_id} timer expired, not restoring")
+                            print(f"⚠️  Zone {zone_id} timer expired at {end_time}, not restoring")
+            else:
+                print(f"Debug: Active zones file does not exist: {self.active_zones_file}")
         except Exception as e:
-            print(f"Error loading active zones: {e}")
+            print(f"❌ Error loading active zones: {e}")
+            import traceback
+            traceback.print_exc()
     
     def save_active_zones(self):
         """Save active zones to persistent storage"""
         try:
+            print(f"Debug: Saving {len(self.active_zones)} active zones to {self.active_zones_file}")
+            print(f"Debug: Active zones: {self.active_zones}")
+            
             # Convert datetime objects to ISO format strings for JSON serialization
             data = {}
             for zone_id, end_time in self.active_zones.items():
                 data[str(zone_id)] = end_time.isoformat()
             
+            print(f"Debug: Saving data: {data}")
+            
             with open(self.active_zones_file, 'w') as f:
                 json.dump(data, f, indent=2)
+            
+            print(f"✅ Active zones saved successfully")
         except Exception as e:
-            print(f"Error saving active zones: {e}")
+            print(f"❌ Error saving active zones: {e}")
+            import traceback
+            traceback.print_exc()
     
     def add_manual_timer(self, zone_id: int, duration_seconds: int) -> bool:
         """Add a manual timer for a zone (used by API)"""
@@ -658,20 +676,40 @@ class WateringScheduler:
             self.thread.start()
             print("Watering scheduler started")
     
+    def shutdown(self):
+        """Proper shutdown that saves active zones before stopping"""
+        try:
+            print("Scheduler: Saving active zones before shutdown...")
+            self.save_active_zones()
+            
+            # Turn off all active zones (but don't clear active_zones dict)
+            for zone_id in list(self.zone_states.keys()):
+                if self.zone_states[zone_id]['active']:
+                    # Only deactivate hardware, don't remove from active_zones
+                    deactivate_zone(zone_id)
+                    # Update zone state to inactive but keep end_time for restoration
+                    self.zone_states[zone_id] = {
+                        'active': False,
+                        'end_time': self.zone_states[zone_id]['end_time'],  # Keep for restoration
+                        'type': self.zone_states[zone_id]['type'],
+                        'remaining': 0
+                    }
+            
+            # Stop the scheduler loop
+            self.running = False
+            if self.thread:
+                self.thread.join(timeout=5)
+            
+            # Clean up GPIO
+            cleanup_gpio()
+            print("Scheduler: Shutdown complete - active zones saved for restoration")
+            
+        except Exception as e:
+            print(f"Scheduler: Error during shutdown: {e}")
+    
     def stop(self):
         """Stop the scheduler and clean up GPIO"""
-        self.running = False
-        if self.thread:
-            self.thread.join(timeout=5)
-        
-        # Turn off all active zones
-        for zone_id in list(self.zone_states.keys()):
-            if self.zone_states[zone_id]['active']:
-                self.deactivate_zone_direct(zone_id, 'system_shutdown')
-        
-        # Clean up GPIO
-        cleanup_gpio()
-        print("Watering scheduler stopped")
+        self.shutdown()
 
 # Global scheduler instance
 scheduler = WateringScheduler() 
