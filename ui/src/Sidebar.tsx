@@ -4,6 +4,30 @@ import { getApiBaseUrl } from './utils';
 
 export default function Sidebar() {
   const [healthStatus, setHealthStatus] = useState<'good' | 'warning' | 'error'>('good');
+  const [currentDateTime, setCurrentDateTime] = useState<string>('');
+
+  useEffect(() => {
+    // Update current date/time every second
+    const updateDateTime = () => {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: 'numeric'
+      });
+      const timeStr = now.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+      });
+      setCurrentDateTime(`${dateStr} ${timeStr}`);
+    };
+
+    updateDateTime();
+    const dateTimeInterval = setInterval(updateDateTime, 1000);
+
+    return () => clearInterval(dateTimeInterval);
+  }, []);
 
   useEffect(() => {
     // Fetch health status
@@ -79,7 +103,17 @@ export default function Sidebar() {
       boxShadow: '2px 0 8px rgba(24,31,42,0.12)',
       fontFamily: 'Inter, Segoe UI, Arial, sans-serif'
     }}>
-      <h2 style={{ color: '#00bcd4', marginBottom: 18, fontWeight: 800, fontSize: 20, letterSpacing: 1, textAlign: 'center' }}>WaterMe!</h2>
+      <h2 style={{ color: '#00bcd4', marginBottom: 8, fontWeight: 800, fontSize: 20, letterSpacing: 1, textAlign: 'center' }}>WaterMe!</h2>
+      <div style={{ 
+        color: '#FF9800', 
+        fontSize: '11px', 
+        textAlign: 'center', 
+        marginBottom: 18,
+        fontFamily: 'monospace',
+        fontWeight: 500
+      }}>
+        {currentDateTime}
+      </div>
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <NavLink to="/" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Overview</NavLink>
         <NavLink to="/plants" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Plants</NavLink>

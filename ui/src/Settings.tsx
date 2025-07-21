@@ -28,7 +28,7 @@ interface BackupInfo {
 
 export default function Settings() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'garden' | 'gpio' | 'backup'>('garden');
+  const [activeTab, setActiveTab] = useState<'garden' | 'location' | 'datetime' | 'gpio' | 'backup'>('garden');
   const [gardenSettings, setGardenSettings] = useState<GardenSettings>({
     garden_name: '',
     gps_lat: 0,
@@ -61,6 +61,8 @@ export default function Settings() {
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
     'garden-basic': true,
     'garden-advanced': false,
+    'location-settings': true,
+    'datetime-timezone': true,
     'gpio-mode': true,
     'gpio-channels': true,
     'backup-info': true,
@@ -486,6 +488,36 @@ export default function Settings() {
           Garden Settings
         </button>
         <button
+          onClick={() => setActiveTab('location')}
+          style={{
+            background: activeTab === 'location' ? '#00bcd4' : 'transparent',
+            color: activeTab === 'location' ? '#181f2a' : '#f4f4f4',
+            border: 'none',
+            padding: '12px 24px',
+            borderRadius: '6px 6px 0 0',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 600
+          }}
+        >
+          GPS/Location
+        </button>
+        <button
+          onClick={() => setActiveTab('datetime')}
+          style={{
+            background: activeTab === 'datetime' ? '#00bcd4' : 'transparent',
+            color: activeTab === 'datetime' ? '#181f2a' : '#f4f4f4',
+            border: 'none',
+            padding: '12px 24px',
+            borderRadius: '6px 6px 0 0',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 600
+          }}
+        >
+          Date/Time
+        </button>
+        <button
           onClick={() => setActiveTab('gpio')}
           style={{
             background: activeTab === 'gpio' ? '#00bcd4' : 'transparent',
@@ -540,10 +572,9 @@ export default function Settings() {
             expanded={expandedSections['garden-basic']}
             onToggle={() => toggleSection('garden-basic')}
           >
-            {/* First row: Garden Name and City */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
+              gridTemplateColumns: '1fr',
               gap: '20px',
               marginBottom: '20px'
             }}>
@@ -571,154 +602,6 @@ export default function Settings() {
                     fontSize: '14px'
                   }}
                   placeholder="My Garden"
-                />
-              </div>
-              <div>
-                <label style={{
-                  color: '#f4f4f4',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  marginBottom: '8px',
-                  display: 'block'
-                }}>
-                  City:
-                </label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input
-                    type="text"
-                    value={citySearch}
-                    onChange={(e) => setCitySearch(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') searchCity();
-                    }}
-                    style={{
-                      flex: 1,
-                      background: '#2d3748',
-                      color: '#f4f4f4',
-                      border: '1px solid #4a5568',
-                      borderRadius: '4px',
-                      padding: '10px 12px',
-                      fontSize: '14px'
-                    }}
-                    placeholder="Search for a city"
-                  />
-                  <button
-                    onClick={searchCity}
-                    disabled={geoLoading}
-                    style={{
-                      background: geoLoading ? '#666' : '#00bcd4',
-                      color: '#181f2a',
-                      border: 'none',
-                      borderRadius: '4px',
-                      padding: '10px 16px',
-                      cursor: geoLoading ? 'not-allowed' : 'pointer',
-                      fontSize: '14px',
-                      fontWeight: 600,
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    {geoLoading ? '🔍' : 'Search'}
-                  </button>
-                </div>
-              </div>
-            </div>
-            {/* Second row: Timezone, Latitude, Longitude */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1.2fr 1fr 1fr',
-              gap: '20px'
-            }}>
-              <div>
-                <label style={{
-                  color: '#f4f4f4',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  marginBottom: '8px',
-                  display: 'block'
-                }}>
-                  Timezone:
-                </label>
-                <select
-                  value={gardenSettings.timezone}
-                  onChange={(e) => setGardenSettings({...gardenSettings, timezone: e.target.value})}
-                  style={{
-                    width: '100%',
-                    background: '#2d3748',
-                    color: '#f4f4f4',
-                    border: '1px solid #4a5568',
-                    borderRadius: '4px',
-                    padding: '10px 12px',
-                    fontSize: '14px'
-                  }}
-                >
-                  <option value="UTC">UTC</option>
-                  <option value="America/Regina">Regina (CST)</option>
-                  <option value="America/Winnipeg">Winnipeg (CST)</option>
-                  <option value="America/Toronto">Toronto (EST)</option>
-                  <option value="America/Vancouver">Vancouver (PST)</option>
-                  <option value="America/New_York">New York (EST)</option>
-                  <option value="America/Chicago">Chicago (CST)</option>
-                  <option value="America/Denver">Denver (MST)</option>
-                  <option value="America/Los_Angeles">Los Angeles (PST)</option>
-                  <option value="Europe/London">London (GMT/BST)</option>
-                  <option value="Europe/Paris">Paris (CET/CEST)</option>
-                  <option value="Asia/Tokyo">Tokyo (JST)</option>
-                  <option value="Asia/Shanghai">Shanghai (CST)</option>
-                  <option value="Australia/Sydney">Sydney (AEST/AEDT)</option>
-                </select>
-              </div>
-              <div>
-                <label style={{
-                  color: '#f4f4f4',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  marginBottom: '8px',
-                  display: 'block'
-                }}>
-                  Latitude:
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  value={gardenSettings.gps_lat}
-                  onChange={(e) => setGardenSettings({...gardenSettings, gps_lat: parseFloat(e.target.value) || 0})}
-                  style={{
-                    width: '100%',
-                    background: '#2d3748',
-                    color: '#f4f4f4',
-                    border: '1px solid #4a5568',
-                    borderRadius: '4px',
-                    padding: '10px 12px',
-                    fontSize: '14px'
-                  }}
-                  placeholder="40.7128"
-                />
-              </div>
-              <div>
-                <label style={{
-                  color: '#f4f4f4',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  marginBottom: '8px',
-                  display: 'block'
-                }}>
-                  Longitude:
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  value={gardenSettings.gps_lon}
-                  onChange={(e) => setGardenSettings({...gardenSettings, gps_lon: parseFloat(e.target.value) || 0})}
-                  style={{
-                    width: '100%',
-                    background: '#2d3748',
-                    color: '#f4f4f4',
-                    border: '1px solid #4a5568',
-                    borderRadius: '4px',
-                    padding: '10px 12px',
-                    fontSize: '14px'
-                  }}
-                  placeholder="-74.0060"
                 />
               </div>
             </div>
@@ -835,6 +718,271 @@ export default function Settings() {
               }}
             >
               {saving ? 'Saving...' : 'Save Garden Settings'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* GPS/Location Tab */}
+      {activeTab === 'location' && (
+        <div style={{
+          background: '#1a1f2a',
+          borderRadius: '8px',
+          padding: '24px',
+          border: '1px solid #2d3748'
+        }}>
+          <h2 style={{
+            color: '#f4f4f4',
+            marginBottom: '24px',
+            fontSize: '20px',
+            fontWeight: 600
+          }}>
+            GPS/Location Configuration
+          </h2>
+
+          {/* Location Settings Section */}
+          <ExpandableSection
+            title="Location Settings"
+            expanded={expandedSections['location-settings']}
+            onToggle={() => toggleSection('location-settings')}
+          >
+            {/* City Search */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr',
+              gap: '20px',
+              marginBottom: '20px'
+            }}>
+              <div>
+                <label style={{
+                  color: '#f4f4f4',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  marginBottom: '8px',
+                  display: 'block'
+                }}>
+                  City:
+                </label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    value={citySearch}
+                    onChange={(e) => setCitySearch(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') searchCity();
+                    }}
+                    style={{
+                      flex: 1,
+                      background: '#2d3748',
+                      color: '#f4f4f4',
+                      border: '1px solid #4a5568',
+                      borderRadius: '4px',
+                      padding: '10px 12px',
+                      fontSize: '14px'
+                    }}
+                    placeholder="Search for a city"
+                  />
+                  <button
+                    onClick={searchCity}
+                    disabled={geoLoading}
+                    style={{
+                      background: geoLoading ? '#666' : '#00bcd4',
+                      color: '#181f2a',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '10px 16px',
+                      cursor: geoLoading ? 'not-allowed' : 'pointer',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {geoLoading ? '🔍' : 'Search'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* GPS Coordinates */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '20px'
+            }}>
+              <div>
+                <label style={{
+                  color: '#f4f4f4',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  marginBottom: '8px',
+                  display: 'block'
+                }}>
+                  Latitude:
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  value={gardenSettings.gps_lat}
+                  onChange={(e) => setGardenSettings({...gardenSettings, gps_lat: parseFloat(e.target.value) || 0})}
+                  style={{
+                    width: '100%',
+                    background: '#2d3748',
+                    color: '#f4f4f4',
+                    border: '1px solid #4a5568',
+                    borderRadius: '4px',
+                    padding: '10px 12px',
+                    fontSize: '14px'
+                  }}
+                  placeholder="40.7128"
+                />
+              </div>
+              <div>
+                <label style={{
+                  color: '#f4f4f4',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  marginBottom: '8px',
+                  display: 'block'
+                }}>
+                  Longitude:
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  value={gardenSettings.gps_lon}
+                  onChange={(e) => setGardenSettings({...gardenSettings, gps_lon: parseFloat(e.target.value) || 0})}
+                  style={{
+                    width: '100%',
+                    background: '#2d3748',
+                    color: '#f4f4f4',
+                    border: '1px solid #4a5568',
+                    borderRadius: '4px',
+                    padding: '10px 12px',
+                    fontSize: '14px'
+                  }}
+                  placeholder="-74.0060"
+                />
+              </div>
+            </div>
+          </ExpandableSection>
+
+          {/* Save Button */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            marginTop: '24px'
+          }}>
+            <button
+              onClick={saveGardenSettings}
+              disabled={saving}
+              style={{
+                background: saving ? '#666' : '#00bcd4',
+                color: '#181f2a',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '12px 24px',
+                cursor: saving ? 'not-allowed' : 'pointer',
+                fontSize: '14px',
+                fontWeight: 600
+              }}
+            >
+              {saving ? 'Saving...' : 'Save Location Settings'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Date/Time Tab */}
+      {activeTab === 'datetime' && (
+        <div style={{
+          background: '#1a1f2a',
+          borderRadius: '8px',
+          padding: '24px',
+          border: '1px solid #2d3748'
+        }}>
+          <h2 style={{
+            color: '#f4f4f4',
+            marginBottom: '24px',
+            fontSize: '20px',
+            fontWeight: 600
+          }}>
+            Date/Time Configuration
+          </h2>
+
+          {/* Timezone Settings Section */}
+          <ExpandableSection
+            title="Timezone Settings"
+            expanded={expandedSections['datetime-timezone']}
+            onToggle={() => toggleSection('datetime-timezone')}
+          >
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr',
+              gap: '20px'
+            }}>
+              <div>
+                <label style={{
+                  color: '#f4f4f4',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  marginBottom: '8px',
+                  display: 'block'
+                }}>
+                  Timezone:
+                </label>
+                <select
+                  value={gardenSettings.timezone}
+                  onChange={(e) => setGardenSettings({...gardenSettings, timezone: e.target.value})}
+                  style={{
+                    width: '100%',
+                    background: '#2d3748',
+                    color: '#f4f4f4',
+                    border: '1px solid #4a5568',
+                    borderRadius: '4px',
+                    padding: '10px 12px',
+                    fontSize: '14px'
+                  }}
+                >
+                  <option value="UTC">UTC</option>
+                  <option value="America/Regina">Regina (CST)</option>
+                  <option value="America/Winnipeg">Winnipeg (CST)</option>
+                  <option value="America/Toronto">Toronto (EST)</option>
+                  <option value="America/Vancouver">Vancouver (PST)</option>
+                  <option value="America/New_York">New York (EST)</option>
+                  <option value="America/Chicago">Chicago (CST)</option>
+                  <option value="America/Denver">Denver (MST)</option>
+                  <option value="America/Los_Angeles">Los Angeles (PST)</option>
+                  <option value="Europe/London">London (GMT/BST)</option>
+                  <option value="Europe/Paris">Paris (CET/CEST)</option>
+                  <option value="Asia/Tokyo">Tokyo (JST)</option>
+                  <option value="Asia/Shanghai">Shanghai (CST)</option>
+                  <option value="Australia/Sydney">Sydney (AEST/AEDT)</option>
+                </select>
+              </div>
+            </div>
+          </ExpandableSection>
+
+          {/* Save Button */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            marginTop: '24px'
+          }}>
+            <button
+              onClick={saveGardenSettings}
+              disabled={saving}
+              style={{
+                background: saving ? '#666' : '#00bcd4',
+                color: '#181f2a',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '12px 24px',
+                cursor: saving ? 'not-allowed' : 'pointer',
+                fontSize: '14px',
+                fontWeight: 600
+              }}
+            >
+              {saving ? 'Saving...' : 'Save Date/Time Settings'}
             </button>
           </div>
         </div>

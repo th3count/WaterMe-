@@ -24,6 +24,7 @@ import signal
 import argparse
 import subprocess
 import threading
+import configparser
 from datetime import datetime
 from pathlib import Path
 
@@ -109,6 +110,51 @@ class WaterMeSystem:
                 json.dump(self.config, f, indent=2)
         except Exception as e:
             print(f"Warning: Could not save config file: {e}")
+    
+    def sync_system_time(self):
+        """Check system time and provide helpful information"""
+        try:
+            settings_file = os.path.join(self.config_dir, 'settings.cfg')
+            if not os.path.exists(settings_file):
+                return True  # Silent skip if no config
+            
+            # Read timezone from settings
+            config = configparser.ConfigParser()
+            config.read(settings_file)
+            
+            if 'Garden' not in config:
+                return True  # Silent skip if no garden section
+            
+            timezone = config['Garden'].get('timezone', 'UTC')
+            
+            # Check current system timezone (silent check)
+            try:
+                current_tz = subprocess.check_output(['timedatectl', 'show', '--property=Timezone', '--value'], 
+                                                   text=True, stderr=subprocess.DEVNULL).strip()
+                
+                if current_tz != timezone:
+                    print(f"🕐 Timezone mismatch: Settings={timezone}, System={current_tz}")
+                    print(f"   Run: sudo timedatectl set-timezone {timezone}")
+                # No else - silent success
+                    
+            except subprocess.CalledProcessError:
+                pass  # Silent skip if timedatectl not available
+            
+            # Check NTP status (silent check)
+            try:
+                ntp_status = subprocess.check_output(['timedatectl', 'status'], text=True)
+                if 'System clock synchronized: no' in ntp_status:
+                    print("🕐 NTP sync not active - run: sudo timedatectl set-ntp true")
+                # No else - silent success
+                    
+            except subprocess.CalledProcessError:
+                pass  # Silent skip if timedatectl not available
+            
+            return True
+            
+        except Exception as e:
+            # Silent fail - don't interrupt startup
+            return True
     
     def check_system_health(self):
         """Check system health and dependencies"""
@@ -341,6 +387,9 @@ class WaterMeSystem:
         
         print("🌱 Starting WaterMe! Smart Garden System...")
         print("=" * 50)
+        
+        # Sync system time first
+        self.sync_system_time()
         
         # Health check
         if not self.check_system_health():
