@@ -16,6 +16,7 @@ import zipfile
 import tempfile
 import shutil
 import io
+from core.gpio import setup_gpio, activate_zone, deactivate_zone
 
 # Conditional GPIO import for development vs production
 try:
@@ -343,27 +344,21 @@ def get_pin_for_channel(channel):
 
 def activate_channel(channel):
     """Activate a specific channel (set HIGH)"""
-    pin = get_pin_for_channel(channel)
-    if pin is not None:
-        try:
-            GPIO.output(pin, GPIO.HIGH)
-            log_event(watering_logger, 'INFO', f'Zone {channel} activated', pin=pin)
-            return True
-        except Exception as e:
-            log_event(error_logger, 'ERROR', f'Failed to activate zone {channel}', error=str(e), pin=pin)
-    return False
+    try:
+        activate_zone(channel)
+        return True
+    except Exception as e:
+        logging.error(f"Failed to activate zone {channel}: {e}")
+        return False
 
 def deactivate_channel(channel):
     """Deactivate a specific channel (set LOW)"""
-    pin = get_pin_for_channel(channel)
-    if pin is not None:
-        try:
-            GPIO.output(pin, GPIO.LOW)
-            log_event(watering_logger, 'INFO', f'Zone {channel} deactivated', pin=pin)
-            return True
-        except Exception as e:
-            log_event(error_logger, 'ERROR', f'Failed to deactivate zone {channel}', error=str(e), pin=pin)
-    return False
+    try:
+        deactivate_zone(channel)
+        return True
+    except Exception as e:
+        logging.error(f"Failed to deactivate zone {channel}: {e}")
+        return False
 
 def get_channel_status(channel):
     """Get current status of a channel"""
