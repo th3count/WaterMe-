@@ -594,27 +594,23 @@ export default function GardenOverview() {
     });
   }
 
-  // Calculate pump status based on zone states
+  // Calculate pump status based on real zone states from GPIO
   const calculatePumpStatus = () => {
-    // Check if any zones are currently running (have remaining time > 0)
-    const anyZoneRunning = zones.some(zone => {
-      if (!zone || zone.mode === 'disabled') return false;
-      const remaining = getZoneRemainingTime(zone);
-      return remaining > 0;
-    });
+    // Check if any zones are currently active based on real GPIO status
+    const anyZoneRunning = Object.values(zoneStatuses).some(status => status.active);
     
     // Pump should be ON if any zone is running, OFF if all zones are off
     const pumpStatus = anyZoneRunning ? 'HIGH' : 'LOW';
     setPumpInfo(prev => ({ ...prev, pumpStatus }));
   };
 
-  // Update pump status based on zone states
+  // Update pump status based on real zone states
   useEffect(() => {
     calculatePumpStatus();
     const interval = setInterval(calculatePumpStatus, 1000); // Update every second to match zone timers
     
     return () => clearInterval(interval);
-  }, [zones, manualTimers]); // Recalculate when zones or manual timers change
+  }, [zoneStatuses]); // Recalculate when real zone statuses change
 
   // Handler to cancel a manual timer
   function cancelManualTimer(zone_id: number) {

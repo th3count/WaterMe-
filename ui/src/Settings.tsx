@@ -55,6 +55,7 @@ export default function Settings() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [citySearch, setCitySearch] = useState('');
   const [geoLoading, setGeoLoading] = useState(false);
+  const [testingZone, setTestingZone] = useState<number | null>(null);
 
   // Expandable sections state
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
@@ -370,6 +371,34 @@ export default function Settings() {
     
     // Default to UTC if no match
     return 'UTC';
+  };
+
+  // Test GPIO zone function
+  const testZone = async (zoneId: number) => {
+    if (testingZone === zoneId) return; // Prevent double-clicking
+    
+    setTestingZone(zoneId);
+    try {
+      // Activate zone for 2 seconds
+      const response = await fetch(`${getApiBaseUrl()}/api/manual-timer/${zoneId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ duration: 2 })
+      });
+      
+      if (response.ok) {
+        // Wait 2.5 seconds then check if it's still active
+        setTimeout(() => {
+          setTestingZone(null);
+        }, 2500);
+      } else {
+        console.error('Failed to test zone:', response.status);
+        setTestingZone(null);
+      }
+    } catch (error) {
+      console.error('Error testing zone:', error);
+      setTestingZone(null);
+    }
   };
 
   if (loading) {
@@ -954,25 +983,59 @@ export default function Settings() {
           >
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-              gap: '12px'
+              gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+              gap: '16px'
             }}>
               {Array.from({ length: gpioConfig.zoneCount || 8 }, (_, i) => i + 1).map(channel => (
                 <div key={channel} style={{
                   background: '#2d3748',
-                  padding: '12px',
-                  borderRadius: '6px',
+                  padding: '16px',
+                  borderRadius: '8px',
                   border: '1px solid #4a5568'
                 }}>
-                  <label style={{
-                    color: '#f4f4f4',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    marginBottom: '8px',
-                    display: 'block'
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '12px'
                   }}>
-                    Zone {channel}:
-                  </label>
+                    <label style={{
+                      color: '#f4f4f4',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      display: 'block'
+                    }}>
+                      Zone {channel}:
+                    </label>
+                    <button
+                      onClick={() => testZone(channel)}
+                      disabled={testingZone === channel}
+                      style={{
+                        background: testingZone === channel ? '#666' : '#00bcd4',
+                        color: testingZone === channel ? '#ccc' : '#181f2a',
+                        border: 'none',
+                        borderRadius: '4px',
+                        padding: '6px 12px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        cursor: testingZone === channel ? 'not-allowed' : 'pointer',
+                        transition: 'background 0.2s',
+                        minWidth: '60px'
+                      }}
+                      onMouseOver={e => {
+                        if (testingZone !== channel) {
+                          e.currentTarget.style.background = '#0097a7';
+                        }
+                      }}
+                      onMouseOut={e => {
+                        if (testingZone !== channel) {
+                          e.currentTarget.style.background = '#00bcd4';
+                        }
+                      }}
+                    >
+                      {testingZone === channel ? 'Testing...' : 'Test'}
+                    </button>
+                  </div>
                   <input
                     type="number"
                     min="1"
@@ -996,6 +1059,13 @@ export default function Settings() {
                     }}
                     placeholder="GPIO Pin"
                   />
+                  <div style={{
+                    color: '#bdbdbd',
+                    fontSize: '11px',
+                    marginTop: '4px'
+                  }}>
+                    GPIO Pin: {(gpioConfig.channels || {})[channel.toString()] || 'Not set'}
+                  </div>
                 </div>
               ))}
             </div>
