@@ -16,7 +16,7 @@ import zipfile
 import tempfile
 import shutil
 import io
-from core.gpio import setup_gpio, activate_zone, deactivate_zone
+# GPIO imports removed - scheduler is now primary controller
 
 # Conditional GPIO import for development vs production
 try:
@@ -312,46 +312,43 @@ def validate_time_code(code):
     
     return False
 
-# GPIO Control Functions
+# GPIO Control Functions - Now interfaces with scheduler
 def get_pin_for_channel(channel):
     """Get GPIO pin number for a given channel (1-indexed)"""
     try:
-        config = load_ini_gpio()
-        pins = config.get('pins', [])
-        if 1 <= channel <= len(pins):
-            return pins[channel - 1]
+        from core.gpio import ZONE_PINS
+        return ZONE_PINS.get(channel)
     except Exception as e:
         print(f"Error getting pin for channel {channel}: {e}")
     return None
 
 def activate_channel(channel):
-    """Activate a specific channel (set HIGH)"""
+    """Activate a specific channel through scheduler"""
     try:
-        activate_zone(channel)
-        return True
+        from core.scheduler import scheduler
+        return scheduler.activate_zone_direct(zone_id=channel, duration_seconds=None, event_type='manual')
     except Exception as e:
         logging.error(f"Failed to activate zone {channel}: {e}")
         return False
 
 def deactivate_channel(channel):
-    """Deactivate a specific channel (set LOW)"""
+    """Deactivate a specific channel through scheduler"""
     try:
-        deactivate_zone(channel)
-        return True
+        from core.scheduler import scheduler
+        return scheduler.deactivate_zone_direct(zone_id=channel, reason='manual')
     except Exception as e:
         logging.error(f"Failed to deactivate zone {channel}: {e}")
         return False
 
 def get_channel_status(channel):
-    """Get current status of a channel"""
-    pin = get_pin_for_channel(channel)
-    if pin is not None:
-        try:
-            state = GPIO.input(pin)
-            return "HIGH" if state else "LOW"
-        except Exception as e:
-            print(f"Error getting status for channel {channel}: {e}")
-    return "UNKNOWN"
+    """Get current status of a channel from scheduler"""
+    try:
+        from core.scheduler import scheduler
+        state = scheduler.get_zone_status(channel)
+        return "HIGH" if state.get('active', False) else "LOW"
+    except Exception as e:
+        print(f"Error getting status for channel {channel}: {e}")
+        return "UNKNOWN"
 
 # Initialize GPIO on startup (only if available)
 if GPIO_AVAILABLE:
@@ -1411,17 +1408,25 @@ def get_gpio_channel_status(channel):
 
 @app.route('/api/gpio/status', methods=['GET'])
 def get_all_gpio_status():
-    """Get status of all GPIO channels"""
+    """Get status of all GPIO channels from scheduler"""
     try:
-        config = load_ini_gpio()
-        pins = config.get('pins', [])
+        from core.scheduler import scheduler
+        from core.gpio import ZONE_PINS
         
         status = {}
-        for i, pin in enumerate(pins, 1):
-            status[f'channel_{i}'] = {
+        all_zone_status = scheduler.get_all_zone_status()
+        
+        for zone_id, pin in ZONE_PINS.items():
+            zone_state = all_zone_status.get(zone_id, {})
+            status[f'channel_{zone_id}'] = {
                 'pin': pin,
-                'status': get_channel_status(i)
+                'status': "HIGH" if zone_state.get('active', False) else "LOW",
+                'active': zone_state.get('active', False),
+                'type': zone_state.get('type'),
+                'remaining': zone_state.get('remaining', 0),
+                'end_time': zone_state.get('end_time').isoformat() if zone_state.get('end_time') else None
             }
+        
         return jsonify(status)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -1429,7 +1434,7 @@ def get_all_gpio_status():
 # Manual Timer Endpoints
 @app.route('/api/manual-timer/<int:zone_id>', methods=['POST'])
 def start_manual_timer(zone_id):
-    """Start a manual timer for a specific zone"""
+    """Start a manual timer for a specific zone through scheduler"""
     try:
         data = request.get_json()
         if not data or 'duration' not in data:
@@ -1441,18 +1446,16 @@ def start_manual_timer(zone_id):
             log_event(user_logger, 'WARN', f'Manual timer failed - invalid duration', zone_id=zone_id, duration=duration)
             return jsonify({'error': 'Duration must be a positive integer'}), 400
         
-        # Activate the zone
-        success = activate_channel(zone_id)
-        if not success:
-            log_event(error_logger, 'ERROR', f'Manual timer failed - zone activation failed', zone_id=zone_id, duration=duration)
-            return jsonify({'error': f'Failed to activate zone {zone_id}'}), 400
-        
-        # Add to scheduler for automatic stop
+        # Use scheduler to activate zone with timer - scheduler is primary controller
         try:
             from core.scheduler import scheduler
-            scheduler.add_manual_timer(zone_id, duration)
+            success = scheduler.add_manual_timer(zone_id, duration)
+            if not success:
+                log_event(error_logger, 'ERROR', f'Manual timer failed - scheduler activation failed', zone_id=zone_id, duration=duration)
+                return jsonify({'error': f'Failed to activate zone {zone_id}'}), 400
         except Exception as e:
-            print(f"Warning: Could not add to scheduler: {e}")
+            log_event(error_logger, 'ERROR', f'Manual timer failed - scheduler error', zone_id=zone_id, duration=duration, error=str(e))
+            return jsonify({'error': f'Scheduler error: {str(e)}'}), 500
         
         log_event(user_logger, 'INFO', f'Manual timer started', zone_id=zone_id, duration=duration)
         return jsonify({
@@ -1466,20 +1469,13 @@ def start_manual_timer(zone_id):
 
 @app.route('/api/manual-timer/<int:zone_id>', methods=['DELETE'])
 def stop_manual_timer(zone_id):
-    """Stop a manual timer for a specific zone"""
+    """Stop a manual timer for a specific zone through scheduler"""
     try:
-        # Remove from scheduler
-        try:
-            from core.scheduler import scheduler
-            scheduler.remove_manual_timer(zone_id)
-        except Exception as e:
-            print(f"Warning: Could not remove from scheduler: {e}")
-        
-        # Deactivate the zone
-        success = deactivate_channel(zone_id)
+        from core.scheduler import scheduler
+        success = scheduler.remove_manual_timer(zone_id)
         if not success:
-            log_event(error_logger, 'ERROR', f'Manual timer stop failed - zone deactivation failed', zone_id=zone_id)
-            return jsonify({'error': f'Failed to deactivate zone {zone_id}'}), 400
+            log_event(error_logger, 'ERROR', f'Manual timer stop failed', zone_id=zone_id)
+            return jsonify({'error': f'Failed to stop zone {zone_id}'}), 400
         
         log_event(user_logger, 'INFO', f'Manual timer stopped', zone_id=zone_id)
         return jsonify({
@@ -1489,6 +1485,48 @@ def stop_manual_timer(zone_id):
         
     except Exception as e:
         log_event(error_logger, 'ERROR', f'Manual timer stop exception', zone_id=zone_id, error=str(e))
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/zones/status', methods=['GET'])
+def get_zone_status():
+    """Get detailed status of all zones from scheduler"""
+    try:
+        from core.scheduler import scheduler
+        status = scheduler.get_all_zone_status()
+        return jsonify(status)
+    except Exception as e:
+        log_event(error_logger, 'ERROR', f'Zone status query failed', error=str(e))
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/zones/<int:zone_id>/status', methods=['GET'])
+def get_single_zone_status(zone_id):
+    """Get detailed status of a single zone from scheduler"""
+    try:
+        from core.scheduler import scheduler
+        status = scheduler.get_zone_status(zone_id)
+        return jsonify(status)
+    except Exception as e:
+        log_event(error_logger, 'ERROR', f'Zone status query failed', zone_id=zone_id, error=str(e))
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/emergency-stop', methods=['POST'])
+def emergency_stop():
+    """Emergency stop all zones through scheduler"""
+    try:
+        from core.scheduler import scheduler
+        success = scheduler.emergency_stop_all_zones()
+        if not success:
+            log_event(error_logger, 'ERROR', 'Emergency stop failed')
+            return jsonify({'error': 'Emergency stop failed'}), 500
+        
+        log_event(user_logger, 'WARN', 'Emergency stop executed')
+        return jsonify({
+            'status': 'success', 
+            'message': 'All zones stopped'
+        })
+        
+    except Exception as e:
+        log_event(error_logger, 'ERROR', f'Emergency stop exception', error=str(e))
         return jsonify({'error': str(e)}), 500
 
 # New Incremental JSON Operations Endpoints
@@ -2063,10 +2101,7 @@ def get_backup_info():
         return jsonify({'error': 'Failed to get backup info'}), 500
 
 if __name__ == '__main__':
-    # Initialize GPIO
-    setup_gpio()
-    
-    # Start the scheduled watering system
+    # Start the scheduled watering system (scheduler handles GPIO initialization)
     try:
         from core.scheduler import scheduler
         scheduler.start()

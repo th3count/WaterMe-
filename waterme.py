@@ -400,26 +400,39 @@ class WaterMeSystem:
         return True
     
     def cleanup_gpio(self):
-        """Turn off all relays and clean up GPIO"""
+        """Turn off all relays and clean up GPIO through scheduler"""
         try:
-            print("🔌 Turning off all relays...")
-            # Import GPIO functions
-            from core.gpio import deactivate_zone, cleanup_gpio, ZONE_COUNT
+            print("🔌 Turning off all relays through scheduler...")
+            # Use scheduler for proper GPIO control
+            from core.scheduler import scheduler
             
-            # Turn off all zones (including pump if configured)
-            for zone_id in range(1, ZONE_COUNT + 1):
-                try:
-                    deactivate_zone(zone_id)
-                except Exception as e:
-                    print(f"   Warning: Could not deactivate zone {zone_id}: {e}")
+            # Emergency stop all zones through scheduler
+            success = scheduler.emergency_stop_all_zones()
+            if success:
+                print("✅ All relays turned off through scheduler")
+            else:
+                print("⚠️  Some relays may not have been properly turned off")
             
-            # Clean up GPIO
-            cleanup_gpio()
-            print("✅ All relays turned off and GPIO cleaned up")
+            # Stop the scheduler (this will also clean up GPIO)
+            scheduler.stop()
+            print("✅ Scheduler stopped and GPIO cleaned up")
+            
         except ImportError:
-            print("   GPIO module not available (development mode)")
+            print("   Scheduler module not available (development mode)")
+            # Fallback to direct GPIO control if scheduler unavailable
+            try:
+                from core.gpio import deactivate_zone, cleanup_gpio, ZONE_PINS
+                for zone_id in ZONE_PINS.keys():
+                    try:
+                        deactivate_zone(zone_id)
+                    except Exception as e:
+                        print(f"   Warning: Could not deactivate zone {zone_id}: {e}")
+                cleanup_gpio()
+                print("✅ Fallback GPIO cleanup completed")
+            except Exception as e:
+                print(f"⚠️  Error during fallback GPIO cleanup: {e}")
         except Exception as e:
-            print(f"⚠️  Error during GPIO cleanup: {e}")
+            print(f"⚠️  Error during scheduler cleanup: {e}")
     
     def restart(self):
         """Restart the complete system"""

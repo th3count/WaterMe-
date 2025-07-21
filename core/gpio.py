@@ -88,5 +88,41 @@ def deactivate_zone(zone_id):
             GPIO.output(pump_pin, GPIO.HIGH if ACTIVE_LOW else GPIO.LOW)
             print(f"Deactivated pump (zone {PUMP_INDEX}) on pin {pump_pin} - no other zones active")
 
+def get_zone_state(zone_id):
+    """Get the current hardware state of a zone"""
+    setup_gpio()
+    if zone_id not in ZONE_PINS:
+        return False
+    
+    pin = ZONE_PINS[zone_id]
+    try:
+        state = GPIO.input(pin)
+        # For active low: LOW = ON (True), HIGH = OFF (False)
+        # For active high: HIGH = ON (True), LOW = OFF (False)
+        return (state == GPIO.LOW) if ACTIVE_LOW else (state == GPIO.HIGH)
+    except Exception as e:
+        print(f"Error reading zone {zone_id} state: {e}")
+        return False
+
+def get_all_zone_states():
+    """Get the current hardware state of all zones"""
+    states = {}
+    for zone_id in ZONE_PINS.keys():
+        states[zone_id] = get_zone_state(zone_id)
+    return states
+
 def cleanup_gpio():
-    GPIO.cleanup() 
+    """Clean up GPIO pins and turn everything off"""
+    global _initialized
+    if _initialized:
+        try:
+            # Turn off all zones before cleanup
+            for zone_id in ZONE_PINS.keys():
+                deactivate_zone(zone_id)
+            GPIO.cleanup()
+            print("GPIO cleanup completed")
+        except Exception as e:
+            print(f"Error during GPIO cleanup: {e}")
+        finally:
+            _initialized = False
+            _active_zones.clear() 
