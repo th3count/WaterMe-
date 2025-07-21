@@ -388,6 +388,9 @@ class WaterMeSystem:
         
         print("🛑 Stopping WaterMe! system...")
         
+        # Clean up GPIO and turn off all relays
+        self.cleanup_gpio()
+        
         self.stop_ui()
         self.stop_backend()
         
@@ -395,6 +398,28 @@ class WaterMeSystem:
         print("✅ WaterMe! system stopped")
         
         return True
+    
+    def cleanup_gpio(self):
+        """Turn off all relays and clean up GPIO"""
+        try:
+            print("🔌 Turning off all relays...")
+            # Import GPIO functions
+            from core.gpio import deactivate_zone, cleanup_gpio, ZONE_COUNT
+            
+            # Turn off all zones (including pump if configured)
+            for zone_id in range(1, ZONE_COUNT + 1):
+                try:
+                    deactivate_zone(zone_id)
+                except Exception as e:
+                    print(f"   Warning: Could not deactivate zone {zone_id}: {e}")
+            
+            # Clean up GPIO
+            cleanup_gpio()
+            print("✅ All relays turned off and GPIO cleaned up")
+        except ImportError:
+            print("   GPIO module not available (development mode)")
+        except Exception as e:
+            print(f"⚠️  Error during GPIO cleanup: {e}")
     
     def restart(self):
         """Restart the complete system"""
@@ -500,6 +525,8 @@ class WaterMeSystem:
     def signal_handler(self, signum, frame):
         """Handle shutdown signals"""
         print(f"\n🛑 Received signal {signum}, shutting down...")
+        # Ensure GPIO cleanup happens on Ctrl-C
+        self.cleanup_gpio()
         self.stop()
         sys.exit(0)
 

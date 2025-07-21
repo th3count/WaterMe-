@@ -27,6 +27,7 @@ MODE = config.get('GPIO', 'mode', fallback='BCM').upper()
 ZONE_PINS = {i+1: pin for i, pin in enumerate(PINS)}
 
 _initialized = False
+_active_zones = set()  # Track which zones are currently active
 
 def setup_gpio():
     global _initialized
@@ -46,15 +47,46 @@ def setup_gpio():
 
 def activate_zone(zone_id):
     setup_gpio()
+    if zone_id not in ZONE_PINS:
+        print(f"Warning: Zone {zone_id} not in configured pins")
+        return
+    
     pin = ZONE_PINS[zone_id]
     # For activeLow, ON = LOW; for activeHigh, ON = HIGH
     GPIO.output(pin, GPIO.LOW if ACTIVE_LOW else GPIO.HIGH)
+    print(f"Activated zone {zone_id} on pin {pin}")
+    
+    # Track active zone
+    _active_zones.add(zone_id)
+    
+    # If pump is configured and this isn't the pump zone itself, activate pump
+    if PUMP_INDEX > 0 and zone_id != PUMP_INDEX and PUMP_INDEX in ZONE_PINS:
+        pump_pin = ZONE_PINS[PUMP_INDEX]
+        GPIO.output(pump_pin, GPIO.LOW if ACTIVE_LOW else GPIO.HIGH)
+        print(f"Activated pump (zone {PUMP_INDEX}) on pin {pump_pin}")
 
 def deactivate_zone(zone_id):
     setup_gpio()
+    if zone_id not in ZONE_PINS:
+        print(f"Warning: Zone {zone_id} not in configured pins")
+        return
+        
     pin = ZONE_PINS[zone_id]
     # For activeLow, OFF = HIGH; for activeHigh, OFF = LOW
     GPIO.output(pin, GPIO.HIGH if ACTIVE_LOW else GPIO.LOW)
+    print(f"Deactivated zone {zone_id} on pin {pin}")
+    
+    # Remove from active zones
+    _active_zones.discard(zone_id)
+    
+    # If pump is configured and no other zones are active, deactivate pump
+    if PUMP_INDEX > 0 and PUMP_INDEX in ZONE_PINS:
+        # Check if any non-pump zones are still active
+        other_active = _active_zones - {PUMP_INDEX}
+        if not other_active:
+            pump_pin = ZONE_PINS[PUMP_INDEX]
+            GPIO.output(pump_pin, GPIO.HIGH if ACTIVE_LOW else GPIO.LOW)
+            print(f"Deactivated pump (zone {PUMP_INDEX}) on pin {pump_pin} - no other zones active")
 
 def cleanup_gpio():
     GPIO.cleanup() 

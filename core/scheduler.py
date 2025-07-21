@@ -66,8 +66,49 @@ class WateringScheduler:
 
             for zone_id_str, zone_data in schedule.items():
                 zone_id = int(zone_id_str)
+                
+                # Skip disabled zones
+                mode = zone_data.get('mode', 'manual')
+                if mode == 'disabled':
+                    print(f"Debug: Zone {zone_id} is disabled, skipping")
+                    continue
+                    
+                period = zone_data.get('period', 'D')
+                start_day = zone_data.get('startDay', '')
                 times = zone_data.get('times', [])
-                print(f"Debug: Checking zone {zone_id} with {len(times)} events")
+                print(f"Debug: Checking zone {zone_id} - mode: {mode}, period: {period}, events: {len(times)}")
+                
+                # Check if this zone should run today based on period
+                should_run_today = False
+                if period == 'D':
+                    should_run_today = True
+                elif period == 'W' and start_day:
+                    # Weekly - check if today is the same day of week as start_day
+                    try:
+                        start_date = datetime.strptime(start_day, '%Y-%m-%d')
+                        if dt.weekday() == start_date.weekday():
+                            should_run_today = True
+                            print(f"Debug:   Weekly schedule matches today's weekday")
+                        else:
+                            print(f"Debug:   Weekly schedule doesn't match today (start: {start_date.strftime('%A')}, today: {dt.strftime('%A')})")
+                    except:
+                        print(f"Debug:   Failed to parse start_day: {start_day}")
+                elif period == 'M' and start_day:
+                    # Monthly - check if today is the same day of month as start_day
+                    try:
+                        start_date = datetime.strptime(start_day, '%Y-%m-%d')
+                        if dt.day == start_date.day:
+                            should_run_today = True
+                            print(f"Debug:   Monthly schedule matches today's day")
+                        else:
+                            print(f"Debug:   Monthly schedule doesn't match today (start: day {start_date.day}, today: day {dt.day})")
+                    except:
+                        print(f"Debug:   Failed to parse start_day: {start_day}")
+                
+                if not should_run_today:
+                    print(f"Debug:   Zone {zone_id} not scheduled for today, skipping")
+                    continue
+                
                 for event_idx, event in enumerate(times):
                     value = event.get('value')
                     duration_str = event.get('duration', '000100')
