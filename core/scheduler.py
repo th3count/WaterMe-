@@ -8,6 +8,11 @@ import threading
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import logging
+import configparser
+import pytz
+from astral.sun import sun
+from astral import LocationInfo
+import re
 
 # Import GPIO functions from main api.py
 import sys
@@ -16,56 +21,85 @@ from api import activate_channel, deactivate_channel, log_event, watering_logger
 
 class WateringScheduler:
     def catch_up_missed_events(self):
-        """On startup, catch up on any missed watering events that are still within their window."""
+        """On startup, catch up on any missed watering events that are still within their window, including solar codes."""
         try:
-            import json
-            from datetime import datetime, timedelta
             # Load schedule
             if not os.path.exists(self.schedule_file):
                 return
             with open(self.schedule_file, 'r') as f:
                 schedule = json.load(f)
             now = datetime.now()
+
+            # Load settings for lat/lon/timezone
+            if not os.path.exists(self.settings_file):
+                return
+            config = configparser.ConfigParser()
+            config.read(self.settings_file)
+            if 'Garden' in config:
+                garden = config['Garden']
+                lat = float(garden.get('gps_lat', 0.0))
+                lon = float(garden.get('gps_lon', 0.0))
+                tz = garden.get('timezone', 'UTC')
+            else:
+                lat, lon, tz = 0.0, 0.0, 'UTC'
+
+            city = LocationInfo(latitude=lat, longitude=lon, timezone=tz)
+            dt = now.astimezone(pytz.timezone(tz))
+            s = sun(city.observer, date=dt.date(), tzinfo=city.timezone)
+
+            def parse_offset(code, base):
+                m = re.search(r'([+-])(\d+)$', code)
+                if m:
+                    sign = 1 if m.group(1) == '+' else -1
+                    minutes = int(m.group(2))
+                    return timedelta(minutes=sign * minutes)
+                return timedelta()
+
             for zone_id_str, zone_data in schedule.items():
                 zone_id = int(zone_id_str)
                 times = zone_data.get('times', [])
                 for event in times:
-                    # Parse start time
-                    # Support both absolute (HHMM) and relative (e.g., SUNRISE-30) times
                     value = event.get('value')
                     duration_str = event.get('duration', '000100')  # Default 1 min
-                    # Try to parse as HHMM
-                    try:
-                        if value and value.isdigit() and len(value) == 4:
-                            hour = int(value[:2])
-                            minute = int(value[2:])
-                            start_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
-                            # If the event is scheduled for earlier today
-                            if start_time > now:
-                                start_time -= timedelta(days=1)
-                        else:
-                            # For SUNRISE/SUNSET codes, skip catch-up (future: resolve these)
-                            continue
-                    except Exception:
+                    # Resolve start_time
+                    start_time = None
+                    if value and value.isdigit() and len(value) == 4:
+                        hour = int(value[:2])
+                        minute = int(value[2:])
+                        start_time = dt.replace(hour=hour, minute=minute, second=0, microsecond=0)
+                    elif value and value.startswith('SUNRISE'):
+                        base = s['sunrise']
+                        offset = parse_offset(value, 'SUNRISE')
+                        start_time = base + offset
+                    elif value and value.startswith('SUNSET'):
+                        base = s['sunset']
+                        offset = parse_offset(value, 'SUNSET')
+                        start_time = base + offset
+                    elif value and value.startswith('ZENITH'):
+                        base = s['noon']
+                        offset = parse_offset(value, 'ZENITH')
+                        start_time = base + offset
+                    # else: skip unknown codes
+                    if not start_time:
                         continue
                     # Parse duration (HHMMSS or MMSS)
                     try:
                         if len(duration_str) == 6:
                             h = int(duration_str[:2])
                             m = int(duration_str[2:4])
-                            s = int(duration_str[4:])
-                            duration = timedelta(hours=h, minutes=m, seconds=s)
+                            s_ = int(duration_str[4:])
+                            duration = timedelta(hours=h, minutes=m, seconds=s_)
                         elif len(duration_str) == 4:
                             m = int(duration_str[:2])
-                            s = int(duration_str[2:])
-                            duration = timedelta(minutes=m, seconds=s)
+                            s_ = int(duration_str[2:])
+                            duration = timedelta(minutes=m, seconds=s_)
                         else:
                             duration = timedelta(minutes=1)
                     except Exception:
                         duration = timedelta(minutes=1)
                     end_time = start_time + duration
-                    if start_time < now < end_time:
-                        remaining = (end_time - now).total_seconds()
+                    if start_time < dt < end_time:
+                        remaining = (end_time - dt).total_seconds()
                         if remaining > 0:
                             # Only start if not already active
                             if not self.is_zone_active(zone_id):
