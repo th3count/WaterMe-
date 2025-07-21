@@ -24,7 +24,7 @@ interface LogFilters {
   search: string;
 }
 
-function Logs() {
+export default function Logs() {
   const [logFiles, setLogFiles] = useState<LogFile[]>([]);
   const [selectedFile, setSelectedFile] = useState('all.log');
   const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
@@ -240,510 +240,442 @@ function Logs() {
           }
         `}
       </style>
-      <div style={{
-        padding: '24px',
-        maxWidth: '1400px',
-        margin: '0 auto'
-      }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '24px'
-      }}>
-        <h1 style={{
-          color: '#f4f4f4',
-          margin: 0,
-          fontSize: '28px',
-          fontWeight: 600
-        }}>
-          System Logs
-        </h1>
-        
-        <div style={{
-          display: 'flex',
-          gap: '12px',
-          alignItems: 'center'
-        }}>
-          <button
-            onClick={() => loadLogEntries(true)}
-            disabled={refreshing}
-            style={{
-              background: refreshing ? '#666' : '#00bcd4',
-              color: '#181f2a',
-              border: 'none',
-              borderRadius: '6px',
-              padding: '8px 16px',
-              cursor: refreshing ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              fontWeight: 600,
-              opacity: refreshing ? 0.6 : 1
-            }}
-          >
-            {refreshing ? 'Refreshing...' : 'Refresh'}
-          </button>
-          
-                     <button
-             onClick={() => downloadLogFile(selectedFile)}
-             disabled={selectedFile === 'all.log'}
-             style={{
-               background: selectedFile === 'all.log' ? '#666' : '#28a745',
-               color: 'white',
-               border: 'none',
-               borderRadius: '6px',
-               padding: '8px 16px',
-               cursor: selectedFile === 'all.log' ? 'not-allowed' : 'pointer',
-               fontSize: '14px',
-               fontWeight: 600,
-               opacity: selectedFile === 'all.log' ? 0.6 : 1
-             }}
-           >
-             Download
-           </button>
-          
-          <button
-            onClick={() => clearOldLogs(30)}
-            style={{
-              background: '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              padding: '8px 16px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 600
-            }}
-          >
-            Clear Old
-          </button>
+      <div className="logs-page" style={{ padding: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h2 style={{ margin: 0 }}>Logs</h2>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {/* Place your top-right buttons here, outside the log data area */}
+            <button onClick={loadLogFiles} style={{ minWidth: 80 }}>Refresh</button>
+            <button onClick={() => downloadLogFile(selectedFile)} style={{ minWidth: 80 }}>Download</button>
+            <button onClick={() => clearOldLogs(30)} style={{ minWidth: 80 }}>Clear</button>
+          </div>
         </div>
-      </div>
-
-      {/* File Selection */}
-      <div style={{
-        background: '#1a1f2a',
-        borderRadius: '8px',
-        padding: '16px',
-        marginBottom: '16px',
-        border: '1px solid #2d3748'
-      }}>
-        <div style={{
-          display: 'flex',
-          gap: '16px',
-          alignItems: 'center',
-          flexWrap: 'wrap'
-        }}>
-          {/* Auto-refresh indicator */}
-          {autoRefresh && (
+        {/* Log data area below, only this part updates on refresh */}
+        <div style={{ minHeight: 400 }}>
+          {/* File Selection */}
+          <div style={{
+            background: '#1a1f2a',
+            borderRadius: '8px',
+            padding: '16px',
+            marginBottom: '16px',
+            border: '1px solid #2d3748'
+          }}>
             <div style={{
-              background: '#28a745',
-              color: 'white',
-              padding: '4px 8px',
-              borderRadius: '4px',
-              fontSize: '11px',
-              fontWeight: 600,
               display: 'flex',
+              gap: '16px',
               alignItems: 'center',
-              gap: '4px'
+              flexWrap: 'wrap'
             }}>
-              <span style={{ animation: 'pulse 2s infinite' }}>🔄</span>
-              Auto-refresh ({refreshInterval / 1000}s)
+              {/* Auto-refresh indicator */}
+              {autoRefresh && (
+                <div style={{
+                  background: '#28a745',
+                  color: 'white',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  <span style={{ animation: 'pulse 2s infinite' }}>🔄</span>
+                  Auto-refresh ({refreshInterval / 1000}s)
+                </div>
+              )}
+              <div>
+                <label style={{
+                  color: '#f4f4f4',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  marginBottom: '8px',
+                  display: 'block'
+                }}>
+                  Log File:
+                </label>
+                <select
+                  value={selectedFile}
+                  onChange={(e) => setSelectedFile(e.target.value)}
+                  style={{
+                    background: '#2d3748',
+                    color: '#f4f4f4',
+                    border: '1px solid #4a5568',
+                    borderRadius: '4px',
+                    padding: '8px 12px',
+                    fontSize: '14px',
+                    minWidth: '150px'
+                  }}
+                >
+                  <option value="all.log">📋 View All Logs</option>
+                  {logFiles.map(file => (
+                    <option key={file.filename} value={file.filename}>
+                      {file.filename} ({file.size_mb}MB)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{
+                  color: '#f4f4f4',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  marginBottom: '8px',
+                  display: 'block'
+                }}>
+                  Level:
+                </label>
+                <select
+                  value={filters.level}
+                  onChange={(e) => setFilters({...filters, level: e.target.value})}
+                  style={{
+                    background: '#2d3748',
+                    color: '#f4f4f4',
+                    border: '1px solid #4a5568',
+                    borderRadius: '4px',
+                    padding: '8px 12px',
+                    fontSize: '14px',
+                    minWidth: '120px'
+                  }}
+                >
+                  <option value="">All Levels</option>
+                  <option value="DEBUG">DEBUG</option>
+                  <option value="INFO">INFO</option>
+                  <option value="WARN">WARN</option>
+                  <option value="ERROR">ERROR</option>
+                  <option value="CRITICAL">CRITICAL</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{
+                  color: '#f4f4f4',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  marginBottom: '8px',
+                  display: 'block'
+                }}>
+                  Category:
+                </label>
+                <select
+                  value={filters.category}
+                  onChange={(e) => setFilters({...filters, category: e.target.value})}
+                  style={{
+                    background: '#2d3748',
+                    color: '#f4f4f4',
+                    border: '1px solid #4a5568',
+                    borderRadius: '4px',
+                    padding: '8px 12px',
+                    fontSize: '14px',
+                    minWidth: '120px'
+                  }}
+                >
+                  <option value="">All Categories</option>
+                  <option value="SYSTEM">SYSTEM</option>
+                  <option value="WATERING">WATERING</option>
+                  <option value="PLANTS">PLANTS</option>
+                  <option value="LOCATIONS">LOCATIONS</option>
+                  <option value="HEALTH">HEALTH</option>
+                  <option value="USER">USER</option>
+                  <option value="ERROR">ERROR</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{
+                  color: '#f4f4f4',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  marginBottom: '8px',
+                  display: 'block'
+                }}>
+                  Limit:
+                </label>
+                <select
+                  value={filters.limit}
+                  onChange={(e) => setFilters({...filters, limit: parseInt(e.target.value)})}
+                  style={{
+                    background: '#2d3748',
+                    color: '#f4f4f4',
+                    border: '1px solid #4a5568',
+                    borderRadius: '4px',
+                    padding: '8px 12px',
+                    fontSize: '14px',
+                    minWidth: '100px'
+                  }}
+                >
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={200}>200</option>
+                  <option value={500}>500</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{
+                  color: '#f4f4f4',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  marginBottom: '8px',
+                  display: 'block'
+                }}>
+                  Search:
+                </label>
+                <input
+                  type="text"
+                  value={filters.search}
+                  onChange={(e) => setFilters({...filters, search: e.target.value})}
+                  placeholder="Search messages..."
+                  style={{
+                    background: '#2d3748',
+                    color: '#f4f4f4',
+                    border: '1px solid #4a5568',
+                    borderRadius: '4px',
+                    padding: '8px 12px',
+                    fontSize: '14px',
+                    minWidth: '200px'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Auto-refresh controls */}
+            <div style={{
+              display: 'flex',
+              gap: '16px',
+              alignItems: 'center',
+              marginTop: '16px',
+              paddingTop: '16px',
+              borderTop: '1px solid #2d3748'
+            }}>
+              <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                color: '#f4f4f4',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={autoRefresh}
+                  onChange={(e) => setAutoRefresh(e.target.checked)}
+                  style={{ cursor: 'pointer' }}
+                />
+                Auto-refresh
+              </label>
+
+              {autoRefresh && (
+                <select
+                  value={refreshInterval}
+                  onChange={(e) => setRefreshInterval(parseInt(e.target.value))}
+                  style={{
+                    background: '#2d3748',
+                    color: '#f4f4f4',
+                    border: '1px solid #4a5568',
+                    borderRadius: '4px',
+                    padding: '4px 8px',
+                    fontSize: '12px'
+                  }}
+                >
+                  <option value={2000}>2s</option>
+                  <option value={5000}>5s</option>
+                  <option value={10000}>10s</option>
+                  <option value={30000}>30s</option>
+                </select>
+              )}
+            </div>
+          </div>
+
+          {/* Error Display */}
+          {error && (
+            <div style={{
+              background: '#721c24',
+              color: '#f8d7da',
+              padding: '12px 16px',
+              borderRadius: '6px',
+              marginBottom: '16px',
+              border: '1px solid #f5c6cb'
+            }}>
+              {error}
             </div>
           )}
-          <div>
-            <label style={{
-              color: '#f4f4f4',
-              fontSize: '14px',
-              fontWeight: 600,
-              marginBottom: '8px',
-              display: 'block'
-            }}>
-              Log File:
-            </label>
-            <select
-              value={selectedFile}
-              onChange={(e) => setSelectedFile(e.target.value)}
-              style={{
-                background: '#2d3748',
-                color: '#f4f4f4',
-                border: '1px solid #4a5568',
-                borderRadius: '4px',
-                padding: '8px 12px',
-                fontSize: '14px',
-                minWidth: '150px'
-              }}
-            >
-              <option value="all.log">📋 View All Logs</option>
-              {logFiles.map(file => (
-                <option key={file.filename} value={file.filename}>
-                  {file.filename} ({file.size_mb}MB)
-                </option>
-              ))}
-            </select>
-          </div>
 
-          <div>
-            <label style={{
-              color: '#f4f4f4',
-              fontSize: '14px',
-              fontWeight: 600,
-              marginBottom: '8px',
-              display: 'block'
-            }}>
-              Level:
-            </label>
-            <select
-              value={filters.level}
-              onChange={(e) => setFilters({...filters, level: e.target.value})}
-              style={{
-                background: '#2d3748',
-                color: '#f4f4f4',
-                border: '1px solid #4a5568',
-                borderRadius: '4px',
-                padding: '8px 12px',
-                fontSize: '14px',
-                minWidth: '120px'
-              }}
-            >
-              <option value="">All Levels</option>
-              <option value="DEBUG">DEBUG</option>
-              <option value="INFO">INFO</option>
-              <option value="WARN">WARN</option>
-              <option value="ERROR">ERROR</option>
-              <option value="CRITICAL">CRITICAL</option>
-            </select>
-          </div>
-
-          <div>
-            <label style={{
-              color: '#f4f4f4',
-              fontSize: '14px',
-              fontWeight: 600,
-              marginBottom: '8px',
-              display: 'block'
-            }}>
-              Category:
-            </label>
-            <select
-              value={filters.category}
-              onChange={(e) => setFilters({...filters, category: e.target.value})}
-              style={{
-                background: '#2d3748',
-                color: '#f4f4f4',
-                border: '1px solid #4a5568',
-                borderRadius: '4px',
-                padding: '8px 12px',
-                fontSize: '14px',
-                minWidth: '120px'
-              }}
-            >
-              <option value="">All Categories</option>
-              <option value="SYSTEM">SYSTEM</option>
-              <option value="WATERING">WATERING</option>
-              <option value="PLANTS">PLANTS</option>
-              <option value="LOCATIONS">LOCATIONS</option>
-              <option value="HEALTH">HEALTH</option>
-              <option value="USER">USER</option>
-              <option value="ERROR">ERROR</option>
-            </select>
-          </div>
-
-          <div>
-            <label style={{
-              color: '#f4f4f4',
-              fontSize: '14px',
-              fontWeight: 600,
-              marginBottom: '8px',
-              display: 'block'
-            }}>
-              Limit:
-            </label>
-            <select
-              value={filters.limit}
-              onChange={(e) => setFilters({...filters, limit: parseInt(e.target.value)})}
-              style={{
-                background: '#2d3748',
-                color: '#f4f4f4',
-                border: '1px solid #4a5568',
-                borderRadius: '4px',
-                padding: '8px 12px',
-                fontSize: '14px',
-                minWidth: '100px'
-              }}
-            >
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-              <option value={200}>200</option>
-              <option value={500}>500</option>
-            </select>
-          </div>
-
-          <div>
-            <label style={{
-              color: '#f4f4f4',
-              fontSize: '14px',
-              fontWeight: 600,
-              marginBottom: '8px',
-              display: 'block'
-            }}>
-              Search:
-            </label>
-            <input
-              type="text"
-              value={filters.search}
-              onChange={(e) => setFilters({...filters, search: e.target.value})}
-              placeholder="Search messages..."
-              style={{
-                background: '#2d3748',
-                color: '#f4f4f4',
-                border: '1px solid #4a5568',
-                borderRadius: '4px',
-                padding: '8px 12px',
-                fontSize: '14px',
-                minWidth: '200px'
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Auto-refresh controls */}
-        <div style={{
-          display: 'flex',
-          gap: '16px',
-          alignItems: 'center',
-          marginTop: '16px',
-          paddingTop: '16px',
-          borderTop: '1px solid #2d3748'
-        }}>
-          <label style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            color: '#f4f4f4',
-            cursor: 'pointer',
-            fontSize: '14px'
+          {/* Log Entries */}
+          <div style={{
+            background: '#1a1f2a',
+            borderRadius: '8px',
+            border: '1px solid #2d3748',
+            overflow: 'hidden',
+            position: 'relative'
           }}>
-            <input
-              type="checkbox"
-              checked={autoRefresh}
-              onChange={(e) => setAutoRefresh(e.target.checked)}
-              style={{ cursor: 'pointer' }}
-            />
-            Auto-refresh
-          </label>
-
-          {autoRefresh && (
-            <select
-              value={refreshInterval}
-              onChange={(e) => setRefreshInterval(parseInt(e.target.value))}
-              style={{
-                background: '#2d3748',
-                color: '#f4f4f4',
-                border: '1px solid #4a5568',
-                borderRadius: '4px',
+            {/* Refresh indicator */}
+            {refreshing && (
+              <div style={{
+                position: 'absolute',
+                top: '8px',
+                right: '8px',
+                background: 'rgba(0, 188, 212, 0.9)',
+                color: '#181f2a',
                 padding: '4px 8px',
-                fontSize: '12px'
-              }}
-            >
-              <option value={2000}>2s</option>
-              <option value={5000}>5s</option>
-              <option value={10000}>10s</option>
-              <option value={30000}>30s</option>
-            </select>
-          )}
-        </div>
-      </div>
-
-      {/* Error Display */}
-      {error && (
-        <div style={{
-          background: '#721c24',
-          color: '#f8d7da',
-          padding: '12px 16px',
-          borderRadius: '6px',
-          marginBottom: '16px',
-          border: '1px solid #f5c6cb'
-        }}>
-          {error}
-        </div>
-      )}
-
-      {/* Log Entries */}
-      <div style={{
-        background: '#1a1f2a',
-        borderRadius: '8px',
-        border: '1px solid #2d3748',
-        overflow: 'hidden',
-        position: 'relative'
-      }}>
-        {/* Refresh indicator */}
-        {refreshing && (
-          <div style={{
-            position: 'absolute',
-            top: '8px',
-            right: '8px',
-            background: 'rgba(0, 188, 212, 0.9)',
-            color: '#181f2a',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            fontSize: '11px',
-            fontWeight: 600,
-            zIndex: 10,
-            animation: 'pulse 1.5s infinite',
-            backdropFilter: 'blur(4px)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-          }}>
-            🔄 Refreshing...
-          </div>
-        )}
-        
-        {loading ? (
-          <div style={{
-            padding: '40px',
-            textAlign: 'center',
-            color: '#f4f4f4'
-          }}>
-            Loading logs...
-          </div>
-        ) : logEntries.length === 0 ? (
-          <div style={{
-            padding: '40px',
-            textAlign: 'center',
-            color: '#bdbdbd'
-          }}>
-            No log entries found
-          </div>
-        ) : (
-          <div 
-            className="log-entries-container"
-            style={{
-              maxHeight: '600px',
-              overflowY: 'auto',
-              opacity: refreshing ? 0.7 : 1,
-              transition: 'opacity 0.2s ease-in-out'
-            }}
-          >
-            {logEntries.map((entry, index) => (
-              <div
-                key={index}
+                borderRadius: '4px',
+                fontSize: '11px',
+                fontWeight: 600,
+                zIndex: 10,
+                animation: 'pulse 1.5s infinite',
+                backdropFilter: 'blur(4px)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              }}>
+                🔄 Refreshing...
+              </div>
+            )}
+            
+            {loading ? (
+              <div style={{
+                padding: '40px',
+                textAlign: 'center',
+                color: '#f4f4f4'
+              }}>
+                Loading logs...
+              </div>
+            ) : logEntries.length === 0 ? (
+              <div style={{
+                padding: '40px',
+                textAlign: 'center',
+                color: '#bdbdbd'
+              }}>
+                No log entries found
+              </div>
+            ) : (
+              <div 
+                className="log-entries-container"
                 style={{
-                  padding: '12px 16px',
-                  borderBottom: '1px solid #2d3748',
-                  fontFamily: 'monospace',
-                  fontSize: '13px',
-                  lineHeight: '1.4'
+                  maxHeight: '600px',
+                  overflowY: 'auto',
+                  opacity: refreshing ? 0.7 : 1,
+                  transition: 'opacity 0.2s ease-in-out'
                 }}
               >
-                <div style={{
-                  display: 'flex',
-                  gap: '12px',
-                  alignItems: 'flex-start',
-                  flexWrap: 'wrap'
-                }}>
-                  <span style={{
-                    color: '#6c757d',
-                    minWidth: '150px',
-                    flexShrink: 0
-                  }}>
-                    {entry.timestamp}
-                  </span>
-                  
-                  <span style={{
-                    color: getLevelColor(entry.level),
-                    fontWeight: 600,
-                    minWidth: '80px',
-                    flexShrink: 0
-                  }}>
-                    {entry.level}
-                  </span>
-                  
-                  <span style={{
-                    color: getCategoryColor(entry.category),
-                    fontWeight: 600,
-                    minWidth: '100px',
-                    flexShrink: 0
-                  }}>
-                    {entry.category}
-                  </span>
-                  
-                                     <span style={{
-                     color: '#f4f4f4',
-                     flex: 1,
-                     wordBreak: 'break-word'
-                   }}>
-                     {entry.message}
-                     {entry.file && entry.file !== selectedFile && (
-                       <span style={{
-                         color: '#6c757d',
-                         fontSize: '11px',
-                         marginLeft: '8px',
-                         fontStyle: 'italic'
-                       }}>
-                         [{entry.file}]
-                       </span>
-                     )}
-                   </span>
-                </div>
+                {logEntries.map((entry, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      padding: '12px 16px',
+                      borderBottom: '1px solid #2d3748',
+                      fontFamily: 'monospace',
+                      fontSize: '13px',
+                      lineHeight: '1.4'
+                    }}
+                  >
+                    <div style={{
+                      display: 'flex',
+                      gap: '12px',
+                      alignItems: 'flex-start',
+                      flexWrap: 'wrap'
+                    }}>
+                      <span style={{
+                        color: '#6c757d',
+                        minWidth: '150px',
+                        flexShrink: 0
+                      }}>
+                        {entry.timestamp}
+                      </span>
+                      
+                      <span style={{
+                        color: getLevelColor(entry.level),
+                        fontWeight: 600,
+                        minWidth: '80px',
+                        flexShrink: 0
+                      }}>
+                        {entry.level}
+                      </span>
+                      
+                      <span style={{
+                        color: getCategoryColor(entry.category),
+                        fontWeight: 600,
+                        minWidth: '100px',
+                        flexShrink: 0
+                      }}>
+                        {entry.category}
+                      </span>
+                      
+                                         <span style={{
+                           color: '#f4f4f4',
+                           flex: 1,
+                           wordBreak: 'break-word'
+                         }}>
+                           {entry.message}
+                           {entry.file && entry.file !== selectedFile && (
+                             <span style={{
+                               color: '#6c757d',
+                               fontSize: '11px',
+                               marginLeft: '8px',
+                               fontStyle: 'italic'
+                             }}>
+                               [{entry.file}]
+                             </span>
+                           )}
+                         </span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        )}
-      </div>
 
-      {/* Log Files Summary */}
-      <div style={{
-        marginTop: '24px',
-        background: '#1a1f2a',
-        borderRadius: '8px',
-        padding: '16px',
-        border: '1px solid #2d3748'
-      }}>
-        <h3 style={{
-          color: '#f4f4f4',
-          margin: '0 0 16px 0',
-          fontSize: '18px',
-          fontWeight: 600
-        }}>
-          Available Log Files
-        </h3>
-        
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-          gap: '12px'
-        }}>
-          {logFiles.map(file => (
-            <div
-              key={file.filename}
-              style={{
-                background: '#2d3748',
-                padding: '12px',
-                borderRadius: '6px',
-                border: selectedFile === file.filename ? '2px solid #00bcd4' : '1px solid #4a5568',
-                cursor: 'pointer'
-              }}
-              onClick={() => setSelectedFile(file.filename)}
-            >
-              <div style={{
-                color: '#f4f4f4',
-                fontWeight: 600,
-                marginBottom: '4px'
-              }}>
-                {file.filename}
-              </div>
-              <div style={{
-                color: '#bdbdbd',
-                fontSize: '12px'
-              }}>
-                Size: {file.size_mb}MB | Modified: {new Date(file.modified).toLocaleString()}
-              </div>
+          {/* Log Files Summary */}
+          <div style={{
+            marginTop: '24px',
+            background: '#1a1f2a',
+            borderRadius: '8px',
+            padding: '16px',
+            border: '1px solid #2d3748'
+          }}>
+            <h3 style={{
+              color: '#f4f4f4',
+              margin: '0 0 16px 0',
+              fontSize: '18px',
+              fontWeight: 600
+            }}>
+              Available Log Files
+            </h3>
+            
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: '12px'
+            }}>
+              {logFiles.map(file => (
+                <div
+                  key={file.filename}
+                  style={{
+                    background: '#2d3748',
+                    padding: '12px',
+                    borderRadius: '6px',
+                    border: selectedFile === file.filename ? '2px solid #00bcd4' : '1px solid #4a5568',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => setSelectedFile(file.filename)}
+                >
+                  <div style={{
+                    color: '#f4f4f4',
+                    fontWeight: 600,
+                    marginBottom: '4px'
+                  }}>
+                    {file.filename}
+                  </div>
+                  <div style={{
+                    color: '#bdbdbd',
+                    fontSize: '12px'
+                  }}>
+                    Size: {file.size_mb}MB | Modified: {new Date(file.modified).toLocaleString()}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
-    </div>
     </>
   );
-}
-
-export default Logs; 
+} 
