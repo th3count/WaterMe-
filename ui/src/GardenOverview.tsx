@@ -46,7 +46,7 @@ export default function GardenOverview() {
   const [ignoredAlerts, setIgnoredAlerts] = useState<Set<string>>(new Set());
 
   // New state for real zone statuses
-  const [zoneStatuses, setZoneStatuses] = useState<Record<string, { active: boolean, remaining: number }>>({});
+  const [zoneStatuses, setZoneStatuses] = useState<Record<string, { active: boolean, remaining: number, type?: string }>>({});
 
   useEffect(() => {
     fetch(`${getApiBaseUrl()}/api/locations`)
@@ -193,12 +193,13 @@ export default function GardenOverview() {
       try {
         const resp = await fetch(`${getApiBaseUrl()}/api/gpio/status`);
         const data = await resp.json();
-        const statuses: Record<string, { active: boolean, remaining: number }> = {};
+        const statuses: Record<string, { active: boolean, remaining: number, type?: string }> = {};
         Object.entries(data).forEach(([key, value]: [string, any]) => {
           const zoneId = parseInt(key.split('_')[1]);
           statuses[zoneId] = {
             active: value.active,
-            remaining: value.remaining || 0
+            remaining: value.remaining || 0,
+            type: value.type
           };
         });
         setZoneStatuses(statuses);
@@ -608,9 +609,17 @@ export default function GardenOverview() {
     return () => clearInterval(interval);
   }, [zoneStatuses]); // Recalculate when real zone statuses change
 
-  // Handler to cancel a manual timer
-  function cancelManualTimer(zone_id: number) {
-    if (!confirm('Are you sure you want to stop this manual timer? This action cannot be undone.')) {
+  // Handler to cancel a timer (manual or scheduled)
+  function cancelTimer(zone_id: number) {
+    const zoneStatus = zoneStatuses[zone_id];
+    const timerType = zoneStatus?.type || 'manual';
+    const isScheduled = timerType === 'scheduled';
+    
+    const message = isScheduled 
+      ? 'Are you sure you want to stop this scheduled event? This action cannot be undone.'
+      : 'Are you sure you want to stop this manual timer? This action cannot be undone.';
+    
+    if (!confirm(message)) {
       return;
     }
 
@@ -961,7 +970,9 @@ export default function GardenOverview() {
                           </>
                         ) : (
                           <>
-                            <div style={{ marginBottom: '8px' }}>Manual timer running: <b>{formatCountdown(manualTimers[z.zone_id])}</b></div>
+                            <div style={{ marginBottom: '8px' }}>
+                              {zoneStatuses[z.zone_id]?.type === 'scheduled' ? 'Scheduled event running' : 'Manual timer running'}: <b>{formatCountdown(manualTimers[z.zone_id])}</b>
+                            </div>
                             <button
                               onClick={e => {
                                 e.stopPropagation();
@@ -997,7 +1008,7 @@ export default function GardenOverview() {
                                   <button
                                     onClick={e => {
                                       e.stopPropagation();
-                                      cancelManualTimer(z.zone_id);
+                                      cancelTimer(z.zone_id);
                                       setConfirmCancelZone(null);
                                     }}
                                     style={{
