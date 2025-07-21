@@ -1405,20 +1405,24 @@ def get_gpio_channel_status(channel):
 
 @app.route('/api/gpio/status', methods=['GET'])
 def get_all_gpio_status():
-    """Get status of all GPIO channels from scheduler"""
+    """Get status of all GPIO channels from actual hardware state"""
     try:
         from core.scheduler import scheduler
-        from core.gpio import ZONE_PINS
+        from core.gpio import ZONE_PINS, get_zone_state
         
         status = {}
         all_zone_status = scheduler.get_all_zone_status()
         
         for zone_id, pin in ZONE_PINS.items():
             zone_state = all_zone_status.get(zone_id, {})
+            # Read actual hardware state for indicator lights
+            hardware_active = get_zone_state(zone_id)
+            
             status[f'channel_{zone_id}'] = {
                 'pin': pin,
-                'status': "HIGH" if zone_state.get('active', False) else "LOW",
-                'active': zone_state.get('active', False),
+                'status': "HIGH" if hardware_active else "LOW",
+                'active': hardware_active,  # Use actual hardware state for indicator lights
+                'scheduler_active': zone_state.get('active', False),  # Keep scheduler state for reference
                 'type': zone_state.get('type'),
                 'remaining': zone_state.get('remaining', 0),
                 'end_time': zone_state.get('end_time').isoformat() if zone_state.get('end_time') else None

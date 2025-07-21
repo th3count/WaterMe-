@@ -510,6 +510,100 @@ class WateringScheduler:
                 self._setup_logging()
                 self.log_event(self.error_logger, 'ERROR', f'Failed to stop expired zone', zone_id=zone_id)
     
+    def check_scheduled_events(self):
+        """Check for scheduled events that should start now"""
+        try:
+            # Load schedule
+            if not os.path.exists(self.schedule_file):
+                return
+            
+            with open(self.schedule_file, 'r') as f:
+                schedule = json.load(f)
+            
+            now = datetime.now()
+            
+            # Load settings for lat/lon/timezone
+            if not os.path.exists(self.settings_file):
+                return
+            
+            config = configparser.ConfigParser()
+            config.read(self.settings_file)
+            if 'Garden' not in config:
+                return
+                
+            garden = config['Garden']
+            lat = float(garden.get('gps_lat', 0.0))
+            lon = float(garden.get('gps_lon', 0.0))
+            tz = garden.get('timezone', 'UTC')
+            
+            # Get solar times for today
+            city = LocationInfo(latitude=lat, longitude=lon, timezone=tz)
+            dt = now.astimezone(pytz.timezone(tz))
+            s = sun(city.observer, date=dt.date(), tzinfo=city.timezone)
+            
+            for zone_id_str, zone_data in schedule.items():
+                zone_id = int(zone_id_str)
+                
+                # Skip disabled zones
+                mode = zone_data.get('mode', 'manual')
+                if mode == 'disabled':
+                    continue
+                
+                # Skip if zone is already active
+                if self.zone_states.get(zone_id, {}).get('active', False):
+                    continue
+                
+                period = zone_data.get('period', 'D')
+                start_day = zone_data.get('startDay', '')
+                times = zone_data.get('times', [])
+                
+                # Check if this zone should run today
+                should_run_today = self._should_run_today(period, start_day, dt)
+                if not should_run_today:
+                    continue
+                
+                # Check each scheduled time
+                for event in times:
+                    value = event.get('value')
+                    duration_str = event.get('duration', '000100')
+                    
+                    # Resolve start_time
+                    start_time = self._resolve_event_time(value, s, dt)
+                    if not start_time:
+                        continue
+                    
+                    # Parse duration
+                    try:
+                        duration = self._parse_duration(duration_str)
+                    except Exception as e:
+                        print(f"Duration parse failed: {e}, using default 1 min")
+                        duration = timedelta(minutes=1)
+                    
+                    # Check if it's time to start this event (within 1 second tolerance)
+                    time_diff = abs((start_time - dt).total_seconds())
+                    if time_diff <= 1:  # Start within 1 second of scheduled time
+                        print(f"Scheduled event triggered for zone {zone_id} at {start_time}")
+                        success = self.activate_zone_direct(zone_id, int(duration.total_seconds()), 'scheduled')
+                        if success:
+                            self._setup_logging()
+                            self.log_event(self.watering_logger, 'INFO', 
+                                         'Scheduled event started', 
+                                         zone_id=zone_id, 
+                                         scheduled_time=start_time.strftime('%H:%M'),
+                                         duration=int(duration.total_seconds()))
+                        else:
+                            self._setup_logging()
+                            self.log_event(self.error_logger, 'ERROR', 
+                                         'Failed to start scheduled event', 
+                                         zone_id=zone_id, 
+                                         scheduled_time=start_time.strftime('%H:%M'))
+                        break  # Only start one event per zone per check
+                        
+        except Exception as e:
+            print(f"Error in check_scheduled_events: {e}")
+            self._setup_logging()
+            self.log_event(self.error_logger, 'ERROR', f'Scheduled event check failed', error=str(e))
+    
     def run_scheduler_loop(self):
         """Main scheduler loop"""
         while self.running:
@@ -517,15 +611,15 @@ class WateringScheduler:
                 # Check for expired manual timers
                 self.check_and_stop_expired_zones()
                 
+                # Check for scheduled events
+                self.check_scheduled_events()
+                
                 # Update remaining times for active zones
                 for zone_id in list(self.zone_states.keys()):
                     state = self.zone_states[zone_id]
                     if state['active'] and state['end_time']:
                         remaining = (state['end_time'] - datetime.now()).total_seconds()
                         state['remaining'] = max(0, int(remaining))
-                
-                # TODO: Check for scheduled events (future implementation)
-                # self.check_scheduled_events()
                 
                 # Sleep for a short interval
                 time.sleep(1)
