@@ -191,7 +191,17 @@ export default function GardenOverview() {
   useEffect(() => {
     const fetchZoneStatuses = async () => {
       try {
-        const resp = await fetch(`${getApiBaseUrl()}/api/gpio/status`);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 2000);  // 2s timeout
+
+        const resp = await fetch(`${getApiBaseUrl()}/api/gpio/status`, { signal: controller.signal });
+        clearTimeout(timeout);
+
+        if (!resp.ok) {
+          console.error('Failed to fetch zone statuses:', resp.status);
+          return;
+        }
+
         const data = await resp.json();
         const statuses: Record<string, { active: boolean, remaining: number, type?: string }> = {};
         Object.entries(data).forEach(([key, value]: [string, any]) => {
@@ -213,13 +223,17 @@ export default function GardenOverview() {
           }
         });
         setManualTimers(newManualTimers);
-      } catch (error) {
-        console.error('Error fetching zone statuses:', error);
+      } catch (error: any) {
+        if (error.name === 'AbortError') {
+          console.warn('Zone status fetch timed out');
+        } else {
+          console.error('Error fetching zone statuses:', error);
+        }
       }
     };
 
     fetchZoneStatuses();
-    const interval = setInterval(fetchZoneStatuses, 1000);
+    const interval = setInterval(fetchZoneStatuses, 5000);  // Reduced to every 5 seconds
     return () => clearInterval(interval);
   }, []);
 
@@ -420,7 +434,7 @@ export default function GardenOverview() {
         const resolvedArr = await resp.json();
         return resolvedArr[0] || '...';
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error resolving time for date:', error);
     }
     return '...';

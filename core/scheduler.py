@@ -27,6 +27,11 @@ class WateringScheduler:
         self.active_zones_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "active_zones.json")
         self.thread = None
         
+        self.schedule = {}  # Cached schedule
+        self.settings = {}  # Cached settings
+        self._load_schedule()
+        self._load_settings()
+        
         # Initialize zone states
         self._initialize_zone_states()
         
@@ -621,32 +626,18 @@ class WateringScheduler:
     def check_scheduled_events(self):
         """Check for scheduled events that should start now"""
         try:
-            # Load schedule
-            if not os.path.exists(self.schedule_file):
+            # Use cached schedule and settings
+            if not self.schedule or not self.settings:
                 return
-            
-            with open(self.schedule_file, 'r') as f:
-                schedule = json.load(f)
-            
-            now = datetime.now()
-            
-            # Load settings for lat/lon/timezone
-            if not os.path.exists(self.settings_file):
-                return
-            
-            config = configparser.ConfigParser()
-            config.read(self.settings_file)
-            if 'Garden' not in config:
-                return
-                
-            garden = config['Garden']
-            lat = float(garden.get('gps_lat', 0.0))
-            lon = float(garden.get('gps_lon', 0.0))
-            tz = garden.get('timezone', 'UTC')
-            
+
+            schedule = self.schedule
+            lat = self.settings.get('gps_lat', 0.0)
+            lon = self.settings.get('gps_lon', 0.0)
+            tz = self.settings.get('timezone', 'UTC')
+
             # Get solar times for today
             city = LocationInfo(latitude=lat, longitude=lon, timezone=tz)
-            dt = now.astimezone(pytz.timezone(tz))
+            dt = datetime.now().astimezone(pytz.timezone(tz))
             s = sun(city.observer, date=dt.date(), tzinfo=city.timezone)
             
             for zone_id_str, zone_data in schedule.items():

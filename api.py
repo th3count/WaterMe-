@@ -2101,6 +2101,40 @@ def get_backup_info():
         error_logger.error(f"Error getting backup info: {e}")
         return jsonify({'error': 'Failed to get backup info'}), 500
 
+@app.route('/api/system/time', methods=['GET'])
+def get_system_time():
+    """Get current system time in configured timezone"""
+    try:
+        # Load settings to get timezone
+        settings_file = os.path.join(os.path.dirname(__file__), 'config', 'settings.cfg')
+        timezone = 'UTC'  # Default
+        
+        if os.path.exists(settings_file):
+            config = configparser.ConfigParser()
+            config.read(settings_file)
+            if 'Garden' in config:
+                timezone = config['Garden'].get('timezone', 'UTC')
+        
+        # Get current time in configured timezone
+        import pytz
+        from datetime import datetime
+        
+        tz = pytz.timezone(timezone)
+        now = datetime.now(tz)
+        
+        # Format for display
+        formatted_time = now.strftime('%b %d, %Y %I:%M %p')
+        
+        return jsonify({
+            'formatted_time': formatted_time,
+            'timezone': timezone,
+            'timestamp': now.isoformat()
+        })
+        
+    except Exception as e:
+        log_event(error_logger, 'ERROR', f'Failed to get system time', error=str(e))
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     # Start the scheduled watering system (scheduler handles GPIO initialization)
     try:

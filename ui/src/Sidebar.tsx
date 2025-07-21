@@ -7,24 +7,47 @@ export default function Sidebar() {
   const [currentDateTime, setCurrentDateTime] = useState<string>('');
 
   useEffect(() => {
-    // Update current date/time every second
-    const updateDateTime = () => {
-      const now = new Date();
-      const dateStr = now.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric',
-        year: 'numeric'
-      });
-      const timeStr = now.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: true 
-      });
-      setCurrentDateTime(`${dateStr} ${timeStr}`);
+    // Fetch system time from backend
+    const fetchSystemTime = async () => {
+      try {
+        const response = await fetch(`${getApiBaseUrl()}/api/system/time`);
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentDateTime(data.formatted_time);
+        } else {
+          // Fallback to browser time if backend fails
+          const now = new Date();
+          const dateStr = now.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          });
+          const timeStr = now.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          });
+          setCurrentDateTime(`${dateStr} ${timeStr}`);
+        }
+      } catch (error) {
+        // Fallback to browser time on error
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        });
+        const timeStr = now.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        });
+        setCurrentDateTime(`${dateStr} ${timeStr}`);
+      }
     };
 
-    updateDateTime();
-    const dateTimeInterval = setInterval(updateDateTime, 1000);
+    fetchSystemTime();
+    const dateTimeInterval = setInterval(fetchSystemTime, 1000);
 
     return () => clearInterval(dateTimeInterval);
   }, []);
