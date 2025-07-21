@@ -1,10 +1,25 @@
-fastapi
-uvicorn
-sqlalchemy
-pydantic
-astral
-flask
-flask_cors
-pytz
-configparser
-RPi.GPIO 
+# Web Framework
+Flask==3.0.0
+Flask-CORS==4.0.0
+
+# API Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# Database
+sqlalchemy==2.0.23
+pydantic==2.5.0
+
+# Time and Date
+pytz==2023.3
+astral==3.2
+
+# Configuration
+configparser==6.0.0
+
+# GPIO Control (Raspberry Pi)
+RPi.GPIO==0.7.1
+
+# Additional utilities
+requests==2.31.0
+python-dateutil==2.8.2 
