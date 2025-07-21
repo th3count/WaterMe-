@@ -244,10 +244,63 @@ export default function Logs() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <h2 style={{ margin: 0 }}>Logs</h2>
           <div style={{ display: 'flex', gap: 8 }}>
-            {/* Place your top-right buttons here, outside the log data area */}
-            <button onClick={loadLogFiles} style={{ minWidth: 80 }}>Refresh</button>
-            <button onClick={() => downloadLogFile(selectedFile)} style={{ minWidth: 80 }}>Download</button>
-            <button onClick={() => clearOldLogs(30)} style={{ minWidth: 80 }}>Clear</button>
+            <button
+              onClick={loadLogFiles}
+              style={{
+                background: '#00bcd4',
+                color: '#181f2a',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '8px 16px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                minWidth: 80,
+                marginLeft: 4,
+                transition: 'background 0.2s'
+              }}
+              onMouseOver={e => (e.currentTarget.style.background = '#0097a7')}
+              onMouseOut={e => (e.currentTarget.style.background = '#00bcd4')}
+            >
+              Refresh
+            </button>
+            <button
+              onClick={() => downloadLogFile(selectedFile)}
+              style={{
+                background: '#28a745',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '8px 16px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                minWidth: 80,
+                marginLeft: 4,
+                transition: 'background 0.2s'
+              }}
+              onMouseOver={e => (e.currentTarget.style.background = '#218838')}
+              onMouseOut={e => (e.currentTarget.style.background = '#28a745')}
+            >
+              Download
+            </button>
+            <button
+              onClick={() => clearOldLogs(30)}
+              style={{
+                background: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '8px 16px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                minWidth: 80,
+                marginLeft: 4,
+                transition: 'background 0.2s'
+              }}
+              onMouseOver={e => (e.currentTarget.style.background = '#b52a37')}
+              onMouseOut={e => (e.currentTarget.style.background = '#dc3545')}
+            >
+              Clear
+            </button>
           </div>
         </div>
         {/* Log data area below, only this part updates on refresh */}
@@ -266,8 +319,8 @@ export default function Logs() {
               alignItems: 'center',
               flexWrap: 'wrap'
             }}>
-              {/* Auto-refresh indicator */}
-              {autoRefresh && (
+              {/* Refreshing indicator only when actually refreshing */}
+              {refreshing && (
                 <div style={{
                   background: '#28a745',
                   color: 'white',
@@ -280,7 +333,7 @@ export default function Logs() {
                   gap: '4px'
                 }}>
                   <span style={{ animation: 'pulse 2s infinite' }}>🔄</span>
-                  Auto-refresh ({refreshInterval / 1000}s)
+                  Refreshing...
                 </div>
               )}
               <div>
@@ -502,34 +555,15 @@ export default function Logs() {
           )}
 
           {/* Log Entries */}
-          <div style={{
-            background: '#1a1f2a',
+          <div className="log-entries-container" style={{
+            maxHeight: '500px',
+            overflowY: 'auto',
+            background: '#181f2a',
             borderRadius: '8px',
-            border: '1px solid #2d3748',
-            overflow: 'hidden',
-            position: 'relative'
+            padding: '12px',
+            marginBottom: '24px',
+            border: '1px solid #2d3748'
           }}>
-            {/* Refresh indicator */}
-            {refreshing && (
-              <div style={{
-                position: 'absolute',
-                top: '8px',
-                right: '8px',
-                background: 'rgba(0, 188, 212, 0.9)',
-                color: '#181f2a',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                fontSize: '11px',
-                fontWeight: 600,
-                zIndex: 10,
-                animation: 'pulse 1.5s infinite',
-                backdropFilter: 'blur(4px)',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-              }}>
-                🔄 Refreshing...
-              </div>
-            )}
-            
             {loading ? (
               <div style={{
                 padding: '40px',

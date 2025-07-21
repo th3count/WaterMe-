@@ -25,14 +25,20 @@ class WateringScheduler:
         try:
             # Load schedule
             if not os.path.exists(self.schedule_file):
+                print("Debug: Schedule file does not exist, skipping catch-up")
                 return
+            print(f"Debug: Loading schedule from {self.schedule_file}")
             with open(self.schedule_file, 'r') as f:
                 schedule = json.load(f)
             now = datetime.now()
+            dt = now  # For consistency
+            print(f"Debug: Current time: {dt}")
 
             # Load settings for lat/lon/timezone
             if not os.path.exists(self.settings_file):
+                print("Debug: Settings file does not exist, skipping catch-up")
                 return
+            print(f"Debug: Loading settings from {self.settings_file}")
             config = configparser.ConfigParser()
             config.read(self.settings_file)
             if 'Garden' in config:
@@ -40,14 +46,17 @@ class WateringScheduler:
                 lat = float(garden.get('gps_lat', 0.0))
                 lon = float(garden.get('gps_lon', 0.0))
                 tz = garden.get('timezone', 'UTC')
+                print(f"Debug: Loaded settings - lat: {lat}, lon: {lon}, tz: {tz}")
             else:
                 lat, lon, tz = 0.0, 0.0, 'UTC'
+                print("Debug: No Garden section in settings, using defaults: lat: {lat}, lon: {lon}, tz: {tz}")
 
             city = LocationInfo(latitude=lat, longitude=lon, timezone=tz)
             dt = now.astimezone(pytz.timezone(tz))
             s = sun(city.observer, date=dt.date(), tzinfo=city.timezone)
+            print(f"Debug: Solar times for today: sunrise={s['sunrise']}, sunset={s['sunset']}, noon={s['noon']}")
 
-            def parse_offset(code, base):
+            def parse_offset(code, base_name):
                 m = re.search(r'([+-])(\d+)$', code)
                 if m:
                     sign = 1 if m.group(1) == '+' else -1
@@ -58,31 +67,38 @@ class WateringScheduler:
             for zone_id_str, zone_data in schedule.items():
                 zone_id = int(zone_id_str)
                 times = zone_data.get('times', [])
-                for event in times:
+                print(f"Debug: Checking zone {zone_id} with {len(times)} events")
+                for event_idx, event in enumerate(times):
                     value = event.get('value')
-                    duration_str = event.get('duration', '000100')  # Default 1 min
+                    duration_str = event.get('duration', '000100')
+                    print(f"Debug:   Event {event_idx+1} - code: {value}, duration: {duration_str}")
                     # Resolve start_time
                     start_time = None
                     if value and value.isdigit() and len(value) == 4:
                         hour = int(value[:2])
                         minute = int(value[2:])
                         start_time = dt.replace(hour=hour, minute=minute, second=0, microsecond=0)
+                        print(f"Debug:     Absolute time resolved to {start_time}")
                     elif value and value.startswith('SUNRISE'):
                         base = s['sunrise']
                         offset = parse_offset(value, 'SUNRISE')
                         start_time = base + offset
+                        print(f"Debug:     SUNRISE resolved to {start_time} (base={base}, offset={offset})")
                     elif value and value.startswith('SUNSET'):
                         base = s['sunset']
                         offset = parse_offset(value, 'SUNSET')
                         start_time = base + offset
+                        print(f"Debug:     SUNSET resolved to {start_time} (base={base}, offset={offset})")
                     elif value and value.startswith('ZENITH'):
                         base = s['noon']
                         offset = parse_offset(value, 'ZENITH')
                         start_time = base + offset
-                    # else: skip unknown codes
+                        print(f"Debug:     ZENITH resolved to {start_time} (base={base}, offset={offset})")
+                    else:
+                        print(f"Debug:     Skipping unknown code: {value}")
                     if not start_time:
                         continue
-                    # Parse duration (HHMMSS or MMSS)
+                    # Parse duration
                     try:
                         if len(duration_str) == 6:
                             h = int(duration_str[:2])
@@ -95,18 +111,26 @@ class WateringScheduler:
                             duration = timedelta(minutes=m, seconds=s_)
                         else:
                             duration = timedelta(minutes=1)
-                    except Exception:
+                        print(f"Debug:     Duration parsed as {duration}")
+                    except Exception as e:
+                        print(f"Debug:     Duration parse failed: {e}, using default 1 min")
                         duration = timedelta(minutes=1)
                     end_time = start_time + duration
+                    print(f"Debug:     Event window: {start_time} to {end_time}")
                     if start_time < dt < end_time:
                         remaining = (end_time - dt).total_seconds()
+                        print(f"Debug:     Event is ongoing! Remaining: {remaining} sec")
                         if remaining > 0:
-                            # Only start if not already active
                             if not self.is_zone_active(zone_id):
+                                print(f"Debug:     Activating zone {zone_id} for remaining {int(remaining)} sec")
                                 from api import activate_channel, log_event, watering_logger
                                 activate_channel(zone_id)
                                 self.add_manual_timer(zone_id, int(remaining))
                                 log_event(watering_logger, 'INFO', f'Catch-up: Started missed watering event', zone_id=zone_id, remaining=int(remaining))
+                            else:
+                                print(f"Debug:     Zone {zone_id} already active, skipping")
+                    else:
+                        print("Debug:     Event not ongoing")
         except Exception as e:
             print(f"Error in catch_up_missed_events: {e}")
 
