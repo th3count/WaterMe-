@@ -141,6 +141,9 @@ class WateringScheduler:
             bool: Success status
         """
         try:
+            print(f"DEBUG: deactivate_zone_direct called - zone_id={zone_id}, reason={reason}")
+            print(f"DEBUG: active_zones before deactivation: {self.active_zones}")
+            
             # Deactivate the hardware
             deactivate_zone(zone_id)
             
@@ -155,7 +158,11 @@ class WateringScheduler:
             # Remove from active zones
             if zone_id in self.active_zones:
                 del self.active_zones[zone_id]
+                print(f"DEBUG: Removed zone {zone_id} from active_zones")
+                print(f"DEBUG: active_zones after removal: {self.active_zones}")
                 self.save_active_zones()
+            else:
+                print(f"DEBUG: Zone {zone_id} not in active_zones, skipping removal")
             
             self._setup_logging()
             self.log_event(self.watering_logger, 'INFO', f'Zone deactivated - {reason}', zone_id=zone_id)
@@ -196,11 +203,16 @@ class WateringScheduler:
     def emergency_stop_all_zones(self) -> bool:
         """Emergency stop all zones"""
         try:
+            print(f"DEBUG: emergency_stop_all_zones called")
+            print(f"DEBUG: active_zones before emergency stop: {self.active_zones}")
+            
             success_count = 0
             for zone_id in ZONE_PINS.keys():
                 if self.zone_states.get(zone_id, {}).get('active', False):
                     if self.deactivate_zone_direct(zone_id, 'emergency_stop'):
                         success_count += 1
+            
+            print(f"DEBUG: active_zones after emergency stop: {self.active_zones}")
             
             self._setup_logging()
             self.log_event(self.user_logger, 'WARN', f'Emergency stop executed', zones_stopped=success_count)
