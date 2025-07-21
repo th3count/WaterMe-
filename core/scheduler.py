@@ -41,6 +41,47 @@ class WateringScheduler:
         # Catch up on missed events
         self.catch_up_missed_events()
     
+    def _load_schedule(self):
+        """Load schedule from file"""
+        try:
+            if os.path.exists(self.schedule_file):
+                with open(self.schedule_file, 'r') as f:
+                    self.schedule = json.load(f)
+                print(f"Loaded {len(self.schedule)} zones from schedule")
+            else:
+                print(f"No schedule file found at {self.schedule_file}")
+        except Exception as e:
+            print(f"Error loading schedule: {e}")
+
+    def _load_settings(self):
+        """Load settings from file"""
+        try:
+            if os.path.exists(self.settings_file):
+                config = configparser.ConfigParser()
+                config.read(self.settings_file)
+                if 'Garden' in config:
+                    garden = config['Garden']
+                    self.settings = {
+                        'gps_lat': float(garden.get('gps_lat', 0.0)),
+                        'gps_lon': float(garden.get('gps_lon', 0.0)),
+                        'timezone': garden.get('timezone', 'UTC')
+                    }
+                    print(f"Loaded settings: {self.settings}")
+                else:
+                    print("No Garden section in settings")
+            else:
+                print(f"No settings file found at {self.settings_file}")
+        except Exception as e:
+            print(f"Error loading settings: {e}")
+
+    def reload_schedule(self):
+        """Reload schedule from file (call when schedule changes)"""
+        self._load_schedule()
+
+    def reload_settings(self):
+        """Reload settings from file (call when settings change)"""
+        self._load_settings()
+    
     def _initialize_zone_states(self):
         """Initialize zone states for all configured zones"""
         for zone_id in ZONE_PINS.keys():
