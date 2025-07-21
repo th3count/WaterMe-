@@ -88,6 +88,8 @@ class WateringScheduler:
             bool: Success status
         """
         try:
+            print(f"DEBUG: activate_zone_direct called - zone_id={zone_id}, duration={duration_seconds}, type={event_type}")
+            
             # Tell gpio.py to activate the hardware
             activate_zone(zone_id)
             
@@ -95,6 +97,7 @@ class WateringScheduler:
             end_time = None
             if duration_seconds:
                 end_time = datetime.now() + timedelta(seconds=duration_seconds)
+                print(f"DEBUG: Calculated end_time = {end_time}")
             
             self.zone_states[zone_id] = {
                 'active': True,
@@ -103,10 +106,16 @@ class WateringScheduler:
                 'remaining': duration_seconds if duration_seconds else 0
             }
             
+            print(f"DEBUG: Updated zone_states[{zone_id}] = {self.zone_states[zone_id]}")
+            
             # Add to active zones if duration specified
             if duration_seconds:
                 self.active_zones[zone_id] = end_time
+                print(f"DEBUG: Added to active_zones[{zone_id}] = {end_time}")
+                print(f"DEBUG: active_zones now contains: {self.active_zones}")
                 self.save_active_zones()
+            else:
+                print(f"DEBUG: No duration specified, not adding to active_zones")
             
             self._setup_logging()
             self.log_event(self.watering_logger, 'INFO', f'{event_type.title()} zone activation', 
@@ -491,15 +500,16 @@ class WateringScheduler:
     def save_active_zones(self):
         """Save active zones to persistent storage"""
         try:
-            print(f"Debug: Saving {len(self.active_zones)} active zones to {self.active_zones_file}")
-            print(f"Debug: Active zones: {self.active_zones}")
+            print(f"DEBUG: save_active_zones called")
+            print(f"DEBUG: Saving {len(self.active_zones)} active zones to {self.active_zones_file}")
+            print(f"DEBUG: Active zones: {self.active_zones}")
             
             # Convert datetime objects to ISO format strings for JSON serialization
             data = {}
             for zone_id, end_time in self.active_zones.items():
                 data[str(zone_id)] = end_time.isoformat()
             
-            print(f"Debug: Saving data: {data}")
+            print(f"DEBUG: Saving data: {data}")
             
             with open(self.active_zones_file, 'w') as f:
                 json.dump(data, f, indent=2)
@@ -680,11 +690,13 @@ class WateringScheduler:
         """Proper shutdown that saves active zones before stopping"""
         try:
             print("Scheduler: Saving active zones before shutdown...")
+            print(f"DEBUG: active_zones before save: {self.active_zones}")
             self.save_active_zones()
             
-            # Turn off all active zones (but don't clear active_zones dict)
+            # Turn off all active zones (but DON'T clear active_zones dict)
             for zone_id in list(self.zone_states.keys()):
                 if self.zone_states[zone_id]['active']:
+                    print(f"DEBUG: Deactivating hardware for zone {zone_id}")
                     # Only deactivate hardware, don't remove from active_zones
                     deactivate_zone(zone_id)
                     # Update zone state to inactive but keep end_time for restoration
@@ -694,6 +706,9 @@ class WateringScheduler:
                         'type': self.zone_states[zone_id]['type'],
                         'remaining': 0
                     }
+                    print(f"DEBUG: Zone {zone_id} state updated but active_zones preserved")
+            
+            print(f"DEBUG: active_zones after deactivation: {self.active_zones}")
             
             # Stop the scheduler loop
             self.running = False
@@ -706,6 +721,8 @@ class WateringScheduler:
             
         except Exception as e:
             print(f"Scheduler: Error during shutdown: {e}")
+            import traceback
+            traceback.print_exc()
     
     def stop(self):
         """Stop the scheduler and clean up GPIO"""
