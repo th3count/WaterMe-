@@ -990,7 +990,11 @@ def get_gpio_cfg():
     
     frontend_config = {
         'channels': channels,
-        'mode': gpio_config.get('mode', 'BCM')  # Use mode from config
+        'mode': gpio_config.get('mode', 'BCM'),  # Use mode from config
+        'pumpIndex': gpio_config.get('pumpIndex', 0),
+        'zoneCount': gpio_config.get('zoneCount', 8),
+        'activeLow': gpio_config.get('activeLow', True),
+        'pins': pins
     }
     
     print(f"Frontend GPIO config: {frontend_config}")
