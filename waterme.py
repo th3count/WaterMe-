@@ -28,15 +28,41 @@ from datetime import datetime
 from pathlib import Path
 
 # Add the backend directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'backend'))
+sys.path.insert(0, os.path.dirname(__file__))
+
+# Dependency check and auto-install
+REQUIRED_PACKAGES = [
+    'flask', 'flask_cors', 'pytz', 'astral', 'configparser', 'RPi.GPIO',
+    'fastapi', 'uvicorn', 'sqlalchemy', 'pydantic'
+]
+
+def check_and_install_dependencies():
+    import importlib
+    missing = []
+    for pkg in REQUIRED_PACKAGES:
+        try:
+            importlib.import_module(pkg.replace('-', '_'))
+        except ImportError:
+            missing.append(pkg)
+    if missing:
+        print(f"\n🔧 Installing missing dependencies: {', '.join(missing)}\n")
+        try:
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', *missing])
+        except Exception as e:
+            print(f"❌ Failed to install dependencies: {e}")
+            print("Please install the missing packages manually and restart.")
+            sys.exit(1)
+
+check_and_install_dependencies()
 
 class WaterMeSystem:
     def __init__(self):
-        self.backend_dir = os.path.join(os.path.dirname(__file__), 'backend')
-        self.ui_dir = os.path.join(os.path.dirname(__file__), 'ui')
-        self.data_dir = os.path.join(self.backend_dir, 'data')
-        self.config_dir = os.path.join(self.backend_dir, 'config')
-        self.logs_dir = os.path.join(self.backend_dir, 'logs')
+        self.project_root = os.path.dirname(__file__)
+        self.backend_dir = self.project_root  # Now points to project root
+        self.ui_dir = os.path.join(self.project_root, 'ui')
+        self.data_dir = os.path.join(self.project_root, 'data')
+        self.config_dir = os.path.join(self.project_root, 'config')
+        self.logs_dir = os.path.join(self.project_root, 'logs')
         
         # Process management
         self.backend_process = None
