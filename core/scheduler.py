@@ -223,6 +223,38 @@ class WateringScheduler:
             self.log_event(self.error_logger, 'ERROR', f'Emergency stop failed', error=str(e))
             return False
     
+    def shutdown_stop_all_zones(self) -> bool:
+        """Shutdown stop all zones - preserves active_zones for restoration"""
+        try:
+            print(f"DEBUG: shutdown_stop_all_zones called")
+            print(f"DEBUG: active_zones before shutdown stop: {self.active_zones}")
+            
+            success_count = 0
+            for zone_id in ZONE_PINS.keys():
+                if self.zone_states.get(zone_id, {}).get('active', False):
+                    print(f"DEBUG: Shutdown stop preserving active_zones for zone {zone_id}")
+                    # Only deactivate hardware, preserve active_zones
+                    deactivate_zone(zone_id)
+                    # Update zone state but keep end_time for restoration
+                    self.zone_states[zone_id] = {
+                        'active': False,
+                        'end_time': self.zone_states[zone_id]['end_time'],  # Keep for restoration
+                        'type': self.zone_states[zone_id]['type'],
+                        'remaining': 0
+                    }
+                    success_count += 1
+            
+            print(f"DEBUG: active_zones after shutdown stop: {self.active_zones}")
+            
+            self._setup_logging()
+            self.log_event(self.user_logger, 'INFO', f'Shutdown stop executed', zones_stopped=success_count)
+            return True
+            
+        except Exception as e:
+            self._setup_logging()  
+            self.log_event(self.error_logger, 'ERROR', f'Shutdown stop failed', error=str(e))
+            return False
+    
     # =============================================================================
     # IMPROVED MISSED EVENT DETECTION AND RESTORATION
     # =============================================================================
@@ -703,31 +735,23 @@ class WateringScheduler:
         try:
             print("Scheduler: Saving active zones before shutdown...")
             print(f"DEBUG: active_zones before save: {self.active_zones}")
+            
+            # Save active zones BEFORE any deactivation
             self.save_active_zones()
             
-            # Turn off all active zones (but DON'T clear active_zones dict)
-            for zone_id in list(self.zone_states.keys()):
-                if self.zone_states[zone_id]['active']:
-                    print(f"DEBUG: Deactivating hardware for zone {zone_id}")
-                    # Only deactivate hardware, don't remove from active_zones
-                    deactivate_zone(zone_id)
-                    # Update zone state to inactive but keep end_time for restoration
-                    self.zone_states[zone_id] = {
-                        'active': False,
-                        'end_time': self.zone_states[zone_id]['end_time'],  # Keep for restoration
-                        'type': self.zone_states[zone_id]['type'],
-                        'remaining': 0
-                    }
-                    print(f"DEBUG: Zone {zone_id} state updated but active_zones preserved")
+            # Use shutdown_stop_all_zones instead of emergency_stop_all_zones
+            print("DEBUG: Calling shutdown_stop_all_zones to preserve active_zones")
+            self.shutdown_stop_all_zones()
             
-            print(f"DEBUG: active_zones after deactivation: {self.active_zones}")
+            print(f"DEBUG: active_zones after shutdown stop: {self.active_zones}")
             
             # Stop the scheduler loop
             self.running = False
             if self.thread:
                 self.thread.join(timeout=5)
             
-            # Clean up GPIO
+            # Clean up GPIO (but don't call emergency_stop)
+            print("DEBUG: Calling cleanup_gpio() without emergency_stop")
             cleanup_gpio()
             print("Scheduler: Shutdown complete - active zones saved for restoration")
             
