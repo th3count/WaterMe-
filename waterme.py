@@ -388,8 +388,7 @@ class WaterMeSystem:
         print("🌱 Starting WaterMe! Smart Garden System...")
         print("=" * 50)
         
-        # Sync system time first
-        self.sync_system_time()
+        # Time sync handled by future installer
         
         # Health check
         if not self.check_system_health():
