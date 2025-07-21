@@ -350,11 +350,8 @@ def get_channel_status(channel):
         print(f"Error getting status for channel {channel}: {e}")
         return "UNKNOWN"
 
-# Initialize GPIO on startup (only if available)
-if GPIO_AVAILABLE:
-    setup_gpio()
-else:
-    print("Skipping GPIO setup - running in development mode")
+# GPIO initialization is now handled by the scheduler
+# No need for global GPIO setup in the API
 
 # Logging System
 def setup_logger(name, log_file, level=logging.INFO):
