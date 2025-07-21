@@ -79,7 +79,7 @@ class WateringScheduler:
     
     def activate_zone_direct(self, zone_id: int, duration_seconds: int = None, event_type: str = 'manual') -> bool:
         """
-        Directly activate a zone through scheduler (primary GPIO controller)
+        Activate a zone by telling gpio.py to control the hardware
         Args:
             zone_id: Zone to activate
             duration_seconds: Duration in seconds, None for indefinite
@@ -88,7 +88,7 @@ class WateringScheduler:
             bool: Success status
         """
         try:
-            # Activate the hardware
+            # Tell gpio.py to activate the hardware
             activate_zone(zone_id)
             
             # Update zone state
@@ -245,14 +245,10 @@ class WateringScheduler:
             s = sun(city.observer, date=dt.date(), tzinfo=city.timezone)
             print(f"Debug: Solar times for today: sunrise={s['sunrise']}, sunset={s['sunset']}, noon={s['noon']}")
             
-            def parse_offset(code, base_name):
-                """Parse offset from solar time code (e.g., SUNRISE+30 -> +30 minutes)"""
-                m = re.search(r'([+-])(\d+)$', code)
-                if m:
-                    sign = 1 if m.group(1) == '+' else -1
-                    minutes = int(m.group(2))
-                    return timedelta(minutes=sign * minutes)
-                return timedelta()
+            # Determine outage window to check for missed events
+            # Check events from the last 24 hours that might have been missed
+            outage_start = dt - timedelta(hours=24)
+            print(f"Debug: Checking for missed events since {outage_start}")
             
             restored_count = 0
             
@@ -323,8 +319,34 @@ class WateringScheduler:
                                 print(f"Debug:     Failed to restore zone {zone_id}")
                         else:
                             print(f"Debug:     Too little time remaining ({remaining:.1f}s), skipping")
+                    
+                    # NEW: Check for events that should have started during outage but are now past their window
+                    elif start_time >= outage_start and start_time < dt:
+                        # Event should have started during the outage window but is now past
+                        time_since_start = (dt - start_time).total_seconds()
+                        event_duration_seconds = duration.total_seconds()
+                        
+                        print(f"Debug:     Event should have started during outage (started {time_since_start:.0f}s ago)")
+                        
+                        # If the event would still be running (within its duration), start it for remaining time
+                        if time_since_start < event_duration_seconds:
+                            remaining = event_duration_seconds - time_since_start
+                            print(f"Debug:     Event would still be running! Starting for remaining {int(remaining)} sec")
+                            success = self.activate_zone_direct(zone_id, int(remaining), 'scheduled')
+                            if success:
+                                restored_count += 1
+                                self._setup_logging()
+                                self.log_event(self.watering_logger, 'INFO', 
+                                             'Catch-up: Started missed event from outage', 
+                                             zone_id=zone_id, 
+                                             missed_start=start_time.strftime('%H:%M'),
+                                             remaining=int(remaining))
+                            else:
+                                print(f"Debug:     Failed to start missed event for zone {zone_id}")
+                        else:
+                            print(f"Debug:     Event would have already finished ({time_since_start:.0f}s > {event_duration_seconds:.0f}s), skipping")
                     else:
-                        print("Debug:     Event not currently active")
+                        print("Debug:     Event not currently active and not in outage window")
             
             if restored_count > 0:
                 print(f"Catch-up complete: Restored {restored_count} missed events")
