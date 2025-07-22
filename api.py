@@ -1503,17 +1503,23 @@ def stop_manual_timer(zone_id):
         success = scheduler.remove_manual_timer(zone_id)
         if not success:
             log_event(error_logger, 'ERROR', f'Manual timer stop failed', zone_id=zone_id)
-            return jsonify({'error': f'Failed to stop zone {zone_id}'}), 400
+            resp = jsonify({'error': f'Failed to stop zone {zone_id}'})
+            resp.headers.add('Access-Control-Allow-Origin', '*')
+            return resp, 400
         
         log_event(user_logger, 'INFO', f'Manual timer stopped', zone_id=zone_id)
-        return jsonify({
+        resp = jsonify({
             'status': 'success', 
             'message': f'Manual timer stopped for zone {zone_id}'
         })
+        resp.headers.add('Access-Control-Allow-Origin', '*')
+        return resp
         
     except Exception as e:
         log_event(error_logger, 'ERROR', f'Manual timer stop exception', zone_id=zone_id, error=str(e))
-        return jsonify({'error': str(e)}), 500
+        resp = jsonify({'error': str(e)})
+        resp.headers.add('Access-Control-Allow-Origin', '*')
+        return resp, 500
 
 @app.route('/api/zones/status', methods=['GET'])
 def get_zone_status():
