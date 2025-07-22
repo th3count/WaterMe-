@@ -73,12 +73,17 @@ class WaterMeSystem:
         
         # System status
         self.is_running = False
-        tz_name = self.config.get('timezone', 'UTC')  # Assuming config has timezone, or load from settings.cfg
+        
+        # Configuration - LOAD FIRST
+        self.config = self.load_config()
+        
+        # Load timezone from settings.cfg directly for initial start_time
+        settings_file = os.path.join(self.config_dir, 'settings.cfg')
+        config_parser = configparser.ConfigParser()
+        config_parser.read(settings_file)
+        tz_name = config_parser['Garden'].get('timezone', 'UTC') if 'Garden' in config_parser else 'UTC'
         tz = pytz.timezone(tz_name)
         self.start_time = datetime.now(tz)
-        
-        # Configuration
-        self.config = self.load_config()
     
     def load_config(self):
         """Load system configuration"""
