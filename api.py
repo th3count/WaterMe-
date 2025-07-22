@@ -1459,11 +1459,7 @@ def start_manual_timer(zone_id):
     """Start a manual timer for a specific zone through scheduler"""
     # Handle OPTIONS preflight request
     if request.method == 'OPTIONS':
-        resp = jsonify({'status': 'ok'})
-        resp.headers.add('Access-Control-Allow-Origin', '*')
-        resp.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        resp.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        return resp, 200
+        return jsonify({'status': 'ok'}), 200
     
     print(f"DEBUG: Manual timer POST request received for zone {zone_id}")
     print(f"DEBUG: Request data: {request.get_json()}")
@@ -1505,12 +1501,7 @@ def stop_manual_timer(zone_id):
     """Stop a manual timer for a specific zone through scheduler"""
     # Handle OPTIONS preflight request
     if request.method == 'OPTIONS':
-        resp = jsonify({'status': 'ok'})
-        resp.headers.add('Access-Control-Allow-Origin', '*')
-        resp.headers.add('Access-Control-Allow-Methods', 'DELETE, OPTIONS')
-        resp.headers.add('Access-Control-Allow-Headers', 'Content-Type, Connection')
-        resp.headers.add('Access-Control-Max-Age', '86400')
-        return resp, 200
+        return jsonify({'status': 'ok'}), 200
     
     print(f"DEBUG: Manual timer DELETE request received for zone {zone_id}")
     
@@ -1519,29 +1510,17 @@ def stop_manual_timer(zone_id):
         success = scheduler.remove_manual_timer(zone_id)
         if not success:
             log_event(error_logger, 'ERROR', f'Manual timer stop failed', zone_id=zone_id)
-            resp = jsonify({'error': f'Failed to stop zone {zone_id}'})
-            resp.headers.add('Access-Control-Allow-Origin', '*')
-            resp.headers.add('Access-Control-Allow-Methods', 'DELETE, OPTIONS')
-            resp.headers.add('Access-Control-Allow-Headers', 'Content-Type, Connection')
-            return resp, 400
+            return jsonify({'error': f'Failed to stop zone {zone_id}'}), 400
         
         log_event(user_logger, 'INFO', f'Manual timer stopped', zone_id=zone_id)
-        resp = jsonify({
+        return jsonify({
             'status': 'success', 
             'message': f'Manual timer stopped for zone {zone_id}'
         })
-        resp.headers.add('Access-Control-Allow-Origin', '*')
-        resp.headers.add('Access-Control-Allow-Methods', 'DELETE, OPTIONS')
-        resp.headers.add('Access-Control-Allow-Headers', 'Content-Type, Connection')
-        return resp
         
     except Exception as e:
         log_event(error_logger, 'ERROR', f'Manual timer stop exception', zone_id=zone_id, error=str(e))
-        resp = jsonify({'error': str(e)})
-        resp.headers.add('Access-Control-Allow-Origin', '*')
-        resp.headers.add('Access-Control-Allow-Methods', 'DELETE, OPTIONS')
-        resp.headers.add('Access-Control-Allow-Headers', 'Content-Type, Connection')
-        return resp, 500
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/zones/status', methods=['GET'])
 def get_zone_status():
