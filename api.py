@@ -2334,6 +2334,66 @@ def start_direct_manual_timer(zone_id):
         log_event(error_logger, 'ERROR', f'Direct manual timer exception', zone_id=zone_id, error=str(e))
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/logs/event', methods=['POST'])
+def log_event_from_frontend():
+    """Log an event from the frontend (e.g., red light errors)"""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        event_type = data.get('event_type', 'unknown')
+        zone_id = data.get('zone_id')
+        message = data.get('message', '')
+        timestamp = data.get('timestamp')
+        
+        # Determine which logger to use based on event type
+        if event_type == 'red_light_error':
+            logger = error_logger
+            level = 'ERROR'
+        elif event_type == 'zone_status_change':
+            logger = watering_logger
+            level = 'INFO'
+        elif event_type == 'manual_timer':
+            logger = user_logger
+            level = 'INFO'
+        else:
+            logger = system_logger
+            level = 'INFO'
+        
+        # Build log message with context
+        log_message = message
+        if zone_id:
+            log_message = f"Zone {zone_id}: {message}"
+        
+        # Add additional context if available
+        context_parts = []
+        if data.get('expected_state'):
+            context_parts.append(f"expected={data['expected_state']}")
+        if data.get('actual_state'):
+            context_parts.append(f"actual={data['actual_state']}")
+        if data.get('duration_seconds'):
+            context_parts.append(f"duration={data['duration_seconds']}s")
+        if data.get('expected_type'):
+            context_parts.append(f"expected_type={data['expected_type']}")
+        if data.get('actual_type'):
+            context_parts.append(f"actual_type={data['actual_type']}")
+        
+        if context_parts:
+            log_message += f" | {' '.join(context_parts)}"
+        
+        # Log the event
+        log_event(logger, level, log_message, 
+                 event_type=event_type,
+                 zone_id=zone_id,
+                 timestamp=timestamp)
+        
+        return jsonify({'status': 'success', 'message': 'Event logged successfully'})
+        
+    except Exception as e:
+        error_logger.error(f"Error logging frontend event: {e}")
+        return jsonify({'error': 'Failed to log event'}), 500
+
 if __name__ == '__main__':
     start_watering_scheduler()
     app.run(debug=True, host='0.0.0.0', port=5000, use_reloader=False) 

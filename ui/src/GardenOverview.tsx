@@ -59,8 +59,7 @@ export default function GardenOverview() {
   // Configuration for error detection limits
   const ERROR_DETECTION_LIMITS = {
     PENDING_TIMEOUT: 30, // seconds - how long to wait for GPIO confirmation
-    ERROR_DISPLAY_DURATION: 300, // seconds - how long to show red light before auto-clearing
-    MAX_ERROR_DURATION: 600, // seconds - maximum time to track an error
+    MANUAL_ACTION_GRACE_PERIOD: 5, // seconds - grace period for manual actions to take effect
     SCHEDULED_EVENT_GRACE_PERIOD: 60 // seconds - grace period for scheduled events to start
   };
 
@@ -268,20 +267,18 @@ export default function GardenOverview() {
             });
           }
           
-          // Check for state mismatches and track errors
-          if (expectedState && expectedState.active !== value.active) {
-            console.log(`Zone ${zoneId}: State mismatch detected`);
-            // State mismatch detected - start or continue error tracking
-            if (!errorStartTimes[zoneId]) {
-              setErrorStartTimes(prev => ({ ...prev, [zoneId]: now }));
-            }
-            // Update error duration
-            const errorStartTime = errorStartTimes[zoneId] || now;
-            const errorDuration = (now.getTime() - errorStartTime.getTime()) / 1000;
-            setErrorDurations(prev => ({ ...prev, [zoneId]: errorDuration }));
-          } else if (expectedState && expectedState.active === value.active) {
-            console.log(`Zone ${zoneId}: States match - clearing error tracking`);
-            // States match - clear error tracking
+          // Clear pending state when zone becomes active (regardless of pending state)
+          if (value.active && pendingActions.has(zoneId)) {
+            console.log(`Zone ${zoneId}: Clearing pending state - zone is now active`);
+            setPendingActions(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(zoneId);
+              return newSet;
+            });
+          }
+          
+          // Clear error tracking when states match or zone becomes active
+          if (value.active || !expectedZoneStates[zoneId]?.active) {
             setErrorStartTimes(prev => {
               const newTimes = { ...prev };
               delete newTimes[zoneId];
@@ -661,7 +658,6 @@ export default function GardenOverview() {
   // Helper: determine indicator color based on expected vs actual state
   function getIndicatorColor(zoneId: number): { color: string; shadow: string; border: string; title: string } {
     const realStatus = zoneStatuses[zoneId] || { active: false, remaining: 0 };
-    const expectedState = expectedZoneStates[zoneId];
     const isPending = pendingActions.has(zoneId);
     const now = new Date();
     
@@ -670,39 +666,23 @@ export default function GardenOverview() {
     const pendingDuration = pendingStartTime ? (now.getTime() - pendingStartTime.getTime()) / 1000 : 0;
     const isPendingTimedOut = isPending && pendingDuration > ERROR_DETECTION_LIMITS.PENDING_TIMEOUT;
     
-    // Check if error has been displayed long enough to auto-clear
-    const errorDuration = errorDurations[zoneId] || 0;
-    const shouldAutoClearError = errorDuration > ERROR_DETECTION_LIMITS.ERROR_DISPLAY_DURATION;
-    
     // Debug logging
     console.log(`Zone ${zoneId} indicator:`, {
       realStatus: realStatus.active,
-      expectedState: expectedState?.active,
       isPending,
       isPendingTimedOut,
-      shouldAutoClearError,
-      errorDuration
+      pendingDuration
     });
     
-    // Red: Expected state is incorrect (zone should be on but isn't, or vice versa)
-    // But only if not auto-cleared and within reasonable limits
-    if (expectedState && expectedState.active !== realStatus.active && !shouldAutoClearError) {
-      const errorStartTime = errorStartTimes[zoneId];
-      const totalErrorDuration = errorStartTime ? (now.getTime() - errorStartTime.getTime()) / 1000 : 0;
-      
-      // Only show red if error is within max duration limit
-      if (totalErrorDuration <= ERROR_DETECTION_LIMITS.MAX_ERROR_DURATION) {
-        // Log the red light event if this is a new error or significant duration change
-        logRedLightEvent(zoneId, expectedState, realStatus, totalErrorDuration);
-        
-        console.log(`Zone ${zoneId}: RED LIGHT - State mismatch`);
-        return { 
-          color: '#ff4444', 
-          shadow: '0 0 8px #ff4444', 
-          border: '#ff4444',
-          title: `Error: Zone state mismatch - expected ${expectedState.active ? 'ON' : 'OFF'}, actual ${realStatus.active ? 'ON' : 'OFF'} (${Math.round(totalErrorDuration)}s)`
-        };
-      }
+    // Green: Zone is active (GPIO confirmed it's on)
+    if (realStatus.active) {
+      console.log(`Zone ${zoneId}: GREEN LIGHT - Active`);
+      return { 
+        color: '#00ff00', 
+        shadow: '0 0 8px #00ff00', 
+        border: '#00ff00',
+        title: 'Active: Zone is running'
+      };
     }
     
     // Orange: Pending action (UI knows an event started but hasn't received GPIO confirmation)
@@ -717,29 +697,14 @@ export default function GardenOverview() {
       };
     }
     
-    // Green: Zone is doing what it's supposed to be doing (expected state is correct)
-    if (realStatus.active) {
-      console.log(`Zone ${zoneId}: GREEN LIGHT - Active and correct`);
-      const result = { 
-        color: '#ff0000', // TEMPORARY: Using red to test if changes work
-        shadow: '0 0 8px #ff0000', 
-        border: '#ff0000',
-        title: 'TEST: Should be RED if changes are working'
-      };
-      console.log(`Zone ${zoneId}: Returning TEST RED result:`, result);
-      return result;
-    }
-    
     // Gray: Zone is off (default state)
     console.log(`Zone ${zoneId}: GRAY LIGHT - Inactive`);
-    const result = { 
+    return { 
       color: '#888', 
       shadow: 'none', 
       border: '#232b3b',
       title: 'Inactive: Zone is off'
     };
-    console.log(`Zone ${zoneId}: Returning GRAY result:`, result);
-    return result;
   }
 
   // Helper: log red light events to backend
@@ -818,12 +783,14 @@ export default function GardenOverview() {
     console.log(`Starting manual timer for zone ${zone_id} with ${seconds}s duration...`);
     console.log(`API URL: ${getApiBaseUrl()}/api/manual-timer/${zone_id}`);
     
-    // Set pending state immediately
-    setPendingActions(prev => new Set(prev).add(zone_id));
-    console.log(`Zone ${zone_id}: Set pending state for manual timer`);
-    
-    // Set error tracking start time for pending action
-    setErrorStartTimes(prev => ({ ...prev, [zone_id]: new Date() }));
+    // Set pending state after a brief delay to avoid red flash
+    setTimeout(() => {
+      setPendingActions(prev => new Set(prev).add(zone_id));
+      console.log(`Zone ${zone_id}: Set pending state for manual timer`);
+      
+      // Set error tracking start time for pending action
+      setErrorStartTimes(prev => ({ ...prev, [zone_id]: new Date() }));
+    }, 100); // 100ms delay to let the API call start
     
     // Set expected state
     const now = new Date();
@@ -963,8 +930,8 @@ export default function GardenOverview() {
           const zoneId = parseInt(zoneIdStr);
           const duration = (now.getTime() - startTime.getTime()) / 1000;
           
-          // Clear if error has been tracked for too long
-          if (duration > ERROR_DETECTION_LIMITS.MAX_ERROR_DURATION) {
+          // Clear if error has been tracked for too long (5 minutes)
+          if (duration > 300) {
             delete newTimes[zoneId];
             // Also clear expected state if it's been too long
             setExpectedZoneStates(prevStates => {
@@ -1030,8 +997,10 @@ export default function GardenOverview() {
       }
     }));
     
-    // Set pending state
-    setPendingActions(prev => new Set(prev).add(zone_id));
+    // Set pending state after a brief delay to avoid red flash
+    setTimeout(() => {
+      setPendingActions(prev => new Set(prev).add(zone_id));
+    }, 100); // 100ms delay to let the API call start
     
     fetch(`${getApiBaseUrl()}/api/manual-timer/${zone_id}`, {
       method: 'DELETE',
@@ -1207,10 +1176,10 @@ export default function GardenOverview() {
                   width: '20px',
                   height: '20px',
                   borderRadius: '50%',
-                  background: pumpInfo.pumpStatus === 'HIGH' ? '#00bcd4' : '#888',
+                  background: pumpInfo.pumpStatus === 'HIGH' ? '#00ff00' : '#888',
                   display: 'inline-block',
                   border: '2px solid #222',
-                  boxShadow: pumpInfo.pumpStatus === 'HIGH' ? '0 0 10px #00bcd4' : 'none',
+                  boxShadow: pumpInfo.pumpStatus === 'HIGH' ? '0 0 10px #00ff00' : 'none',
                   transition: 'all 0.3s ease'
                 }}></span>
                 <span style={{
