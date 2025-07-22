@@ -812,6 +812,10 @@ class WateringScheduler:
                         if loop_count % 10 == 0:  # Log every 10 seconds
                             print(f"DEBUG: Zone {zone_id} remaining time: {state['remaining']}s")
                 
+                # Debug zone states every 30 seconds to catch mismatches
+                if loop_count % 30 == 0:
+                    self.debug_zone_states()
+                
                 # Sleep for a short interval
                 time.sleep(1)
                 
