@@ -351,37 +351,8 @@ def get_channel_status(channel):
 # GPIO initialization is now handled by the scheduler
 # No need for global GPIO setup in the API
 
-# Logging System
-def setup_logger(name, log_file, level=logging.INFO):
-    """Setup a logger with rotating file handler"""
-    # Ensure logs directory exists
-    os.makedirs(LOGS_DIR, exist_ok=True)
-    
-    # Create logger
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-    
-    # Clear existing handlers to avoid duplicates
-    logger.handlers.clear()
-    
-    # Create rotating file handler (10MB max, keep 5 backup files)
-    handler = RotatingFileHandler(
-        os.path.join(LOGS_DIR, log_file),
-        maxBytes=10*1024*1024,  # 10MB
-        backupCount=5
-    )
-    
-    # Create formatter
-    formatter = logging.Formatter(
-        '[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
-    handler.setFormatter(formatter)
-    
-    # Add handler to logger
-    logger.addHandler(handler)
-    
-    return logger
+# Import unified logging system
+from core.logging import setup_logger, log_event
 
 # Initialize loggers
 system_logger = setup_logger('SYSTEM', 'system.log')
@@ -392,22 +363,6 @@ health_logger = setup_logger('HEALTH', 'health.log')
 user_logger = setup_logger('USER', 'user.log')
 error_logger = setup_logger('ERROR', 'error.log')
 
-def log_event(logger, level, message, **kwargs):
-    """Log an event with optional additional context"""
-    if kwargs:
-        context = ' '.join([f"{k}={v}" for k, v in kwargs.items()])
-        message = f"{message} | {context}"
-    
-    if level.upper() == 'DEBUG':
-        logger.debug(message)
-    elif level.upper() == 'INFO':
-        logger.info(message)
-    elif level.upper() == 'WARN':
-        logger.warning(message)
-    elif level.upper() == 'ERROR':
-        logger.error(message)
-    elif level.upper() == 'CRITICAL':
-        logger.critical(message)
 
 def cleanup_old_logs(days_to_keep=30):
     """Clean up log files older than specified days"""
