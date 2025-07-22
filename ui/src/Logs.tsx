@@ -181,6 +181,34 @@ export default function Logs() {
     }
   };
 
+  // Clear all logs
+  const clearAllLogs = async () => {
+    if (!confirm('⚠️ WARNING: This will permanently delete ALL log entries from ALL log files!\n\nThis action cannot be undone. Are you sure you want to continue?')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/api/logs/clear-all`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        alert(data.message);
+        loadLogFiles(); // Refresh file list
+        loadLogEntries(); // Refresh current view
+      } else {
+        setError('Failed to clear all logs');
+      }
+    } catch (err) {
+      setError('Error clearing all logs');
+      console.error('Error clearing all logs:', err);
+    }
+  };
+
   // Get level color
   const getLevelColor = (level: string) => {
     switch (level.toUpperCase()) {
@@ -300,8 +328,8 @@ export default function Logs() {
               <button
                 onClick={() => clearOldLogs(30)}
                 style={{
-                  background: '#dc3545',
-                  color: 'white',
+                  background: '#ffc107',
+                  color: '#181f2a',
                   border: 'none',
                   borderRadius: '6px',
                   padding: '8px 16px',
@@ -311,10 +339,29 @@ export default function Logs() {
                   marginLeft: 4,
                   transition: 'background 0.2s'
                 }}
+                onMouseOver={e => (e.currentTarget.style.background = '#e0a800')}
+                onMouseOut={e => (e.currentTarget.style.background = '#ffc107')}
+              >
+                Clear Old
+              </button>
+              <button
+                onClick={clearAllLogs}
+                style={{
+                  background: '#dc3545',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '8px 16px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  minWidth: 100,
+                  marginLeft: 4,
+                  transition: 'background 0.2s'
+                }}
                 onMouseOver={e => (e.currentTarget.style.background = '#b52a37')}
                 onMouseOut={e => (e.currentTarget.style.background = '#dc3545')}
               >
-                Clear
+                Clear All
               </button>
             </div>
           </div>

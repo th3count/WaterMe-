@@ -1817,6 +1817,50 @@ def clear_old_logs():
         error_logger.error(f"Error clearing old logs: {e}")
         return jsonify({'error': 'Failed to clear old logs'}), 500
 
+@app.route('/api/logs/clear-all', methods=['POST'])
+def clear_all_logs():
+    """Clear all log files completely"""
+    try:
+        logs_dir = os.path.join(os.path.dirname(__file__), 'logs')
+        
+        if not os.path.exists(logs_dir):
+            return jsonify({
+                'status': 'success',
+                'message': 'No logs directory found'
+            })
+        
+        # Get all log files
+        log_files = [f for f in os.listdir(logs_dir) if f.endswith('.log')]
+        
+        if not log_files:
+            return jsonify({
+                'status': 'success',
+                'message': 'No log files found to clear'
+            })
+        
+        # Clear each log file
+        cleared_count = 0
+        for log_file in log_files:
+            log_path = os.path.join(logs_dir, log_file)
+            try:
+                # Truncate the file to 0 bytes (clear content but keep file)
+                with open(log_path, 'w') as f:
+                    f.write('')
+                cleared_count += 1
+                print(f"Cleared log file: {log_file}")
+            except Exception as e:
+                print(f"Error clearing {log_file}: {e}")
+        
+        log_event(user_logger, 'INFO', f'All logs cleared manually - {cleared_count} files affected')
+        
+        return jsonify({
+            'status': 'success',
+            'message': f'Cleared all logs ({cleared_count} files)'
+        })
+    except Exception as e:
+        error_logger.error(f"Error clearing all logs: {e}")
+        return jsonify({'error': 'Failed to clear all logs'}), 500
+
 # Scheduler Control Endpoints
 @app.route('/api/scheduler/status', methods=['GET'])
 def get_scheduler_status():
@@ -2135,13 +2179,32 @@ def get_system_time():
         log_event(error_logger, 'ERROR', f'Failed to get system time', error=str(e))
         return jsonify({'error': str(e)}), 500
 
-if __name__ == '__main__':
-    # Start the scheduled watering system (scheduler handles GPIO initialization)
+# Start the scheduled watering system (scheduler handles GPIO initialization)
+def start_watering_scheduler():
     try:
         from core.scheduler import scheduler
         scheduler.start()
         system_logger.info("Scheduled watering system started")
     except Exception as e:
         system_logger.error(f"Failed to start scheduled watering system: {e}")
-    
+
+@app.route('/api/scheduler/test', methods=['GET'])
+def test_scheduler():
+    """Test if scheduler is running and show debug info"""
+    try:
+        from core.scheduler import scheduler
+        return jsonify({
+            'scheduler_running': scheduler.running,
+            'active_zones': scheduler.active_zones,
+            'zone_states': scheduler.zone_states,
+            'thread_alive': scheduler.thread.is_alive() if scheduler.thread else False
+        })
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'scheduler_running': False
+        }), 500
+
+if __name__ == '__main__':
+    start_watering_scheduler()
     app.run(debug=True, host='0.0.0.0', port=5000) 

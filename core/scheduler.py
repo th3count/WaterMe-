@@ -824,14 +824,21 @@ class WateringScheduler:
                 import traceback
                 traceback.print_exc()
                 time.sleep(5)  # Wait longer on error
+        
+        print("DEBUG: Scheduler loop ended")
     
     def start(self):
         """Start the scheduler"""
+        print("DEBUG: Scheduler start() method called")
         if not self.running:
+            print("DEBUG: Scheduler not running, starting now...")
             self.running = True
             self.thread = threading.Thread(target=self.run_scheduler_loop, daemon=True)
             self.thread.start()
+            print("DEBUG: Scheduler thread started")
             print("Watering scheduler started")
+        else:
+            print("DEBUG: Scheduler already running")
     
     def shutdown(self):
         """Proper shutdown that saves active zones before stopping"""
