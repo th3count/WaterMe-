@@ -252,17 +252,10 @@ export default function GardenOverview() {
           const now = new Date();
           const expectedState = expectedZoneStates[zoneId];
           
-          console.log(`Zone ${zoneId} status update:`, {
-            active: value.active,
-            remaining: value.remaining,
-            type: value.type,
-            expectedState: expectedState?.active,
-            isPending: pendingActions.has(zoneId)
-          });
+          // Removed excessive debug logging
           
           // Clear pending state when GPIO confirms the action
-          if (pendingActions.has(zoneId)) {
-            console.log(`Zone ${zoneId}: Clearing pending state - GPIO confirmed`);
+          if (pendingActions.has(zoneId) || (value.active && pendingActions.has(zoneId))) {
             setPendingActions(prev => {
               const newSet = new Set(prev);
               newSet.delete(zoneId);
@@ -278,16 +271,6 @@ export default function GardenOverview() {
               const newDurations = { ...prev };
               delete newDurations[zoneId];
               return newDurations;
-            });
-          }
-          
-          // Clear pending state when zone becomes active (regardless of pending state)
-          if (value.active && pendingActions.has(zoneId)) {
-            console.log(`Zone ${zoneId}: Clearing pending state - zone is now active`);
-            setPendingActions(prev => {
-              const newSet = new Set(prev);
-              newSet.delete(zoneId);
-              return newSet;
             });
           }
           
@@ -680,17 +663,13 @@ export default function GardenOverview() {
     const pendingDuration = pendingStartTime ? (now.getTime() - pendingStartTime.getTime()) / 1000 : 0;
     const isPendingTimedOut = isPending && pendingDuration > ERROR_DETECTION_LIMITS.PENDING_TIMEOUT;
     
-    // Debug logging
-    console.log(`Zone ${zoneId} indicator:`, {
-      realStatus: realStatus.active,
-      isPending,
-      isPendingTimedOut,
-      pendingDuration
-    });
+    // Only log important state changes
+    if (isPending && isPendingTimedOut) {
+      console.warn(`Zone ${zoneId}: Pending timeout after ${Math.round(pendingDuration)}s`);
+    }
     
     // Green: Zone is active (GPIO confirmed it's on)
     if (realStatus.active) {
-      console.log(`Zone ${zoneId}: GREEN LIGHT - Active`);
       return { 
         color: '#00ff00', 
         shadow: '0 0 8px #00ff00', 
@@ -702,7 +681,6 @@ export default function GardenOverview() {
     // Orange: Pending action (UI knows an event started but hasn't received GPIO confirmation)
     // But only if not timed out
     if (isPending && !isPendingTimedOut) {
-      console.log(`Zone ${zoneId}: ORANGE LIGHT - Pending action`);
       return { 
         color: '#ff8800', 
         shadow: '0 0 8px #ff8800', 
@@ -712,7 +690,6 @@ export default function GardenOverview() {
     }
     
     // Gray: Zone is off (default state)
-    console.log(`Zone ${zoneId}: GRAY LIGHT - Inactive`);
     return { 
       color: '#888', 
       shadow: 'none', 
@@ -804,14 +781,9 @@ export default function GardenOverview() {
 
   // Handler to start a manual timer
   function startManualTimer(zone_id: number, seconds: number) {
-    console.log(`Starting manual timer for zone ${zone_id} with ${seconds}s duration...`);
-    console.log(`API URL: ${getApiBaseUrl()}/api/manual-timer/${zone_id}`);
-    
     // Set pending state after a brief delay to avoid red flash
     setTimeout(() => {
       setPendingActions(prev => new Set(prev).add(zone_id));
-      console.log(`Zone ${zone_id}: Set pending state for manual timer`);
-      
       // Set error tracking start time for pending action
       setErrorStartTimes(prev => ({ ...prev, [zone_id]: new Date() }));
     }, 100); // 100ms delay to let the API call start
@@ -828,7 +800,6 @@ export default function GardenOverview() {
         type: 'manual'
       }
     }));
-    console.log(`Zone ${zone_id}: Set expected state to active for manual timer`);
     
     // Use the standard manual timer endpoint (scheduler-based) with timeout
     const controller = new AbortController();
@@ -842,18 +813,14 @@ export default function GardenOverview() {
     })
     .then(response => {
       clearTimeout(timeoutId);
-      console.log(`API Response status: ${response.status}`);
       if (response.ok) {
-        console.log('Manual timer started successfully');
         // Clear input and hide control only on success
         setManualInput(inp => ({ ...inp, [zone_id]: '' }));
         setManualInputError(errs => ({ ...errs, [zone_id]: '' }));
         setShowManualControl(null);
-        console.log('Input cleared and control hidden');
         // Backend sync will update manualTimers state
       } else {
-        console.error('Failed to start manual timer, status:', response.status);
-        response.text().then(text => console.error('Response text:', text));
+        console.error(`Failed to start manual timer for zone ${zone_id}:`, response.status);
         alert('Failed to start manual timer. Please try again.');
         // Clear pending state on failure
         setPendingActions(prev => {
@@ -1017,9 +984,6 @@ export default function GardenOverview() {
     if (!confirm(message)) {
       return;
     }
-
-    console.log(`Attempting to cancel timer for zone ${zone_id}...`);
-    console.log(`DELETE URL: ${getApiBaseUrl()}/api/manual-timer/${zone_id}`);
     
     // Set expected state to inactive
     setExpectedZoneStates(prev => ({
@@ -1051,15 +1015,11 @@ export default function GardenOverview() {
     })
     .then(response => {
       clearTimeout(timeoutId);
-      console.log(`DELETE Response status: ${response.status}`);
-      console.log(`DELETE Response headers:`, response.headers);
       if (response.ok) {
-        console.log('Manual timer canceled successfully');
         // Backend sync will update manualTimers state
         setConfirmCancelZone(null);
       } else {
-        console.error('Failed to cancel manual timer, status:', response.status);
-        response.text().then(text => console.error('Response text:', text));
+        console.error(`Failed to cancel timer for zone ${zone_id}:`, response.status);
         alert('Failed to cancel manual timer. Please try again.');
         // Clear pending state on failure
         setPendingActions(prev => {
@@ -1080,13 +1040,7 @@ export default function GardenOverview() {
         console.error('Cancel timer request timed out');
         alert('Request timed out. Please try again.');
       } else {
-        console.error('Error canceling manual timer:', error);
-        console.error('Error details:', error.message, error.stack);
-        console.error('Error type:', error.constructor.name);
-        console.error('Error name:', error.name);
-        if (error instanceof TypeError) {
-          console.error('This is a TypeError - likely a CORS or network issue');
-        }
+        console.error(`Error canceling timer for zone ${zone_id}:`, error.message);
         alert('Error canceling manual timer. Please try again.');
       }
       // Clear pending state on error
@@ -1374,23 +1328,19 @@ export default function GardenOverview() {
                                 maxLength={4}
                               />
                               <button
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  const val = manualInput[z.zone_id] || '';
-                                  console.log(`Button clicked for zone ${z.zone_id}, input value: "${val}"`);
-                                  const parsed = parseManualTimeInput(val);
-                                  console.log(`Parsed result:`, parsed);
-                                  
-                                  if (!parsed.isValid) {
-                                    console.log(`Validation failed: ${parsed.error}`);
-                                    setManualInputError(errs => ({ ...errs, [z.zone_id]: parsed.error }));
-                                    return;
-                                  }
-                                  
-                                  const totalSeconds = parsed.hours * 3600 + parsed.minutes * 60;
-                                  console.log(`Total seconds calculated: ${totalSeconds}`);
-                                  startManualTimer(z.zone_id, totalSeconds);
-                                }}
+                                                onClick={e => {
+                  e.stopPropagation();
+                  const val = manualInput[z.zone_id] || '';
+                  const parsed = parseManualTimeInput(val);
+                  
+                  if (!parsed.isValid) {
+                    setManualInputError(errs => ({ ...errs, [z.zone_id]: parsed.error }));
+                    return;
+                  }
+                  
+                  const totalSeconds = parsed.hours * 3600 + parsed.minutes * 60;
+                  startManualTimer(z.zone_id, totalSeconds);
+                }}
                                 style={{
                                   padding: '6px 14px',
                                   borderRadius: '6px',
@@ -1442,7 +1392,6 @@ export default function GardenOverview() {
                             <button
                               onClick={e => {
                                 e.stopPropagation();
-                                console.log(`Initial Cancel button clicked for zone ${z.zone_id}`);
                                 setConfirmCancelZone(z.zone_id);
                               }}
                               style={{
@@ -1475,7 +1424,6 @@ export default function GardenOverview() {
                                   <button
                                     onClick={e => {
                                       e.stopPropagation();
-                                      console.log(`Button clicked for zone ${z.zone_id}`);
                                       cancelTimer(z.zone_id);
                                       setConfirmCancelZone(null);
                                     }}

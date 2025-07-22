@@ -184,8 +184,6 @@ class WateringScheduler:
         Returns:
             bool: Success status
         """
-        print(f"DEBUG: activate_zone_direct called - zone_id={zone_id}, duration={duration_seconds}, type={event_type}")
-        
         # Do all calculations OUTSIDE the lock
         end_time = None
         if duration_seconds:
@@ -194,7 +192,6 @@ class WateringScheduler:
             utc_now = datetime.now(pytz.UTC)
             now = utc_now.astimezone(tz)
             end_time = now + timedelta(seconds=duration_seconds)
-            print(f"DEBUG: Calculated end_time = {end_time} (timezone: {tz_name})")
         
         zone_state = {
             'active': True,
@@ -206,37 +203,24 @@ class WateringScheduler:
         try:
             # Activate hardware OUTSIDE the lock (GPIO operations are atomic)
             activate_zone(zone_id)
-            print(f"DEBUG: GPIO activation completed for zone {zone_id}")
             
             # Now acquire lock for minimal time to update data structures
-            print(f"DEBUG: About to acquire lock for data update...")
-            
-            # Try to acquire lock with timeout to prevent deadlock
             lock_acquired = False
             save_needed = False
             try:
                 lock_acquired = self.lock.acquire(timeout=0.5)  # 500ms timeout
                 if lock_acquired:
-                    print(f"DEBUG: Lock acquired - updating data structures")
-                    
                     # Update zone state
                     self.zone_states[zone_id] = zone_state
-                    print(f"DEBUG: Updated zone_states[{zone_id}] = {self.zone_states[zone_id]}")
                     
                     # Add to active zones if duration specified
                     if duration_seconds:
                         self.active_zones[zone_id] = end_time
-                        print(f"DEBUG: Added to active_zones[{zone_id}] = {end_time}")
-                        print(f"DEBUG: active_zones now contains: {self.active_zones}")
                         # Don't save while holding lock - do it after
                         save_needed = True
                     else:
-                        print(f"DEBUG: No duration specified, not adding to active_zones")
                         save_needed = False
-                    
-                    print(f"DEBUG: Lock released after data update")
                 else:
-                    print(f"DEBUG: Could not acquire lock for data update - scheduler may be busy")
                     print(f"WARNING: Zone {zone_id} GPIO activated but not tracked by scheduler!")
                     return False
             finally:
@@ -245,16 +229,14 @@ class WateringScheduler:
             
             # Save active zones after releasing lock (file I/O can be slow)
             if lock_acquired and save_needed:
-                print(f"DEBUG: Saving active zones to file...")
                 self.save_active_zones()
-                print(f"DEBUG: Active zones saved")
             
             # Logging outside the lock
             self._setup_logging()
             self.log_event(self.watering_logger, 'INFO', f'{event_type.title()} zone activation', 
                          zone_id=zone_id, duration=duration_seconds)
             
-            print(f"Scheduler: Activated zone {zone_id} for {duration_seconds}s ({event_type})")
+            print(f"Zone {zone_id} activated for {duration_seconds}s ({event_type})")
             return True
             
         except Exception as e:
@@ -930,31 +912,22 @@ class WateringScheduler:
     
     def check_and_stop_expired_zones(self):
         """Check for expired zones and stop them"""
-        print(f"DEBUG: check_and_stop_expired_zones - trying to acquire lock...")
         zones_changed = False
         with self.lock:
-            print(f"DEBUG: check_and_stop_expired_zones - lock acquired")
             initial_active_count = len(self.active_zones)
             self._check_and_stop_expired_zones_internal()
             final_active_count = len(self.active_zones)
             zones_changed = initial_active_count != final_active_count
-        print(f"DEBUG: check_and_stop_expired_zones - lock released")
         
         # Save active zones after releasing lock if any zones were stopped
         if zones_changed:
-            print(f"DEBUG: Zones changed, saving active zones...")
             self.save_active_zones()
-            print(f"DEBUG: Active zones saved")
     
     def _check_and_stop_expired_zones_internal(self):
         """Internal method - assumes lock is already held"""
-        print(f"DEBUG: _check_and_stop_expired_zones_internal - starting")
-        
         # Increment debug counter
         self.check_count += 1
         self.last_check_time = self.get_current_time()
-        
-        print(f"DEBUG: Got current time")
         
         # Use timezone-aware datetime for comparison
         tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
@@ -964,33 +937,22 @@ class WateringScheduler:
         current_time = utc_now.astimezone(tz)
         zones_to_stop = []
         
-        print(f"DEBUG: check_and_stop_expired_zones #{self.check_count} - current_time={current_time} (timezone: {tz_name})")
-        print(f"DEBUG: active_zones={self.active_zones}")
-        
         # Lock is already held by caller
-        print(f"DEBUG: About to iterate through active zones")
         for zone_id, end_time in list(self.active_zones.items()):
             # Convert end_time to the same timezone as current_time for proper comparison
             if end_time.tzinfo is None:
                 # If stored end_time is naive, assume it's in the configured timezone
                 end_time_tz = tz.localize(end_time)
-                print(f"DEBUG: Converted naive end_time to timezone-aware: {end_time_tz}")
             else:
                 # If it has timezone info, convert to our timezone for comparison
                 end_time_tz = end_time.astimezone(tz)
-                print(f"DEBUG: Converted end_time to local timezone: {end_time_tz}")
-            
-            print(f"DEBUG: Checking zone {zone_id}, end_time={end_time_tz}, current_time={current_time}, expired={current_time >= end_time_tz}")
             
             if current_time >= end_time_tz:
                 zones_to_stop.append(zone_id)
-                print(f"DEBUG: Zone {zone_id} marked for stopping (expired)")
-        
-        print(f"DEBUG: Zones to stop: {zones_to_stop}")
         
         # Process zones one at a time to avoid race conditions
         for zone_id in zones_to_stop:
-            print(f"Stopping expired zone {zone_id}")
+            print(f"Zone {zone_id} timer expired")
             
             # Add a small delay between deactivations to prevent race conditions
             if len(zones_to_stop) > 1:
@@ -1001,17 +963,10 @@ class WateringScheduler:
                 self._setup_logging()
                 self.log_event(self.error_logger, 'ERROR', f'Failed to stop expired zone', zone_id=zone_id)
                 print(f"ERROR: Failed to stop expired zone {zone_id}")
-            else:
-                print(f"SUCCESS: Stopped expired zone {zone_id}")
                 
         # If we stopped any zones, add a small delay before next check
         if zones_to_stop:
             time.sleep(0.2)  # 200ms delay after stopping zones
-            print(f"DEBUG: Stopped {len(zones_to_stop)} expired zones")
-        else:
-            print(f"DEBUG: No expired zones to stop")
-        
-        print(f"DEBUG: _check_and_stop_expired_zones_internal - finished")
     
     def check_scheduled_events(self):
         """Check for scheduled events that should start now"""
@@ -1027,61 +982,42 @@ class WateringScheduler:
                 lon = self.settings.get('gps_lon', 0.0)
                 tz = self.settings.get('timezone', 'UTC')
 
-                print(f"DEBUG: check_scheduled_events - tz={tz}, lat={lat}, lon={lon}")
-
                 # Get solar times for today
                 city = LocationInfo(latitude=lat, longitude=lon, timezone=tz)
                 dt = self.get_current_time()
                 s = sun(city.observer, date=dt.date(), tzinfo=city.timezone)
                 
-                print(f"DEBUG: Current time in {tz}: {dt}")
-                print(f"DEBUG: Schedule zones: {list(schedule.keys())}")
-                
                 for zone_id_str, zone_data in schedule.items():
                     zone_id = int(zone_id_str)
-                    
-                    print(f"DEBUG: Checking zone {zone_id}")
                     
                     # Skip disabled zones
                     mode = zone_data.get('mode', 'manual')
                     if mode == 'disabled':
-                        print(f"DEBUG: Zone {zone_id} is disabled, skipping")
                         continue
                     
                     # Skip if zone is already active
                     zone_state = self.zone_states.get(zone_id, {})
                     if zone_state.get('active', False):
-                        print(f"DEBUG: Zone {zone_id} is already active, skipping")
                         continue
                     
                     period = zone_data.get('period', 'D')
                     start_day = zone_data.get('startDay', '')
                     times = zone_data.get('times', [])
                     
-                    print(f"DEBUG: Zone {zone_id} - period={period}, start_day={start_day}, times={times}")
-                    
                     # Check if this zone should run today
                     should_run_today = self._should_run_today(period, start_day, dt)
                     if not should_run_today:
-                        print(f"DEBUG: Zone {zone_id} should not run today")
                         continue
-                    
-                    print(f"DEBUG: Zone {zone_id} should run today")
                     
                     # Check each scheduled time
                     for event in times:
                         value = event.get('value')
                         duration_str = event.get('duration', '000100')
                         
-                        print(f"DEBUG: Checking event - value={value}, duration={duration_str}")
-                        
                         # Resolve start_time
                         start_time = self._resolve_event_time(value, s, dt)
                         if not start_time:
-                            print(f"DEBUG: Could not resolve start_time for event {value}")
                             continue
-                        
-                        print(f"DEBUG: Resolved start_time={start_time}")
                         
                         # Parse duration
                         try:
@@ -1092,10 +1028,9 @@ class WateringScheduler:
                         
                         # Check if it's time to start this event (within 60 seconds after start time for catch-up)
                         time_since_start = (dt - start_time).total_seconds()
-                        print(f"DEBUG: time_since_start={time_since_start:.1f}s")
                         
                         if 0 <= time_since_start < 60:  # Trigger within 60 seconds after scheduled time
-                            print(f"Scheduled event triggered for zone {zone_id} at {start_time} (detected {time_since_start:.1f}s after)")
+                            print(f"Scheduled event: Zone {zone_id} at {start_time.strftime('%H:%M:%S')} ({time_since_start:.1f}s after)")
                             success = self.activate_zone_direct(zone_id, int(duration.total_seconds()), 'scheduled')
                             if success:
                                 self._setup_logging()
@@ -1104,7 +1039,6 @@ class WateringScheduler:
                                              zone_id=zone_id, 
                                              scheduled_time=start_time.strftime('%H:%M'),
                                              duration=int(duration.total_seconds()))
-                                print(f"SUCCESS: Scheduled event started for zone {zone_id}")
                             else:
                                 self._setup_logging()
                                 self.log_event(self.error_logger, 'ERROR', 
@@ -1113,35 +1047,21 @@ class WateringScheduler:
                                              scheduled_time=start_time.strftime('%H:%M'))
                                 print(f"ERROR: Failed to start scheduled event for zone {zone_id}")
                             break  # Only start one event per zone per check
-                        else:
-                            if time_since_start > 0:
-                                print(f"DEBUG: Zone {zone_id} event missed - too late (time_since_start={time_since_start:.1f}s)")
-                            else:
-                                print(f"DEBUG: Not time yet for zone {zone_id} event (time_since_start={time_since_start:.1f}s)")
                             
         except Exception as e:
-            print(f"ERROR in check_scheduled_events: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"Error in check_scheduled_events: {e}")
             self._setup_logging()
             self.log_event(self.error_logger, 'ERROR', f'Scheduled event check failed', error=str(e))
     
     def run_scheduler_loop(self):
         """Main scheduler loop"""
-        print("DEBUG: Scheduler loop started successfully")
+        print("Watering scheduler started")
         loop_count = 0
         
         try:
             while self.running:
                 try:
                     loop_count += 1
-                    
-                    # IMMEDIATE DEBUG - print every iteration for first 10 loops
-                    if loop_count <= 10:
-                        print(f"DEBUG: Scheduler loop iteration {loop_count} - calling check_and_stop_expired_zones()")
-                    
-                    if loop_count % 60 == 0:  # Log every 60 seconds
-                        print(f"DEBUG: Scheduler loop iteration {loop_count} - still running")
                     
                     # Check for expired manual timers (MOST IMPORTANT - check every loop)
                     self.check_and_stop_expired_zones()
@@ -1169,34 +1089,26 @@ class WateringScheduler:
                             
                             remaining = (end_time - current_time).total_seconds()
                             state['remaining'] = max(0, int(remaining))
-                            if loop_count % 10 == 0:  # Log every 10 seconds
-                                print(f"DEBUG: Zone {zone_id} remaining time: {state['remaining']}s")
                     
-                    # Debug zone states every 30 seconds to catch mismatches
-                    if loop_count % 30 == 0:
+                    # Debug zone states every 5 minutes to catch mismatches
+                    if loop_count % 300 == 0:  # Every 5 minutes
                         self.debug_zone_states()
                     
                     # Sleep for a reasonable interval - balance between responsiveness and performance
                     time.sleep(1.0)  # Check every 1 second
                     
                 except Exception as e:
-                    print(f"ERROR in scheduler loop iteration {loop_count}: {e}")
-                    import traceback
-                    traceback.print_exc()
+                    print(f"Scheduler error: {e}")
                     time.sleep(5)  # Wait longer on error
                     
         except Exception as e:
-            print(f"FATAL ERROR in scheduler loop: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"Scheduler fatal error: {e}")
         
-        print("DEBUG: Scheduler loop ended")
+        print("Scheduler stopped")
     
     def start(self):
         """Start the scheduler"""
-        print("DEBUG: Scheduler start() method called")
         if not self.running:
-            print("DEBUG: Scheduler not running, starting now...")
             self.running = True
             self.thread = threading.Thread(target=self.run_scheduler_loop, daemon=True)
             self.thread.start()
@@ -1204,28 +1116,22 @@ class WateringScheduler:
             # Wait a moment and verify the thread is alive
             time.sleep(0.5)
             if self.thread.is_alive():
-                print("DEBUG: Scheduler thread started and is alive")
-                print("Watering scheduler started")
+                # Message will be printed by run_scheduler_loop
+                pass
             else:
                 print("ERROR: Scheduler thread failed to start!")
                 self.running = False
-        else:
-            print("DEBUG: Scheduler already running")
     
     def shutdown(self):
         """Proper shutdown that saves active zones before stopping"""
         try:
-            print("Scheduler: Saving active zones before shutdown...")
-            print(f"DEBUG: active_zones before save: {self.active_zones}")
+            print("Saving active zones before shutdown...")
             
             # Save active zones BEFORE any deactivation
             self.save_active_zones()
             
             # Use shutdown_stop_all_zones instead of emergency_stop_all_zones
-            print("DEBUG: Calling shutdown_stop_all_zones to preserve active_zones")
             self.shutdown_stop_all_zones()
-            
-            print(f"DEBUG: active_zones after shutdown stop: {self.active_zones}")
             
             # Stop the scheduler loop
             self.running = False
@@ -1233,44 +1139,35 @@ class WateringScheduler:
                 self.thread.join(timeout=5)
             
             # Clean up GPIO (but don't call emergency_stop)
-            print("DEBUG: Calling cleanup_gpio() without emergency_stop")
             cleanup_gpio()
-            print("Scheduler: Shutdown complete - active zones saved for restoration")
+            print("Scheduler shutdown complete")
             
         except Exception as e:
-            print(f"Scheduler: Error during shutdown: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"Scheduler shutdown error: {e}")
     
     def stop(self):
         """Stop the scheduler and clean up GPIO"""
         self.shutdown()
 
     def debug_zone_states(self):
-        """Debug method to show current state of all zones"""
-        print("\n=== ZONE STATE DEBUG ===")
+        """Debug method to show current state of all zones (runs every 5 minutes)"""
         with self.lock:
-            print(f"Active zones (scheduler): {self.active_zones}")
-            print(f"Zone states (scheduler): {self.zone_states}")
-            
             # Get actual GPIO states
             from .gpio import get_all_zone_states, ZONE_PINS
             gpio_states = get_all_zone_states()
-            print(f"GPIO states (hardware): {gpio_states}")
             
-            print("\nDetailed zone status:")
+            # Only print if there are mismatches or active zones
+            mismatches = []
             for zone_id in sorted(ZONE_PINS.keys()):
                 scheduler_state = self.zone_states.get(zone_id, {})
                 gpio_state = gpio_states.get(zone_id, False)
-                active_in_scheduler = zone_id in self.active_zones
-                
-                print(f"Zone {zone_id}:")
-                print(f"  Scheduler active: {active_in_scheduler}")
-                print(f"  Scheduler state: {scheduler_state}")
-                print(f"  GPIO state: {gpio_state}")
-                print(f"  Mismatch: {'YES' if scheduler_state.get('active', False) != gpio_state else 'NO'}")
+                if scheduler_state.get('active', False) != gpio_state:
+                    mismatches.append(f"Zone {zone_id}: scheduler={scheduler_state.get('active', False)}, gpio={gpio_state}")
             
-        print("=== END DEBUG ===\n")
+            if self.active_zones or mismatches:
+                print(f"Active zones: {list(self.active_zones.keys())}")
+                if mismatches:
+                    print("State mismatches:", ", ".join(mismatches))
 
 # Global scheduler instance
 scheduler = WateringScheduler() 
