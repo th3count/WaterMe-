@@ -584,16 +584,22 @@ export default function GardenOverview() {
 
   // Handler to start a manual timer
   function startManualTimer(zone_id: number, seconds: number) {
-    // Call backend to activate the zone
-    fetch(`${getApiBaseUrl()}/api/manual-timer/${zone_id}`, {
+    console.log(`Starting manual timer for zone ${zone_id} with ${seconds}s duration...`);
+    
+    // Use the direct GPIO manual timer endpoint
+    fetch(`${getApiBaseUrl()}/api/gpio/manual-timer/${zone_id}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ duration: seconds })
     })
     .then(response => {
       if (response.ok) {
-        // Backend sync will update manualTimers state
+        console.log('Direct GPIO manual timer started successfully');
+        // Clear input and hide control only on success
+        setManualInput(inp => ({ ...inp, [zone_id]: '' }));
+        setManualInputError(errs => ({ ...errs, [zone_id]: '' }));
         setShowManualControl(null);
+        // Backend sync will update manualTimers state
       } else {
         console.error('Failed to start manual timer');
         alert('Failed to start manual timer. Please try again.');
@@ -936,8 +942,6 @@ export default function GardenOverview() {
                                   
                                   const totalSeconds = parsed.hours * 3600 + parsed.minutes * 60;
                                   startManualTimer(z.zone_id, totalSeconds);
-                                  setManualInput(inp => ({ ...inp, [z.zone_id]: '' }));
-                                  setManualInputError(errs => ({ ...errs, [z.zone_id]: '' }));
                                 }}
                                 style={{
                                   padding: '6px 14px',

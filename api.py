@@ -2247,6 +2247,38 @@ def test_scheduler():
             'scheduler_running': False
         }), 500
 
+@app.route('/api/gpio/manual-timer/<int:zone_id>', methods=['POST'])
+def start_direct_manual_timer(zone_id):
+    """Start a manual timer using direct GPIO control with scheduler integration"""
+    try:
+        data = request.get_json() or {}
+        duration = data.get('duration', 2)
+        
+        if not isinstance(duration, int) or duration <= 0:
+            log_event(user_logger, 'WARN', f'Direct manual timer failed - invalid duration', zone_id=zone_id)
+            return jsonify({'error': 'Duration must be a positive integer'}), 400
+        
+        # Use scheduler to activate zone with timer - scheduler is primary controller
+        try:
+            from core.scheduler import scheduler
+            success = scheduler.add_manual_timer(zone_id, duration)
+            if not success:
+                log_event(error_logger, 'ERROR', f'Direct manual timer failed - scheduler activation failed', zone_id=zone_id, duration=duration)
+                return jsonify({'error': f'Failed to activate zone {zone_id}'}), 400
+        except Exception as e:
+            log_event(error_logger, 'ERROR', f'Direct manual timer failed - scheduler error', zone_id=zone_id, duration=duration, error=str(e))
+            return jsonify({'error': f'Scheduler error: {str(e)}'}), 500
+        
+        log_event(user_logger, 'INFO', f'Direct manual timer started', zone_id=zone_id, duration=duration)
+        return jsonify({
+            'status': 'success', 
+            'message': f'Direct manual timer started for zone {zone_id} for {duration} seconds'
+        })
+        
+    except Exception as e:
+        log_event(error_logger, 'ERROR', f'Direct manual timer exception', zone_id=zone_id, error=str(e))
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     start_watering_scheduler()
     app.run(debug=True, host='0.0.0.0', port=5000) 
