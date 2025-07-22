@@ -820,10 +820,17 @@ class WateringScheduler:
                     }
                 
                 print(f"DEBUG: Saving data: {data}")
+                print(f"DEBUG: File path: {self.active_zones_file}")
+                print(f"DEBUG: File exists before save: {os.path.exists(self.active_zones_file)}")
+                
+                # Ensure directory exists
+                os.makedirs(os.path.dirname(self.active_zones_file), exist_ok=True)
                 
                 with open(self.active_zones_file, 'w') as f:
                     json.dump(data, f, indent=2)
                 
+                print(f"DEBUG: File exists after save: {os.path.exists(self.active_zones_file)}")
+                print(f"DEBUG: File size after save: {os.path.getsize(self.active_zones_file) if os.path.exists(self.active_zones_file) else 'N/A'}")
                 print(f"✅ Active zones saved successfully")
         except Exception as e:
             print(f"❌ Error saving active zones: {e}")
