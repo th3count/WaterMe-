@@ -838,9 +838,11 @@ class WateringScheduler:
     def remove_manual_timer(self, zone_id: int) -> bool:
         """Remove a manual timer for a zone (used by API)"""
         print(f"DEBUG: remove_manual_timer called - zone_id={zone_id}")
+        print(f"DEBUG: active_zones before removal: {self.active_zones}")
         try:
             result = self.deactivate_zone_direct(zone_id, 'manual')
             print(f"DEBUG: remove_manual_timer result = {result}")
+            print(f"DEBUG: active_zones after removal: {self.active_zones}")
             return result
         except Exception as e:
             print(f"DEBUG: remove_manual_timer exception: {e}")
