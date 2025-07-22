@@ -76,17 +76,23 @@ def deactivate_zone(zone_id):
     GPIO.output(pin, GPIO.HIGH if ACTIVE_LOW else GPIO.LOW)
     print(f"Deactivated zone {zone_id} on pin {pin}")
     
-    # Remove from active zones
+    # Remove from active zones BEFORE checking pump status
+    was_in_active = zone_id in _active_zones
     _active_zones.discard(zone_id)
+    print(f"DEBUG: Removed zone {zone_id} from _active_zones. Remaining: {_active_zones}")
     
     # If pump is configured and no other zones are active, deactivate pump
     if PUMP_INDEX > 0 and PUMP_INDEX in ZONE_PINS:
         # Check if any non-pump zones are still active
         other_active = _active_zones - {PUMP_INDEX}
+        print(f"DEBUG: After deactivating zone {zone_id}, other_active zones: {other_active}")
+        
         if not other_active:
             pump_pin = ZONE_PINS[PUMP_INDEX]
             GPIO.output(pump_pin, GPIO.HIGH if ACTIVE_LOW else GPIO.LOW)
             print(f"Deactivated pump (zone {PUMP_INDEX}) on pin {pump_pin} - no other zones active")
+        else:
+            print(f"DEBUG: Pump kept ON - other zones still active: {other_active}")
 
 def get_zone_state(zone_id):
     """Get the current hardware state of a zone"""
