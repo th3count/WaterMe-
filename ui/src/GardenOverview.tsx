@@ -682,6 +682,11 @@ export default function GardenOverview() {
     .catch(error => {
       console.error('Error canceling manual timer:', error);
       console.error('Error details:', error.message, error.stack);
+      console.error('Error type:', error.constructor.name);
+      console.error('Error name:', error.name);
+      if (error instanceof TypeError) {
+        console.error('This is a TypeError - likely a CORS or network issue');
+      }
       alert('Error canceling manual timer. Please try again.');
     });
   }
@@ -1023,6 +1028,7 @@ export default function GardenOverview() {
                             <button
                               onClick={e => {
                                 e.stopPropagation();
+                                console.log(`Initial Cancel button clicked for zone ${z.zone_id}`);
                                 setConfirmCancelZone(z.zone_id);
                               }}
                               style={{
@@ -1055,6 +1061,7 @@ export default function GardenOverview() {
                                   <button
                                     onClick={e => {
                                       e.stopPropagation();
+                                      console.log(`Button clicked for zone ${z.zone_id}`);
                                       cancelTimer(z.zone_id);
                                       setConfirmCancelZone(null);
                                     }}
