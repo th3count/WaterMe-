@@ -886,11 +886,11 @@ export default function GardenOverview() {
         const nextStartTime = getNextStartTime(zone.zone_id, zone.times?.[0]?.value || '');
         if (!nextStartTime) return;
         
-        // If the scheduled time is within the grace period and zone isn't active yet
+        // Only set pending state if the scheduled time has actually arrived (within 5 seconds)
         const timeDiff = Math.abs(now.getTime() - nextStartTime.getTime()) / 1000;
         const realStatus = zoneStatuses[zone.zone_id] || { active: false };
         
-        if (timeDiff <= ERROR_DETECTION_LIMITS.SCHEDULED_EVENT_GRACE_PERIOD && !realStatus.active && !expectedZoneStates[zone.zone_id]?.active) {
+        if (timeDiff <= 5 && !realStatus.active && !expectedZoneStates[zone.zone_id]?.active) {
           // Set expected state for scheduled event
           const duration = getZoneDuration(zone);
           const endTime = new Date(nextStartTime.getTime() + duration * 1000);
