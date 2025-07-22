@@ -922,7 +922,10 @@ def save_garden():
     
     success = save_ini_settings(data)
     if success:
-        log_event(system_logger, 'INFO', f'Garden settings saved', 
+        # Reload the scheduler's cached settings data
+        from core.scheduler import scheduler
+        scheduler.reload_settings()
+        log_event(system_logger, 'INFO', f'Garden settings saved and reloaded', 
                  name=data.get('name', ''),
                  location=data.get('city', ''),
                  timezone=data.get('timezone', ''),
@@ -1042,7 +1045,10 @@ def save_schedule():
     
     # Use the new incremental save function
     if save_json_file(SCHEDULE_JSON_PATH, schedule_dict):
-        log_event(user_logger, 'INFO', f'Schedule saved', zone_count=len(schedule_dict))
+        # Reload the scheduler's cached schedule data
+        from core.scheduler import scheduler
+        scheduler.reload_schedule()
+        log_event(user_logger, 'INFO', f'Schedule saved and reloaded', zone_count=len(schedule_dict))
         return jsonify({'status': 'success'})
     else:
         log_event(error_logger, 'ERROR', f'Schedule save failed - save error', zone_count=len(schedule_dict))
@@ -1652,7 +1658,10 @@ def add_zone():
     existing[key] = data
     
     if save_json_file(SCHEDULE_JSON_PATH, existing):
-        log_event(user_logger, 'INFO', f'Zone created', 
+        # Reload the scheduler's cached schedule data
+        from core.scheduler import scheduler
+        scheduler.reload_schedule()
+        log_event(user_logger, 'INFO', f'Zone created and schedule reloaded', 
                  zone_id=next_id, 
                  mode=data.get('mode', ''),
                  period=data.get('period', ''),
@@ -1699,7 +1708,10 @@ def delete_zone(zone_id):
         zone_info = existing[key]
         del existing[key]
         if save_json_file(SCHEDULE_JSON_PATH, existing):
-            log_event(user_logger, 'INFO', f'Zone deleted', 
+            # Reload the scheduler's cached schedule data
+            from core.scheduler import scheduler
+            scheduler.reload_schedule()
+            log_event(user_logger, 'INFO', f'Zone deleted and schedule reloaded', 
                      zone_id=zone_id, 
                      mode=zone_info.get('mode', ''),
                      period=zone_info.get('period', ''))
