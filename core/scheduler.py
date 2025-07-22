@@ -899,7 +899,7 @@ class WateringScheduler:
     def check_scheduled_events(self):
         """Check for scheduled events that should start now"""
         try:
-            with self.lock:
+            # Lock is now acquired externally by the caller
                 # Use cached schedule and settings
                 if not self.schedule or not self.settings:
                     print("DEBUG: No schedule or settings available")
@@ -1026,9 +1026,18 @@ class WateringScheduler:
                     # Check for expired manual timers (MOST IMPORTANT - check every loop)
                     self.check_and_stop_expired_zones()
                     
-                    # Check for scheduled events (less frequent)
+                    # Check for scheduled events (less frequent) - use timeout to prevent blocking
                     if loop_count % 10 == 0:  # Check every 10 seconds
-                        self.check_scheduled_events()
+                        try:
+                            if self.lock.acquire(timeout=1.0):  # 1 second timeout
+                                try:
+                                    self.check_scheduled_events()
+                                finally:
+                                    self.lock.release()
+                            else:
+                                print(f"DEBUG: Skipping scheduled events check - lock timeout")
+                        except Exception as e:
+                            print(f"DEBUG: Error in scheduled events check: {e}")
                     
                     # Update remaining times for active zones
                     tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
