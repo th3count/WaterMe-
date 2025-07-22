@@ -1444,7 +1444,11 @@ def start_manual_timer(zone_id):
     """Start a manual timer for a specific zone through scheduler"""
     # Handle OPTIONS preflight request
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'ok'}), 200
+        resp = jsonify({'status': 'ok'})
+        resp.headers.add('Access-Control-Allow-Origin', '*')
+        resp.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        resp.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        return resp, 200
     
     print(f"DEBUG: Manual timer POST request received for zone {zone_id}")
     print(f"DEBUG: Request data: {request.get_json()}")
@@ -1486,7 +1490,11 @@ def stop_manual_timer(zone_id):
     """Stop a manual timer for a specific zone through scheduler"""
     # Handle OPTIONS preflight request
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'ok'}), 200
+        resp = jsonify({'status': 'ok'})
+        resp.headers.add('Access-Control-Allow-Origin', '*')
+        resp.headers.add('Access-Control-Allow-Methods', 'DELETE, OPTIONS')
+        resp.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        return resp, 200
     
     print(f"DEBUG: Manual timer DELETE request received for zone {zone_id}")
     
