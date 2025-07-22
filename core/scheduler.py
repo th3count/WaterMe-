@@ -212,6 +212,7 @@ class WateringScheduler:
             
             # Try to acquire lock with timeout to prevent deadlock
             lock_acquired = False
+            save_needed = False
             try:
                 lock_acquired = self.lock.acquire(timeout=0.5)  # 500ms timeout
                 if lock_acquired:
@@ -226,9 +227,11 @@ class WateringScheduler:
                         self.active_zones[zone_id] = end_time
                         print(f"DEBUG: Added to active_zones[{zone_id}] = {end_time}")
                         print(f"DEBUG: active_zones now contains: {self.active_zones}")
-                        self.save_active_zones()
+                        # Don't save while holding lock - do it after
+                        save_needed = True
                     else:
                         print(f"DEBUG: No duration specified, not adding to active_zones")
+                        save_needed = False
                     
                     print(f"DEBUG: Lock released after data update")
                 else:
@@ -238,6 +241,12 @@ class WateringScheduler:
             finally:
                 if lock_acquired:
                     self.lock.release()
+            
+            # Save active zones after releasing lock (file I/O can be slow)
+            if lock_acquired and save_needed:
+                print(f"DEBUG: Saving active zones to file...")
+                self.save_active_zones()
+                print(f"DEBUG: Active zones saved")
             
             # Logging outside the lock
             self._setup_logging()
@@ -289,7 +298,8 @@ class WateringScheduler:
                     del self.active_zones[zone_id]
                     print(f"DEBUG: Removed zone {zone_id} from active_zones")
                     print(f"DEBUG: active_zones after removal: {self.active_zones}")
-                    self.save_active_zones()
+                    # Don't save while lock is held by caller - they should handle it
+                    print(f"DEBUG: Skipping save_active_zones (skip_lock=True)")
                 else:
                     print(f"DEBUG: Zone {zone_id} not in active_zones, skipping removal")
             else:
@@ -848,16 +858,30 @@ class WateringScheduler:
     def check_and_stop_expired_zones(self):
         """Check for expired zones and stop them"""
         print(f"DEBUG: check_and_stop_expired_zones - trying to acquire lock...")
+        zones_changed = False
         with self.lock:
             print(f"DEBUG: check_and_stop_expired_zones - lock acquired")
+            initial_active_count = len(self.active_zones)
             self._check_and_stop_expired_zones_internal()
+            final_active_count = len(self.active_zones)
+            zones_changed = initial_active_count != final_active_count
         print(f"DEBUG: check_and_stop_expired_zones - lock released")
+        
+        # Save active zones after releasing lock if any zones were stopped
+        if zones_changed:
+            print(f"DEBUG: Zones changed, saving active zones...")
+            self.save_active_zones()
+            print(f"DEBUG: Active zones saved")
     
     def _check_and_stop_expired_zones_internal(self):
         """Internal method - assumes lock is already held"""
+        print(f"DEBUG: _check_and_stop_expired_zones_internal - starting")
+        
         # Increment debug counter
         self.check_count += 1
         self.last_check_time = self.get_current_time()
+        
+        print(f"DEBUG: Got current time")
         
         # Use timezone-aware datetime for comparison
         tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
@@ -871,6 +895,7 @@ class WateringScheduler:
         print(f"DEBUG: active_zones={self.active_zones}")
         
         # Lock is already held by caller
+        print(f"DEBUG: About to iterate through active zones")
         for zone_id, end_time in list(self.active_zones.items()):
             # Convert end_time to the same timezone as current_time for proper comparison
             if end_time.tzinfo is None:
@@ -912,6 +937,8 @@ class WateringScheduler:
             print(f"DEBUG: Stopped {len(zones_to_stop)} expired zones")
         else:
             print(f"DEBUG: No expired zones to stop")
+        
+        print(f"DEBUG: _check_and_stop_expired_zones_internal - finished")
     
     def check_scheduled_events(self):
         """Check for scheduled events that should start now"""

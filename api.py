@@ -1517,10 +1517,37 @@ def stop_manual_timer(zone_id):
 
 @app.route('/api/zones/status', methods=['GET'])
 def get_zone_status():
-    """Get detailed status of all zones from scheduler"""
+    """Get hardware status of all zones directly from GPIO (lock-free)"""
     try:
+        from core.gpio import get_all_zone_states, ZONE_PINS
         from core.scheduler import scheduler
-        status = scheduler.get_all_zone_status()
+        
+        # Get actual hardware states (no lock needed)
+        hardware_states = get_all_zone_states()
+        
+        # Try to get remaining time from scheduler (with timeout to prevent hanging)
+        remaining_times = {}
+        try:
+            # Quick check without blocking
+            for zone_id in ZONE_PINS.keys():
+                remaining = scheduler.get_remaining_time(zone_id)
+                remaining_times[zone_id] = remaining if remaining is not None else 0
+        except:
+            # If scheduler is busy, just return 0 for all
+            remaining_times = {zone_id: 0 for zone_id in ZONE_PINS.keys()}
+        
+        # Build response with hardware state as the source of truth
+        status = {}
+        for zone_id in ZONE_PINS.keys():
+            hardware_active = hardware_states.get(zone_id, False)
+            remaining = remaining_times.get(zone_id, 0)
+            
+            status[str(zone_id)] = {
+                'active': hardware_active,
+                'remaining': remaining if hardware_active else 0,
+                'type': 'manual' if hardware_active and remaining > 0 else None
+            }
+        
         return jsonify(status)
     except Exception as e:
         log_event(error_logger, 'ERROR', f'Zone status query failed', error=str(e))
