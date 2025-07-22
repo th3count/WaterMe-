@@ -262,11 +262,12 @@ export default function GardenOverview() {
           // 3. Zone becomes inactive and we were expecting it to be inactive (timer cancellation confirmed)
           if (pendingActions.has(zoneId)) {
             const expectedState = expectedZoneStates[zoneId];
-            console.log(`Zone ${zoneId} pending check:`, {
-              zoneActive: value.active,
+            console.log('Pending check', {
+              zoneId,
+              realActive: value.active,
               expectedActive: expectedState?.active,
-              expectedType: expectedState?.type,
-              shouldClear: value.active || (!value.active && expectedState?.active) || (!value.active && !expectedState?.active)
+              pendingActions: Array.from(pendingActions),
+              expectedZoneStates,
             });
             
             const shouldClearPending = value.active || // Zone activated (start confirmed)
