@@ -27,6 +27,7 @@ import threading
 import configparser
 from datetime import datetime
 from pathlib import Path
+import pytz
 
 # Add the backend directory to the path
 sys.path.insert(0, os.path.dirname(__file__))
@@ -72,7 +73,9 @@ class WaterMeSystem:
         
         # System status
         self.is_running = False
-        self.start_time = None
+        tz_name = self.config.get('timezone', 'UTC')  # Assuming config has timezone, or load from settings.cfg
+        tz = pytz.timezone(tz_name)
+        self.start_time = datetime.now(tz)
         
         # Configuration
         self.config = self.load_config()
@@ -425,7 +428,9 @@ class WaterMeSystem:
             print("⚠️  UI failed to start, but backend is running")
         
         self.is_running = True
-        self.start_time = datetime.now()
+        # tz_name = self.config.get('timezone', 'UTC')  # Assuming config has timezone, or load from settings.cfg
+        # tz = pytz.timezone(tz_name)
+        # self.start_time = datetime.now(tz)
         
         print("=" * 50)
         print("🎉 WaterMe! system started successfully!")
@@ -515,8 +520,9 @@ class WaterMeSystem:
         # System status
         print(f"Status: {'🟢 Running' if self.is_running else '🔴 Stopped'}")
         if self.start_time:
+            current_time = datetime.now(self.start_time.tzinfo)
+            uptime = current_time - self.start_time
             print(f"Started: {self.start_time.strftime('%Y-%m-%d %H:%M:%S')}")
-            uptime = datetime.now() - self.start_time
             print(f"Uptime: {str(uptime).split('.')[0]}")
         
         # Process status

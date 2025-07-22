@@ -52,6 +52,13 @@ class WateringScheduler:
         # Catch up on missed events
         self.catch_up_missed_events()
     
+    def get_current_time(self):
+        """Get current time in configured timezone"""
+        tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
+        tz = pytz.timezone(tz_name)
+        utc_now = datetime.now(pytz.UTC)
+        return utc_now.astimezone(tz)
+
     def _load_schedule(self):
         """Load schedule from file"""
         try:
@@ -351,7 +358,7 @@ class WateringScheduler:
             
             schedule = self.schedule
             
-            now = datetime.now()
+            now = self.get_current_time()
             print(f"Debug: Current time: {now}")
             
             # Use cached settings
@@ -684,7 +691,7 @@ class WateringScheduler:
         """Get remaining time in seconds for a zone"""
         state = self.zone_states.get(zone_id, {})
         if state.get('active', False) and state.get('end_time'):
-            remaining = (state['end_time'] - datetime.now()).total_seconds()
+            remaining = (state['end_time'] - self.get_current_time()).total_seconds()
             return max(0, int(remaining))
         return None
     
@@ -692,7 +699,7 @@ class WateringScheduler:
         """Check for expired zones and stop them"""
         # Increment debug counter
         self.check_count += 1
-        self.last_check_time = datetime.now()
+        self.last_check_time = self.get_current_time()
         
         # Use timezone-aware datetime for comparison
         tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
@@ -764,7 +771,7 @@ class WateringScheduler:
 
             # Get solar times for today
             city = LocationInfo(latitude=lat, longitude=lon, timezone=tz)
-            dt = datetime.now().astimezone(pytz.timezone(tz))
+            dt = self.get_current_time()
             s = sun(city.observer, date=dt.date(), tzinfo=city.timezone)
             
             print(f"DEBUG: Current time in {tz}: {dt}")

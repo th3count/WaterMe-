@@ -414,7 +414,8 @@ def log_event(logger, level, message, **kwargs):
 def cleanup_old_logs(days_to_keep=30):
     """Clean up log files older than specified days"""
     try:
-        cutoff_date = datetime.now() - timedelta(days=days_to_keep)
+        tz = pytz.timezone(scheduler.settings.get('timezone', 'UTC'))
+        cutoff_date = datetime.now(tz) - timedelta(days=days_to_keep)
         log_files = glob.glob(os.path.join(LOGS_DIR, "*.log*"))
         
         for log_file in log_files:
@@ -1679,7 +1680,7 @@ def ignore_health_alert():
     ignored_entry = {
         'alert_type': alert_type,
         'alert_id': alert_id,
-        'ignored_at': datetime.now().isoformat()
+        'ignored_at': datetime.now(tz).isoformat()
     }
     
     # Check if already ignored
@@ -1955,7 +1956,7 @@ def create_backup():
             
             # Create metadata file
             metadata = {
-                'backup_date': datetime.now().isoformat(),
+                'backup_date': datetime.now(tz).isoformat(),
                 'version': '1.0.0',
                 'files_backed_up': list(backup_files.keys()),
                 'system_info': {
@@ -2030,7 +2031,7 @@ def restore_backup(backup_data):
                     os.makedirs(os.path.dirname(target_path), exist_ok=True)
                     # Create backup of existing file
                     if os.path.exists(target_path):
-                        backup_name = f"{target_path}.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                        backup_name = f"{target_path}.backup.{datetime.now(tz).strftime('%Y%m%d_%H%M%S')}"
                         shutil.copy2(target_path, backup_name)
                     # Restore file
                     shutil.copy2(source_path, target_path)
@@ -2054,7 +2055,7 @@ def create_backup_endpoint():
         backup_data = create_backup()
         
         # Generate filename with timestamp
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        timestamp = datetime.now(tz).strftime('%Y%m%d_%H%M%S')
         filename = f'waterme_backup_{timestamp}.zip'
         
         log_event(system_logger, 'INFO', 'System backup created', backup_file=filename)
@@ -2198,7 +2199,7 @@ def test_scheduler():
             'active_zones': scheduler.active_zones,
             'zone_states': scheduler.zone_states,
             'thread_alive': scheduler.thread.is_alive() if scheduler.thread else False,
-            'current_time': datetime.now().isoformat()
+            'current_time': datetime.now(tz).isoformat()
         })
     except Exception as e:
         return jsonify({
