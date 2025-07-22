@@ -837,7 +837,20 @@ class WateringScheduler:
         return None
     
     def check_and_stop_expired_zones(self):
-        """Check for expired zones and stop them"""
+        """Check for expired zones and stop them - external interface"""
+        try:
+            if self.lock.acquire(timeout=1.0):  # 1 second timeout
+                try:
+                    self._check_and_stop_expired_zones_internal()
+                finally:
+                    self.lock.release()
+            else:
+                print(f"DEBUG: check_and_stop_expired_zones - lock timeout")
+        except Exception as e:
+            print(f"DEBUG: Error in check_and_stop_expired_zones: {e}")
+    
+    def _check_and_stop_expired_zones_internal(self):
+        """Internal method - assumes lock is already held"""
         # Increment debug counter
         self.check_count += 1
         self.last_check_time = self.get_current_time()
@@ -853,23 +866,23 @@ class WateringScheduler:
         print(f"DEBUG: check_and_stop_expired_zones #{self.check_count} - current_time={current_time} (timezone: {tz_name})")
         print(f"DEBUG: active_zones={self.active_zones}")
         
-        with self.lock:
-            for zone_id, end_time in list(self.active_zones.items()):
-                # Convert end_time to the same timezone as current_time for proper comparison
-                if end_time.tzinfo is None:
-                    # If stored end_time is naive, assume it's in the configured timezone
-                    end_time_tz = tz.localize(end_time)
-                    print(f"DEBUG: Converted naive end_time to timezone-aware: {end_time_tz}")
-                else:
-                    # If it has timezone info, convert to our timezone for comparison
-                    end_time_tz = end_time.astimezone(tz)
-                    print(f"DEBUG: Converted end_time to local timezone: {end_time_tz}")
-                
-                print(f"DEBUG: Checking zone {zone_id}, end_time={end_time_tz}, current_time={current_time}, expired={current_time >= end_time_tz}")
-                
-                if current_time >= end_time_tz:
-                    zones_to_stop.append(zone_id)
-                    print(f"DEBUG: Zone {zone_id} marked for stopping (expired)")
+        # Lock is already held by caller
+        for zone_id, end_time in list(self.active_zones.items()):
+            # Convert end_time to the same timezone as current_time for proper comparison
+            if end_time.tzinfo is None:
+                # If stored end_time is naive, assume it's in the configured timezone
+                end_time_tz = tz.localize(end_time)
+                print(f"DEBUG: Converted naive end_time to timezone-aware: {end_time_tz}")
+            else:
+                # If it has timezone info, convert to our timezone for comparison
+                end_time_tz = end_time.astimezone(tz)
+                print(f"DEBUG: Converted end_time to local timezone: {end_time_tz}")
+            
+            print(f"DEBUG: Checking zone {zone_id}, end_time={end_time_tz}, current_time={current_time}, expired={current_time >= end_time_tz}")
+            
+            if current_time >= end_time_tz:
+                zones_to_stop.append(zone_id)
+                print(f"DEBUG: Zone {zone_id} marked for stopping (expired)")
         
         print(f"DEBUG: Zones to stop: {zones_to_stop}")
         
@@ -1023,8 +1036,17 @@ class WateringScheduler:
                     if loop_count % 60 == 0:  # Log every 60 seconds
                         print(f"DEBUG: Scheduler loop iteration {loop_count} - still running")
                     
-                    # Check for expired manual timers (MOST IMPORTANT - check every loop)
-                    self.check_and_stop_expired_zones()
+                    # Check for expired manual timers (MOST IMPORTANT - check every loop) - use timeout to prevent blocking
+                    try:
+                        if self.lock.acquire(timeout=0.5):  # 500ms timeout
+                            try:
+                                self._check_and_stop_expired_zones_internal()
+                            finally:
+                                self.lock.release()
+                        else:
+                            print(f"DEBUG: Skipping expired zones check - lock timeout")
+                    except Exception as e:
+                        print(f"DEBUG: Error in expired zones check: {e}")
                     
                     # Check for scheduled events (less frequent) - use timeout to prevent blocking
                     if loop_count % 10 == 0:  # Check every 10 seconds
