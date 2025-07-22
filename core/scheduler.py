@@ -17,6 +17,9 @@ import re
 # Import GPIO functions directly - scheduler is now primary controller
 from .gpio import setup_gpio, activate_zone, deactivate_zone, cleanup_gpio, get_zone_state, ZONE_PINS
 
+# Import unified logging system
+from .logging import log_event, setup_logger
+
 class WateringScheduler:
     def __init__(self):
         self.lock = threading.Lock()  # Initialize lock first!
@@ -74,16 +77,16 @@ class WateringScheduler:
                 if catch_up_error:
                     print(f"Debug: Catch-up failed: {catch_up_error}")
                     self._setup_logging()
-                    self.log_event(self.error_logger, 'ERROR', f'Catch-up failed', error=str(catch_up_error))
+                    log_event(self.error_logger, 'ERROR', f'Catch-up failed', error=str(catch_up_error))
             else:
                 print("Debug: Catch-up timed out after 30 seconds, continuing without catch-up")
                 self._setup_logging()
-                self.log_event(self.error_logger, 'WARN', 'Catch-up timed out, continuing without catch-up')
+                log_event(self.error_logger, 'WARN', 'Catch-up timed out, continuing without catch-up')
                 
         except Exception as e:
             print(f"Debug: Catch-up setup failed: {e}, skipping")
             self._setup_logging()
-            self.log_event(self.error_logger, 'WARN', 'Catch-up setup failed, skipping', error=str(e))
+            log_event(self.error_logger, 'WARN', 'Catch-up setup failed, skipping', error=str(e))
 
     def get_current_time(self):
         """Get current time in configured timezone"""
@@ -144,31 +147,11 @@ class WateringScheduler:
             }
     
     def _setup_logging(self):
-        """Setup logging for scheduler events"""
-        logs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
-        os.makedirs(logs_dir, exist_ok=True)
-        
-        # Create loggers if they don't exist
-        self.watering_logger = logging.getLogger('watering')
-        self.user_logger = logging.getLogger('user')
-        self.error_logger = logging.getLogger('error')
-        
-        # Set up handlers if not already set
-        if not self.watering_logger.handlers:
-            handler = logging.FileHandler(os.path.join(logs_dir, 'watering.log'))
-            formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-            handler.setFormatter(formatter)
-            self.watering_logger.addHandler(handler)
-            self.watering_logger.setLevel(logging.INFO)
-    
-    def log_event(self, logger, level, message, **kwargs):
-        """Log an event with optional context"""
-        try:
-            context = " | ".join([f"{k}={v}" for k, v in kwargs.items()])
-            full_message = f"{message} | {context}" if context else message
-            getattr(logger, level.lower())(full_message)
-        except Exception as e:
-            print(f"Logging error: {e}")
+        """Setup logging for scheduler events using unified system"""
+        # Setup unified loggers
+        self.watering_logger = setup_logger('watering', 'watering.log')
+        self.user_logger = setup_logger('user', 'user.log') 
+        self.error_logger = setup_logger('error', 'error.log')
     
     # =============================================================================
     # PRIMARY GPIO CONTROL METHODS - Scheduler is now the authority
@@ -233,16 +216,16 @@ class WateringScheduler:
             
             # Logging outside the lock
             self._setup_logging()
-            self.log_event(self.watering_logger, 'INFO', f'{event_type.title()} zone activation', 
-                         zone_id=zone_id, duration=duration_seconds)
+            log_event(self.watering_logger, 'INFO', f'{event_type.title()} zone activation', 
+                     zone_id=zone_id, duration=duration_seconds)
             
             print(f"Zone {zone_id} activated for {duration_seconds}s ({event_type})")
             return True
             
         except Exception as e:
             self._setup_logging()
-            self.log_event(self.error_logger, 'ERROR', f'Zone activation failed', 
-                         zone_id=zone_id, error=str(e))
+            log_event(self.error_logger, 'ERROR', f'Zone activation failed', 
+                     zone_id=zone_id, error=str(e))
             print(f"Scheduler: Failed to activate zone {zone_id}: {e}")
             return False
     
@@ -317,7 +300,7 @@ class WateringScheduler:
                         print(f"DEBUG: Zone {zone_id} not in active_zones, skipping removal")
                 
                 self._setup_logging()
-                self.log_event(self.watering_logger, 'INFO', f'Zone deactivated - {reason}', zone_id=zone_id)
+                log_event(self.watering_logger, 'INFO', f'Zone deactivated - {reason}', zone_id=zone_id)
                 
                 print(f"Scheduler: Deactivated zone {zone_id} - {reason}")
                 return True
@@ -327,8 +310,8 @@ class WateringScheduler:
             import traceback
             traceback.print_exc()
             self._setup_logging()
-            self.log_event(self.error_logger, 'ERROR', f'Zone deactivation failed', 
-                         zone_id=zone_id, error=str(e))
+            log_event(self.error_logger, 'ERROR', f'Zone deactivation failed', 
+                     zone_id=zone_id, error=str(e))
             print(f"Scheduler: Failed to deactivate zone {zone_id}: {e}")
             return False
     
@@ -450,12 +433,12 @@ class WateringScheduler:
             print(f"DEBUG: active_zones after emergency stop: {self.active_zones}")
             
             self._setup_logging()
-            self.log_event(self.user_logger, 'WARN', f'Emergency stop executed', zones_stopped=success_count)
+            log_event(self.user_logger, 'WARN', f'Emergency stop executed', zones_stopped=success_count)
             return True
             
         except Exception as e:
             self._setup_logging()  
-            self.log_event(self.error_logger, 'ERROR', f'Emergency stop failed', error=str(e))
+            log_event(self.error_logger, 'ERROR', f'Emergency stop failed', error=str(e))
             return False
     
     def shutdown_stop_all_zones(self) -> bool:
@@ -483,12 +466,12 @@ class WateringScheduler:
             print(f"DEBUG: active_zones after shutdown stop: {self.active_zones}")
             
             self._setup_logging()
-            self.log_event(self.user_logger, 'INFO', f'Shutdown stop executed', zones_stopped=success_count)
+            log_event(self.user_logger, 'INFO', f'Shutdown stop executed', zones_stopped=success_count)
             return True
             
         except Exception as e:
             self._setup_logging()  
-            self.log_event(self.error_logger, 'ERROR', f'Shutdown stop failed', error=str(e))
+            log_event(self.error_logger, 'ERROR', f'Shutdown stop failed', error=str(e))
             return False
     
     # =============================================================================
@@ -611,9 +594,9 @@ class WateringScheduler:
                                 if success:
                                     restored_count += 1
                                     self._setup_logging()
-                                    self.log_event(self.watering_logger, 'INFO', 
-                                                 'Catch-up: Restored missed scheduled event', 
-                                                 zone_id=zone_id, remaining=int(remaining))
+                                    log_event(self.watering_logger, 'INFO', 
+                                             'Catch-up: Restored missed scheduled event', 
+                                             zone_id=zone_id, remaining=int(remaining))
                                 else:
                                     print(f"Debug:     Failed to restore zone {zone_id}")
                             else:
@@ -635,11 +618,11 @@ class WateringScheduler:
                                 if success:
                                     restored_count += 1
                                     self._setup_logging()
-                                    self.log_event(self.watering_logger, 'INFO', 
-                                                 'Catch-up: Started missed event from outage', 
-                                                 zone_id=zone_id, 
-                                                 missed_start=start_time.strftime('%H:%M'),
-                                                 remaining=int(remaining))
+                                    log_event(self.watering_logger, 'INFO', 
+                                             'Catch-up: Started missed event from outage', 
+                                             zone_id=zone_id, 
+                                             missed_start=start_time.strftime('%H:%M'),
+                                             remaining=int(remaining))
                                 else:
                                     print(f"Debug:     Failed to start missed event for zone {zone_id}")
                             else:
@@ -650,7 +633,7 @@ class WateringScheduler:
                 if restored_count > 0:
                     print(f"Catch-up complete: Restored {restored_count} missed events")
                     self._setup_logging()
-                    self.log_event(self.watering_logger, 'INFO', f'Startup catch-up completed', events_restored=restored_count)
+                    log_event(self.watering_logger, 'INFO', f'Startup catch-up completed', events_restored=restored_count)
                 else:
                     print("Catch-up complete: No missed events to restore")
                     
@@ -659,7 +642,7 @@ class WateringScheduler:
             import traceback
             traceback.print_exc()
             self._setup_logging()
-            self.log_event(self.error_logger, 'ERROR', f'Catch-up failed', error=str(e))
+            log_event(self.error_logger, 'ERROR', f'Catch-up failed', error=str(e))
     
     def _should_run_today(self, period: str, start_day: str, dt: datetime) -> bool:
         """Check if a scheduled event should run today"""
@@ -961,7 +944,7 @@ class WateringScheduler:
             success = self.deactivate_zone_direct(zone_id, 'timer_expired', skip_lock=True)
             if not success:
                 self._setup_logging()
-                self.log_event(self.error_logger, 'ERROR', f'Failed to stop expired zone', zone_id=zone_id)
+                log_event(self.error_logger, 'ERROR', f'Failed to stop expired zone', zone_id=zone_id)
                 print(f"ERROR: Failed to stop expired zone {zone_id}")
                 
         # If we stopped any zones, add a small delay before next check
@@ -1036,24 +1019,24 @@ class WateringScheduler:
                         success = self.activate_zone_direct(zone_id, int(duration.total_seconds()), 'scheduled')
                         if success:
                             self._setup_logging()
-                            self.log_event(self.watering_logger, 'INFO', 
-                                         'Scheduled event started', 
-                                         zone_id=zone_id, 
-                                         scheduled_time=start_time.strftime('%H:%M'),
-                                         duration=int(duration.total_seconds()))
+                            log_event(self.watering_logger, 'INFO', 
+                                     'Scheduled event started', 
+                                     zone_id=zone_id, 
+                                     scheduled_time=start_time.strftime('%H:%M'),
+                                     duration=int(duration.total_seconds()))
                         else:
                             self._setup_logging()
-                            self.log_event(self.error_logger, 'ERROR', 
-                                         'Failed to start scheduled event', 
-                                         zone_id=zone_id, 
-                                         scheduled_time=start_time.strftime('%H:%M'))
+                            log_event(self.error_logger, 'ERROR', 
+                                     'Failed to start scheduled event', 
+                                     zone_id=zone_id, 
+                                     scheduled_time=start_time.strftime('%H:%M'))
                             print(f"ERROR: Failed to start scheduled event for zone {zone_id}")
                         break  # Only start one event per zone per check
                             
         except Exception as e:
             print(f"Error in check_scheduled_events: {e}")
             self._setup_logging()
-            self.log_event(self.error_logger, 'ERROR', f'Scheduled event check failed', error=str(e))
+            log_event(self.error_logger, 'ERROR', f'Scheduled event check failed', error=str(e))
     
     def run_scheduler_loop(self):
         """Main scheduler loop"""
