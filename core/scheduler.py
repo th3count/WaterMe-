@@ -289,40 +289,75 @@ class WateringScheduler:
     
     def get_zone_status(self, zone_id: int) -> Dict:
         """Get current status of a zone"""
-        with self.lock:
-            state = self.zone_states.get(zone_id, {
+        try:
+            with self.lock:
+                state = self.zone_states.get(zone_id, {
+                    'active': False,
+                    'end_time': None,
+                    'type': None,
+                    'remaining': 0
+                })
+                
+                # Update remaining time if active with timer
+                if state['active'] and state['end_time']:
+                    try:
+                        # Use timezone-aware datetime for calculation
+                        tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
+                        tz = pytz.timezone(tz_name)
+                        # Get current UTC time and convert to configured timezone
+                        utc_now = datetime.now(pytz.UTC)
+                        current_time = utc_now.astimezone(tz)
+                        
+                        end_time = state['end_time']
+                        # Ensure end_time is timezone-aware
+                        if end_time.tzinfo is None:
+                            end_time = tz.localize(end_time)
+                        
+                        remaining = (end_time - current_time).total_seconds()
+                        state['remaining'] = max(0, int(remaining))
+                    except Exception as e:
+                        print(f"Error calculating remaining time for zone {zone_id}: {e}")
+                        state['remaining'] = 0
+                
+                return state.copy()
+        except Exception as e:
+            print(f"Error in get_zone_status for zone {zone_id}: {e}")
+            return {
                 'active': False,
                 'end_time': None,
                 'type': None,
-                'remaining': 0
-            })
-            
-            # Update remaining time if active with timer
-            if state['active'] and state['end_time']:
-                # Use timezone-aware datetime for calculation
-                tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
-                tz = pytz.timezone(tz_name)
-                # Get current UTC time and convert to configured timezone
-                utc_now = datetime.now(pytz.UTC)
-                current_time = utc_now.astimezone(tz)
-                
-                end_time = state['end_time']
-                # Ensure end_time is timezone-aware
-                if end_time.tzinfo is None:
-                    end_time = tz.localize(end_time)
-                
-                remaining = (end_time - current_time).total_seconds()
-                state['remaining'] = max(0, int(remaining))
-            
-            return state.copy()
+                'remaining': 0,
+                'error': str(e)
+            }
     
     def get_all_zone_status(self) -> Dict[int, Dict]:
         """Get status of all zones"""
         status = {}
-        with self.lock:
-            for zone_id in ZONE_PINS.keys():
-                status[zone_id] = self.get_zone_status(zone_id)
-        return status
+        try:
+            with self.lock:
+                for zone_id in ZONE_PINS.keys():
+                    try:
+                        status[zone_id] = self.get_zone_status(zone_id)
+                    except Exception as e:
+                        print(f"Error getting status for zone {zone_id}: {e}")
+                        status[zone_id] = {
+                            'active': False,
+                            'end_time': None,
+                            'type': None,
+                            'remaining': 0,
+                            'error': str(e)
+                        }
+            return status
+        except Exception as e:
+            print(f"Error in get_all_zone_status: {e}")
+            # Return a safe default status
+            return {zone_id: {
+                'active': False,
+                'end_time': None,
+                'type': None,
+                'remaining': 0,
+                'error': 'Status unavailable'
+            } for zone_id in ZONE_PINS.keys()}
     
     def emergency_stop_all_zones(self) -> bool:
         """Emergency stop all zones"""

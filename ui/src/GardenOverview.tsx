@@ -192,22 +192,30 @@ export default function GardenOverview() {
     const fetchZoneStatuses = async () => {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 2000);  // 2s timeout
+        const timeout = setTimeout(() => controller.abort(), 5000);  // 5s timeout (longer for Pi)
 
-        const resp = await fetch(`${getApiBaseUrl()}/api/gpio/status`, { signal: controller.signal });
+        const resp = await fetch(`${getApiBaseUrl()}/api/zones/status`, { 
+          signal: controller.signal,
+          headers: {
+            'Connection': 'close'  // Force connection close to prevent CLOSE_WAIT
+          }
+        });
         clearTimeout(timeout);
 
         if (!resp.ok) {
           console.error('Failed to fetch zone statuses:', resp.status);
+          // Don't spam console with errors
           return;
         }
 
         const data = await resp.json();
         const statuses: Record<string, { active: boolean, remaining: number, type?: string }> = {};
-        Object.entries(data).forEach(([key, value]: [string, any]) => {
-          const zoneId = parseInt(key.split('_')[1]);
+        
+        // data is already in the format { "1": { active: true, remaining: 30, type: "manual" }, ... }
+        Object.entries(data).forEach(([zoneIdStr, value]: [string, any]) => {
+          const zoneId = parseInt(zoneIdStr);
           statuses[zoneId] = {
-            active: value.active,
+            active: value.active || false,
             remaining: value.remaining || 0,
             type: value.type
           };
@@ -216,8 +224,8 @@ export default function GardenOverview() {
         
         // Sync manual timers with backend zone status
         const newManualTimers: Record<number, number> = {};
-        Object.entries(data).forEach(([key, value]: [string, any]) => {
-          const zoneId = parseInt(key.split('_')[1]);
+        Object.entries(data).forEach(([zoneIdStr, value]: [string, any]) => {
+          const zoneId = parseInt(zoneIdStr);
           if (value.active && value.remaining && value.remaining > 0) {
             newManualTimers[zoneId] = value.remaining;
           }
@@ -233,7 +241,7 @@ export default function GardenOverview() {
     };
 
     fetchZoneStatuses();
-    const interval = setInterval(fetchZoneStatuses, 1000);  // Poll every 1 second for smooth countdown
+    const interval = setInterval(fetchZoneStatuses, 3000);  // Poll every 3 seconds to reduce load
     return () => clearInterval(interval);
   }, []);
 
@@ -585,23 +593,27 @@ export default function GardenOverview() {
   // Handler to start a manual timer
   function startManualTimer(zone_id: number, seconds: number) {
     console.log(`Starting manual timer for zone ${zone_id} with ${seconds}s duration...`);
+    console.log(`API URL: ${getApiBaseUrl()}/api/manual-timer/${zone_id}`);
     
-    // Use the direct GPIO manual timer endpoint
-    fetch(`${getApiBaseUrl()}/api/gpio/manual-timer/${zone_id}`, {
+    // Use the standard manual timer endpoint (scheduler-based)
+    fetch(`${getApiBaseUrl()}/api/manual-timer/${zone_id}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ duration: seconds })
     })
     .then(response => {
+      console.log(`API Response status: ${response.status}`);
       if (response.ok) {
-        console.log('Direct GPIO manual timer started successfully');
+        console.log('Manual timer started successfully');
         // Clear input and hide control only on success
         setManualInput(inp => ({ ...inp, [zone_id]: '' }));
         setManualInputError(errs => ({ ...errs, [zone_id]: '' }));
         setShowManualControl(null);
+        console.log('Input cleared and control hidden');
         // Backend sync will update manualTimers state
       } else {
-        console.error('Failed to start manual timer');
+        console.error('Failed to start manual timer, status:', response.status);
+        response.text().then(text => console.error('Response text:', text));
         alert('Failed to start manual timer. Please try again.');
       }
     })
@@ -933,14 +945,18 @@ export default function GardenOverview() {
                                 onClick={e => {
                                   e.stopPropagation();
                                   const val = manualInput[z.zone_id] || '';
+                                  console.log(`Button clicked for zone ${z.zone_id}, input value: "${val}"`);
                                   const parsed = parseManualTimeInput(val);
+                                  console.log(`Parsed result:`, parsed);
                                   
                                   if (!parsed.isValid) {
+                                    console.log(`Validation failed: ${parsed.error}`);
                                     setManualInputError(errs => ({ ...errs, [z.zone_id]: parsed.error }));
                                     return;
                                   }
                                   
                                   const totalSeconds = parsed.hours * 3600 + parsed.minutes * 60;
+                                  console.log(`Total seconds calculated: ${totalSeconds}`);
                                   startManualTimer(z.zone_id, totalSeconds);
                                 }}
                                 style={{
