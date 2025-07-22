@@ -237,18 +237,20 @@ class WateringScheduler:
             print(f"Scheduler: Failed to activate zone {zone_id}: {e}")
             return False
     
-    def deactivate_zone_direct(self, zone_id: int, reason: str = 'manual') -> bool:
+    def deactivate_zone_direct(self, zone_id: int, reason: str = 'manual', skip_lock: bool = False) -> bool:
         """
         Directly deactivate a zone through scheduler (primary GPIO controller)
         Args:
             zone_id: Zone to deactivate  
             reason: Reason for deactivation ('manual', 'timer_expired', 'scheduled')
+            skip_lock: If True, skip acquiring the lock (for internal calls)
         Returns:
             bool: Success status
         """
         try:
-            with self.lock:
-                print(f"DEBUG: deactivate_zone_direct called - zone_id={zone_id}, reason={reason}")
+            if skip_lock:
+                # Internal call - assume lock is already held
+                print(f"DEBUG: deactivate_zone_direct called (skip_lock=True) - zone_id={zone_id}, reason={reason}")
                 print(f"DEBUG: active_zones before deactivation: {self.active_zones}")
                 print(f"DEBUG: zone_states[{zone_id}] before deactivation: {self.zone_states.get(zone_id, {})}")
                 
@@ -273,6 +275,34 @@ class WateringScheduler:
                     self.save_active_zones()
                 else:
                     print(f"DEBUG: Zone {zone_id} not in active_zones, skipping removal")
+            else:
+                # External call - acquire lock
+                with self.lock:
+                    print(f"DEBUG: deactivate_zone_direct called - zone_id={zone_id}, reason={reason}")
+                    print(f"DEBUG: active_zones before deactivation: {self.active_zones}")
+                    print(f"DEBUG: zone_states[{zone_id}] before deactivation: {self.zone_states.get(zone_id, {})}")
+                    
+                    # Deactivate the hardware
+                    deactivate_zone(zone_id)
+                    print(f"DEBUG: Hardware deactivation completed for zone {zone_id}")
+                    
+                    # Update zone state
+                    self.zone_states[zone_id] = {
+                        'active': False,
+                        'end_time': None,
+                        'type': None,
+                        'remaining': 0
+                    }
+                    print(f"DEBUG: Updated zone_states[{zone_id}] = {self.zone_states[zone_id]}")
+                    
+                    # Remove from active zones
+                    if zone_id in self.active_zones:
+                        del self.active_zones[zone_id]
+                        print(f"DEBUG: Removed zone {zone_id} from active_zones")
+                        print(f"DEBUG: active_zones after removal: {self.active_zones}")
+                        self.save_active_zones()
+                    else:
+                        print(f"DEBUG: Zone {zone_id} not in active_zones, skipping removal")
                 
                 self._setup_logging()
                 self.log_event(self.watering_logger, 'INFO', f'Zone deactivated - {reason}', zone_id=zone_id)
@@ -843,7 +873,7 @@ class WateringScheduler:
             if len(zones_to_stop) > 1:
                 time.sleep(0.1)  # 100ms delay between multiple zone deactivations
             
-            success = self.deactivate_zone_direct(zone_id, 'timer_expired')
+            success = self.deactivate_zone_direct(zone_id, 'timer_expired', skip_lock=True)
             if not success:
                 self._setup_logging()
                 self.log_event(self.error_logger, 'ERROR', f'Failed to stop expired zone', zone_id=zone_id)
