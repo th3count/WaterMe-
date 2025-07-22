@@ -1036,12 +1036,9 @@ export default function GardenOverview() {
       }
     }));
     
-    // Set pending state after a brief delay to avoid red flash
-    setTimeout(() => {
-      setPendingActions(prev => new Set(prev).add(zone_id));
-      // Set error tracking start time for pending action
-      setErrorStartTimes(prev => ({ ...prev, [zone_id]: new Date() }));
-    }, 100); // 100ms delay to let the API call start
+    // Set pending state immediately for cancellation
+    setPendingActions(prev => new Set(prev).add(zone_id));
+    setErrorStartTimes(prev => ({ ...prev, [zone_id]: new Date() }));
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
