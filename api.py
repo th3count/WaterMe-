@@ -1439,9 +1439,16 @@ def get_all_gpio_status():
         return jsonify({'error': str(e)}), 500
 
 # Manual Timer Endpoints
-@app.route('/api/manual-timer/<int:zone_id>', methods=['POST'])
+@app.route('/api/manual-timer/<int:zone_id>', methods=['POST', 'OPTIONS'])
 def start_manual_timer(zone_id):
     """Start a manual timer for a specific zone through scheduler"""
+    # Handle OPTIONS preflight request
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+    
+    print(f"DEBUG: Manual timer POST request received for zone {zone_id}")
+    print(f"DEBUG: Request data: {request.get_json()}")
+    
     try:
         data = request.get_json()
         if not data or 'duration' not in data:
@@ -1474,9 +1481,15 @@ def start_manual_timer(zone_id):
         log_event(error_logger, 'ERROR', f'Manual timer exception', zone_id=zone_id, error=str(e))
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/manual-timer/<int:zone_id>', methods=['DELETE'])
+@app.route('/api/manual-timer/<int:zone_id>', methods=['DELETE', 'OPTIONS'])
 def stop_manual_timer(zone_id):
     """Stop a manual timer for a specific zone through scheduler"""
+    # Handle OPTIONS preflight request
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+    
+    print(f"DEBUG: Manual timer DELETE request received for zone {zone_id}")
+    
     try:
         from core.scheduler import scheduler
         success = scheduler.remove_manual_timer(zone_id)
