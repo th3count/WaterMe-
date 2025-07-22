@@ -655,15 +655,20 @@ export default function GardenOverview() {
       return;
     }
 
+    console.log(`Attempting to cancel timer for zone ${zone_id}...`);
+    console.log(`DELETE URL: ${getApiBaseUrl()}/api/manual-timer/${zone_id}`);
+    
     fetch(`${getApiBaseUrl()}/api/manual-timer/${zone_id}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
         'Connection': 'close'
-      }
+      },
+      mode: 'cors'
     })
     .then(response => {
       console.log(`DELETE Response status: ${response.status}`);
+      console.log(`DELETE Response headers:`, response.headers);
       if (response.ok) {
         console.log('Manual timer canceled successfully');
         // Backend sync will update manualTimers state
@@ -676,6 +681,7 @@ export default function GardenOverview() {
     })
     .catch(error => {
       console.error('Error canceling manual timer:', error);
+      console.error('Error details:', error.message, error.stack);
       alert('Error canceling manual timer. Please try again.');
     });
   }

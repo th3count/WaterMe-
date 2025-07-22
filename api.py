@@ -1493,7 +1493,8 @@ def stop_manual_timer(zone_id):
         resp = jsonify({'status': 'ok'})
         resp.headers.add('Access-Control-Allow-Origin', '*')
         resp.headers.add('Access-Control-Allow-Methods', 'DELETE, OPTIONS')
-        resp.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        resp.headers.add('Access-Control-Allow-Headers', 'Content-Type, Connection')
+        resp.headers.add('Access-Control-Max-Age', '86400')
         return resp, 200
     
     print(f"DEBUG: Manual timer DELETE request received for zone {zone_id}")
@@ -1505,6 +1506,8 @@ def stop_manual_timer(zone_id):
             log_event(error_logger, 'ERROR', f'Manual timer stop failed', zone_id=zone_id)
             resp = jsonify({'error': f'Failed to stop zone {zone_id}'})
             resp.headers.add('Access-Control-Allow-Origin', '*')
+            resp.headers.add('Access-Control-Allow-Methods', 'DELETE, OPTIONS')
+            resp.headers.add('Access-Control-Allow-Headers', 'Content-Type, Connection')
             return resp, 400
         
         log_event(user_logger, 'INFO', f'Manual timer stopped', zone_id=zone_id)
@@ -1513,12 +1516,16 @@ def stop_manual_timer(zone_id):
             'message': f'Manual timer stopped for zone {zone_id}'
         })
         resp.headers.add('Access-Control-Allow-Origin', '*')
+        resp.headers.add('Access-Control-Allow-Methods', 'DELETE, OPTIONS')
+        resp.headers.add('Access-Control-Allow-Headers', 'Content-Type, Connection')
         return resp
         
     except Exception as e:
         log_event(error_logger, 'ERROR', f'Manual timer stop exception', zone_id=zone_id, error=str(e))
         resp = jsonify({'error': str(e)})
         resp.headers.add('Access-Control-Allow-Origin', '*')
+        resp.headers.add('Access-Control-Allow-Methods', 'DELETE, OPTIONS')
+        resp.headers.add('Access-Control-Allow-Headers', 'Content-Type, Connection')
         return resp, 500
 
 @app.route('/api/zones/status', methods=['GET'])
