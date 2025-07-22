@@ -184,7 +184,10 @@ class WateringScheduler:
             bool: Success status
         """
         try:
+            print(f"DEBUG: activate_zone_direct called - zone_id={zone_id}, duration={duration_seconds}, type={event_type}")
+            print(f"DEBUG: About to acquire lock...")
             with self.lock:
+                print(f"DEBUG: Lock acquired successfully")
                 print(f"DEBUG: activate_zone_direct called - zone_id={zone_id}, duration={duration_seconds}, type={event_type}")
                 
                 # Tell gpio.py to activate the hardware
@@ -764,7 +767,16 @@ class WateringScheduler:
     
     def add_manual_timer(self, zone_id: int, duration_seconds: int) -> bool:
         """Add a manual timer for a zone (used by API)"""
-        return self.activate_zone_direct(zone_id, duration_seconds, 'manual')
+        print(f"DEBUG: add_manual_timer called - zone_id={zone_id}, duration={duration_seconds}")
+        try:
+            result = self.activate_zone_direct(zone_id, duration_seconds, 'manual')
+            print(f"DEBUG: add_manual_timer result = {result}")
+            return result
+        except Exception as e:
+            print(f"DEBUG: add_manual_timer exception: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
     
     def remove_manual_timer(self, zone_id: int) -> bool:
         """Remove a manual timer for a zone (used by API)"""
