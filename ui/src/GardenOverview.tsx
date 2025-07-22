@@ -242,6 +242,7 @@ export default function GardenOverview() {
         
         // data is already in the format { "1": { active: true, remaining: 30, type: "manual" }, ... }
         console.log('Current pending actions:', Array.from(pendingActions));
+        console.log('Zone statuses from backend:', data);
         Object.entries(data).forEach(([zoneIdStr, value]: [string, any]) => {
           const zoneId = parseInt(zoneIdStr);
           statuses[zoneId] = {
@@ -1037,7 +1038,13 @@ export default function GardenOverview() {
     }));
     
     // Set pending state immediately for cancellation
-    setPendingActions(prev => new Set(prev).add(zone_id));
+    console.log(`Adding zone ${zone_id} to pending actions`);
+    setPendingActions(prev => {
+      const newSet = new Set(prev);
+      newSet.add(zone_id);
+      console.log(`Updated pending actions:`, Array.from(newSet));
+      return newSet;
+    });
     setErrorStartTimes(prev => ({ ...prev, [zone_id]: new Date() }));
     
     const controller = new AbortController();
