@@ -924,33 +924,39 @@ export default function GardenOverview() {
   useEffect(() => {
     const cleanupErrors = () => {
       const now = new Date();
+      const zonesToCleanup: number[] = [];
       
-      // Clean up old error tracking
-      setErrorStartTimes(prev => {
-        const newTimes = { ...prev };
-        Object.entries(newTimes).forEach(([zoneIdStr, startTime]) => {
-          const zoneId = parseInt(zoneIdStr);
-          const duration = (now.getTime() - startTime.getTime()) / 1000;
-          
-          // Clear if error has been tracked for too long (5 minutes)
-          if (duration > 300) {
-            delete newTimes[zoneId];
-            // Also clear expected state if it's been too long
-            setExpectedZoneStates(prevStates => {
-              const newStates = { ...prevStates };
-              delete newStates[zoneId];
-              return newStates;
-            });
-            // Clear pending state if it's been too long
-            setPendingActions(prev => {
-              const newSet = new Set(prev);
-              newSet.delete(zoneId);
-              return newSet;
-            });
-          }
-        });
-        return newTimes;
+      // Find zones that need cleanup
+      Object.entries(errorStartTimes).forEach(([zoneIdStr, startTime]) => {
+        const zoneId = parseInt(zoneIdStr);
+        const duration = (now.getTime() - startTime.getTime()) / 1000;
+        
+        // Clear if error has been tracked for too long (5 minutes)
+        if (duration > 300) {
+          zonesToCleanup.push(zoneId);
+        }
       });
+      
+      // Apply all cleanups separately to avoid nested setState
+      if (zonesToCleanup.length > 0) {
+        setErrorStartTimes(prev => {
+          const newTimes = { ...prev };
+          zonesToCleanup.forEach(zoneId => delete newTimes[zoneId]);
+          return newTimes;
+        });
+        
+        setExpectedZoneStates(prev => {
+          const newStates = { ...prev };
+          zonesToCleanup.forEach(zoneId => delete newStates[zoneId]);
+          return newStates;
+        });
+        
+        setPendingActions(prev => {
+          const newSet = new Set(prev);
+          zonesToCleanup.forEach(zoneId => newSet.delete(zoneId));
+          return newSet;
+        });
+      }
       
       // Clean up old error durations
       setErrorDurations(prev => {
@@ -969,7 +975,7 @@ export default function GardenOverview() {
     const interval = setInterval(cleanupErrors, 10000); // Clean up every 10 seconds
     
     return () => clearInterval(interval);
-  }, [errorStartTimes]);
+  }, []); // Remove errorStartTimes dependency to prevent infinite loop
 
   // Handler to cancel a timer (manual or scheduled)
   function cancelTimer(zone_id: number) {
