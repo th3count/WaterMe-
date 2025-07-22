@@ -359,7 +359,7 @@ export default function GardenOverview() {
     fetchZoneStatuses();
     const interval = setInterval(fetchZoneStatuses, 3000);  // Poll every 3 seconds to reduce load
     return () => clearInterval(interval);
-  }, []);
+  }, [pendingActions, expectedZoneStates]);
 
   useEffect(() => {
     if (zones.length === 0) return;
