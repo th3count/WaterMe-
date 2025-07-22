@@ -19,7 +19,7 @@ from .gpio import setup_gpio, activate_zone, deactivate_zone, cleanup_gpio, get_
 
 class WateringScheduler:
     def __init__(self):
-        """Initialize the watering scheduler"""
+        self.lock = threading.Lock()  # Initialize lock first!
         self.running = False
         self.thread = None
         self.active_zones = {}  # zone_id -> end_time
@@ -52,9 +52,6 @@ class WateringScheduler:
         # Catch up on missed events
         self.catch_up_missed_events()
 
-        # Initialize threading lock
-        self.lock = threading.Lock()
-    
     def get_current_time(self):
         """Get current time in configured timezone"""
         tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
