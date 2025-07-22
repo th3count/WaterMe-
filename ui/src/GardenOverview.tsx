@@ -46,7 +46,23 @@ export default function GardenOverview() {
   const [ignoredAlerts, setIgnoredAlerts] = useState<Set<string>>(new Set());
 
   // New state for real zone statuses
-  const [zoneStatuses, setZoneStatuses] = useState<Record<string, { active: boolean, remaining: number, type?: string }>>({});
+  const [zoneStatuses, setZoneStatuses] = useState<Record<number, { active: boolean, remaining: number, type?: string }>>({});
+
+  // New state for expected zone states and pending actions
+  const [expectedZoneStates, setExpectedZoneStates] = useState<Record<number, { active: boolean, startTime: Date | null, endTime: Date | null, type: string }>>({});
+  const [pendingActions, setPendingActions] = useState<Set<number>>(new Set());
+  
+  // New state for error tracking and limits
+  const [errorStartTimes, setErrorStartTimes] = useState<Record<number, Date>>({});
+  const [errorDurations, setErrorDurations] = useState<Record<number, number>>({});
+  
+  // Configuration for error detection limits
+  const ERROR_DETECTION_LIMITS = {
+    PENDING_TIMEOUT: 30, // seconds - how long to wait for GPIO confirmation
+    ERROR_DISPLAY_DURATION: 300, // seconds - how long to show red light before auto-clearing
+    MAX_ERROR_DURATION: 600, // seconds - maximum time to track an error
+    SCHEDULED_EVENT_GRACE_PERIOD: 60 // seconds - grace period for scheduled events to start
+  };
 
   useEffect(() => {
     fetch(`${getApiBaseUrl()}/api/locations`)
@@ -209,7 +225,7 @@ export default function GardenOverview() {
         }
 
         const data = await resp.json();
-        const statuses: Record<string, { active: boolean, remaining: number, type?: string }> = {};
+        const statuses: Record<number, { active: boolean, remaining: number, type?: string }> = {};
         
         // data is already in the format { "1": { active: true, remaining: 30, type: "manual" }, ... }
         Object.entries(data).forEach(([zoneIdStr, value]: [string, any]) => {
@@ -219,6 +235,88 @@ export default function GardenOverview() {
             remaining: value.remaining || 0,
             type: value.type
           };
+          
+          const now = new Date();
+          const expectedState = expectedZoneStates[zoneId];
+          
+          console.log(`Zone ${zoneId} status update:`, {
+            active: value.active,
+            remaining: value.remaining,
+            type: value.type,
+            expectedState: expectedState?.active,
+            isPending: pendingActions.has(zoneId)
+          });
+          
+          // Clear pending state when GPIO confirms the action
+          if (pendingActions.has(zoneId)) {
+            console.log(`Zone ${zoneId}: Clearing pending state - GPIO confirmed`);
+            setPendingActions(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(zoneId);
+              return newSet;
+            });
+            // Clear error tracking when pending action succeeds
+            setErrorStartTimes(prev => {
+              const newTimes = { ...prev };
+              delete newTimes[zoneId];
+              return newTimes;
+            });
+            setErrorDurations(prev => {
+              const newDurations = { ...prev };
+              delete newDurations[zoneId];
+              return newDurations;
+            });
+          }
+          
+          // Check for state mismatches and track errors
+          if (expectedState && expectedState.active !== value.active) {
+            console.log(`Zone ${zoneId}: State mismatch detected`);
+            // State mismatch detected - start or continue error tracking
+            if (!errorStartTimes[zoneId]) {
+              setErrorStartTimes(prev => ({ ...prev, [zoneId]: now }));
+            }
+            // Update error duration
+            const errorStartTime = errorStartTimes[zoneId] || now;
+            const errorDuration = (now.getTime() - errorStartTime.getTime()) / 1000;
+            setErrorDurations(prev => ({ ...prev, [zoneId]: errorDuration }));
+          } else if (expectedState && expectedState.active === value.active) {
+            console.log(`Zone ${zoneId}: States match - clearing error tracking`);
+            // States match - clear error tracking
+            setErrorStartTimes(prev => {
+              const newTimes = { ...prev };
+              delete newTimes[zoneId];
+              return newTimes;
+            });
+            setErrorDurations(prev => {
+              const newDurations = { ...prev };
+              delete newDurations[zoneId];
+              return newDurations;
+            });
+          }
+          
+          // Update expected state based on actual status
+          if (value.active) {
+            // Zone is active, update expected state
+            const endTime = new Date(now.getTime() + (value.remaining || 0) * 1000);
+            setExpectedZoneStates(prev => ({
+              ...prev,
+              [zoneId]: {
+                active: true,
+                startTime: now,
+                endTime: endTime,
+                type: value.type || 'unknown'
+              }
+            }));
+          } else {
+            // Zone is inactive, clear expected state if it was expecting to be active
+            if (expectedState && expectedState.active) {
+              setExpectedZoneStates(prev => {
+                const newStates = { ...prev };
+                delete newStates[zoneId];
+                return newStates;
+              });
+            }
+          }
         });
         setZoneStatuses(statuses);
         
@@ -560,6 +658,131 @@ export default function GardenOverview() {
     return remaining > 0 ? remaining : 0;
   }
 
+  // Helper: determine indicator color based on expected vs actual state
+  function getIndicatorColor(zoneId: number): { color: string; shadow: string; border: string; title: string } {
+    const realStatus = zoneStatuses[zoneId] || { active: false, remaining: 0 };
+    const expectedState = expectedZoneStates[zoneId];
+    const isPending = pendingActions.has(zoneId);
+    const now = new Date();
+    
+    // Check if pending action has timed out
+    const pendingStartTime = errorStartTimes[zoneId];
+    const pendingDuration = pendingStartTime ? (now.getTime() - pendingStartTime.getTime()) / 1000 : 0;
+    const isPendingTimedOut = isPending && pendingDuration > ERROR_DETECTION_LIMITS.PENDING_TIMEOUT;
+    
+    // Check if error has been displayed long enough to auto-clear
+    const errorDuration = errorDurations[zoneId] || 0;
+    const shouldAutoClearError = errorDuration > ERROR_DETECTION_LIMITS.ERROR_DISPLAY_DURATION;
+    
+    // Debug logging
+    console.log(`Zone ${zoneId} indicator:`, {
+      realStatus: realStatus.active,
+      expectedState: expectedState?.active,
+      isPending,
+      isPendingTimedOut,
+      shouldAutoClearError,
+      errorDuration
+    });
+    
+    // Red: Expected state is incorrect (zone should be on but isn't, or vice versa)
+    // But only if not auto-cleared and within reasonable limits
+    if (expectedState && expectedState.active !== realStatus.active && !shouldAutoClearError) {
+      const errorStartTime = errorStartTimes[zoneId];
+      const totalErrorDuration = errorStartTime ? (now.getTime() - errorStartTime.getTime()) / 1000 : 0;
+      
+      // Only show red if error is within max duration limit
+      if (totalErrorDuration <= ERROR_DETECTION_LIMITS.MAX_ERROR_DURATION) {
+        // Log the red light event if this is a new error or significant duration change
+        logRedLightEvent(zoneId, expectedState, realStatus, totalErrorDuration);
+        
+        console.log(`Zone ${zoneId}: RED LIGHT - State mismatch`);
+        return { 
+          color: '#ff4444', 
+          shadow: '0 0 8px #ff4444', 
+          border: '#ff4444',
+          title: `Error: Zone state mismatch - expected ${expectedState.active ? 'ON' : 'OFF'}, actual ${realStatus.active ? 'ON' : 'OFF'} (${Math.round(totalErrorDuration)}s)`
+        };
+      }
+    }
+    
+    // Orange: Pending action (UI knows an event started but hasn't received GPIO confirmation)
+    // But only if not timed out
+    if (isPending && !isPendingTimedOut) {
+      console.log(`Zone ${zoneId}: ORANGE LIGHT - Pending action`);
+      return { 
+        color: '#ff8800', 
+        shadow: '0 0 8px #ff8800', 
+        border: '#ff8800',
+        title: `Pending: Waiting for GPIO confirmation (${Math.round(pendingDuration)}s)`
+      };
+    }
+    
+    // Green: Zone is doing what it's supposed to be doing (expected state is correct)
+    if (realStatus.active) {
+      console.log(`Zone ${zoneId}: GREEN LIGHT - Active and correct`);
+      const result = { 
+        color: '#ff0000', // TEMPORARY: Using red to test if changes work
+        shadow: '0 0 8px #ff0000', 
+        border: '#ff0000',
+        title: 'TEST: Should be RED if changes are working'
+      };
+      console.log(`Zone ${zoneId}: Returning TEST RED result:`, result);
+      return result;
+    }
+    
+    // Gray: Zone is off (default state)
+    console.log(`Zone ${zoneId}: GRAY LIGHT - Inactive`);
+    const result = { 
+      color: '#888', 
+      shadow: 'none', 
+      border: '#232b3b',
+      title: 'Inactive: Zone is off'
+    };
+    console.log(`Zone ${zoneId}: Returning GRAY result:`, result);
+    return result;
+  }
+
+  // Helper: log red light events to backend
+  function logRedLightEvent(zoneId: number, expectedState: any, realStatus: any, duration: number) {
+    // Only log if this is a new error or significant duration milestone
+    const lastLoggedDuration = errorDurations[zoneId] || 0;
+    const shouldLog = !errorStartTimes[zoneId] || // New error
+                     (duration >= 30 && lastLoggedDuration < 30) || // 30s milestone
+                     (duration >= 60 && lastLoggedDuration < 60) || // 1min milestone
+                     (duration >= 300 && lastLoggedDuration < 300); // 5min milestone
+    
+    if (shouldLog) {
+      const logData = {
+        zone_id: zoneId,
+        event_type: 'red_light_error',
+        expected_state: expectedState.active ? 'ON' : 'OFF',
+        actual_state: realStatus.active ? 'ON' : 'OFF',
+        expected_type: expectedState.type || 'unknown',
+        actual_type: realStatus.type || 'unknown',
+        duration_seconds: Math.round(duration),
+        timestamp: new Date().toISOString(),
+        message: `Zone ${zoneId} state mismatch: expected ${expectedState.active ? 'ON' : 'OFF'} (${expectedState.type}), actual ${realStatus.active ? 'ON' : 'OFF'} (${realStatus.type}) for ${Math.round(duration)}s`
+      };
+      
+      // Log to backend
+      fetch(`${getApiBaseUrl()}/api/logs/event`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(logData)
+      })
+      .then(response => {
+        if (response.ok) {
+          console.log(`Red light event logged for zone ${zoneId}:`, logData.message);
+        } else {
+          console.error(`Failed to log red light event for zone ${zoneId}:`, response.status);
+        }
+      })
+      .catch(error => {
+        console.error(`Error logging red light event for zone ${zoneId}:`, error);
+      });
+    }
+  }
+
   // Helper function to parse manual timer input with leading zero support
   function parseManualTimeInput(input: string): { hours: number; minutes: number; isValid: boolean; error: string } {
     // Remove any non-numeric characters
@@ -595,6 +818,27 @@ export default function GardenOverview() {
     console.log(`Starting manual timer for zone ${zone_id} with ${seconds}s duration...`);
     console.log(`API URL: ${getApiBaseUrl()}/api/manual-timer/${zone_id}`);
     
+    // Set pending state immediately
+    setPendingActions(prev => new Set(prev).add(zone_id));
+    console.log(`Zone ${zone_id}: Set pending state for manual timer`);
+    
+    // Set error tracking start time for pending action
+    setErrorStartTimes(prev => ({ ...prev, [zone_id]: new Date() }));
+    
+    // Set expected state
+    const now = new Date();
+    const endTime = new Date(now.getTime() + seconds * 1000);
+    setExpectedZoneStates(prev => ({
+      ...prev,
+      [zone_id]: {
+        active: true,
+        startTime: now,
+        endTime: endTime,
+        type: 'manual'
+      }
+    }));
+    console.log(`Zone ${zone_id}: Set expected state to active for manual timer`);
+    
     // Use the standard manual timer endpoint (scheduler-based)
     fetch(`${getApiBaseUrl()}/api/manual-timer/${zone_id}`, {
       method: 'POST',
@@ -615,11 +859,33 @@ export default function GardenOverview() {
         console.error('Failed to start manual timer, status:', response.status);
         response.text().then(text => console.error('Response text:', text));
         alert('Failed to start manual timer. Please try again.');
+        // Clear pending state on failure
+        setPendingActions(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(zone_id);
+          return newSet;
+        });
+        setExpectedZoneStates(prev => {
+          const newStates = { ...prev };
+          delete newStates[zone_id];
+          return newStates;
+        });
       }
     })
     .catch(error => {
       console.error('Error starting manual timer:', error);
       alert('Error starting manual timer. Please try again.');
+      // Clear pending state on error
+      setPendingActions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(zone_id);
+        return newSet;
+      });
+      setExpectedZoneStates(prev => {
+        const newStates = { ...prev };
+        delete newStates[zone_id];
+        return newStates;
+      });
     });
   }
 
@@ -641,6 +907,101 @@ export default function GardenOverview() {
     return () => clearInterval(interval);
   }, [zoneStatuses]); // Recalculate when real zone statuses change
 
+  // Monitor for scheduled events and set expected states
+  useEffect(() => {
+    const checkScheduledEvents = () => {
+      const now = new Date();
+      
+      zones.forEach(zone => {
+        if (zone.mode === 'disabled') return;
+        
+        // Check if this zone should be starting now
+        const nextStartTime = getNextStartTime(zone.zone_id, zone.times?.[0]?.value || '');
+        if (!nextStartTime) return;
+        
+        // If the scheduled time is within the grace period and zone isn't active yet
+        const timeDiff = Math.abs(now.getTime() - nextStartTime.getTime()) / 1000;
+        const realStatus = zoneStatuses[zone.zone_id] || { active: false };
+        
+        if (timeDiff <= ERROR_DETECTION_LIMITS.SCHEDULED_EVENT_GRACE_PERIOD && !realStatus.active && !expectedZoneStates[zone.zone_id]?.active) {
+          // Set expected state for scheduled event
+          const duration = getZoneDuration(zone);
+          const endTime = new Date(nextStartTime.getTime() + duration * 1000);
+          
+          setExpectedZoneStates(prev => ({
+            ...prev,
+            [zone.zone_id]: {
+              active: true,
+              startTime: nextStartTime,
+              endTime: endTime,
+              type: 'scheduled'
+            }
+          }));
+          
+          // Set pending state and error tracking
+          setPendingActions(prev => new Set(prev).add(zone.zone_id));
+          setErrorStartTimes(prev => ({ ...prev, [zone.zone_id]: now }));
+        }
+      });
+    };
+    
+    checkScheduledEvents();
+    const interval = setInterval(checkScheduledEvents, 1000); // Check every second
+    
+    return () => clearInterval(interval);
+  }, [zones, zoneStatuses, expectedZoneStates]);
+
+  // Cleanup old errors and timeouts
+  useEffect(() => {
+    const cleanupErrors = () => {
+      const now = new Date();
+      
+      // Clean up old error tracking
+      setErrorStartTimes(prev => {
+        const newTimes = { ...prev };
+        Object.entries(newTimes).forEach(([zoneIdStr, startTime]) => {
+          const zoneId = parseInt(zoneIdStr);
+          const duration = (now.getTime() - startTime.getTime()) / 1000;
+          
+          // Clear if error has been tracked for too long
+          if (duration > ERROR_DETECTION_LIMITS.MAX_ERROR_DURATION) {
+            delete newTimes[zoneId];
+            // Also clear expected state if it's been too long
+            setExpectedZoneStates(prevStates => {
+              const newStates = { ...prevStates };
+              delete newStates[zoneId];
+              return newStates;
+            });
+            // Clear pending state if it's been too long
+            setPendingActions(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(zoneId);
+              return newSet;
+            });
+          }
+        });
+        return newTimes;
+      });
+      
+      // Clean up old error durations
+      setErrorDurations(prev => {
+        const newDurations = { ...prev };
+        Object.keys(newDurations).forEach(zoneIdStr => {
+          const zoneId = parseInt(zoneIdStr);
+          if (!errorStartTimes[zoneId]) {
+            delete newDurations[zoneId];
+          }
+        });
+        return newDurations;
+      });
+    };
+    
+    cleanupErrors();
+    const interval = setInterval(cleanupErrors, 10000); // Clean up every 10 seconds
+    
+    return () => clearInterval(interval);
+  }, [errorStartTimes]);
+
   // Handler to cancel a timer (manual or scheduled)
   function cancelTimer(zone_id: number) {
     const zoneStatus = zoneStatuses[zone_id];
@@ -657,6 +1018,20 @@ export default function GardenOverview() {
 
     console.log(`Attempting to cancel timer for zone ${zone_id}...`);
     console.log(`DELETE URL: ${getApiBaseUrl()}/api/manual-timer/${zone_id}`);
+    
+    // Set expected state to inactive
+    setExpectedZoneStates(prev => ({
+      ...prev,
+      [zone_id]: {
+        active: false,
+        startTime: null,
+        endTime: null,
+        type: 'canceled'
+      }
+    }));
+    
+    // Set pending state
+    setPendingActions(prev => new Set(prev).add(zone_id));
     
     fetch(`${getApiBaseUrl()}/api/manual-timer/${zone_id}`, {
       method: 'DELETE',
@@ -677,6 +1052,17 @@ export default function GardenOverview() {
         console.error('Failed to cancel manual timer, status:', response.status);
         response.text().then(text => console.error('Response text:', text));
         alert('Failed to cancel manual timer. Please try again.');
+        // Clear pending state on failure
+        setPendingActions(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(zone_id);
+          return newSet;
+        });
+        setExpectedZoneStates(prev => {
+          const newStates = { ...prev };
+          delete newStates[zone_id];
+          return newStates;
+        });
       }
     })
     .catch(error => {
@@ -688,6 +1074,17 @@ export default function GardenOverview() {
         console.error('This is a TypeError - likely a CORS or network issue');
       }
       alert('Error canceling manual timer. Please try again.');
+      // Clear pending state on error
+      setPendingActions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(zone_id);
+        return newSet;
+      });
+      setExpectedZoneStates(prev => {
+        const newStates = { ...prev };
+        delete newStates[zone_id];
+        return newStates;
+      });
     });
   }
 
@@ -860,6 +1257,7 @@ export default function GardenOverview() {
                 const remaining = realStatus.remaining;
                 const rowNumber = Math.floor((z.zone_id - 1) / 4);
                 const isExpanded = expandedRow === rowNumber;
+                const indicatorStyle = getIndicatorColor(z.zone_id);
                 return (
                   <div key={z.zone_id} style={{
                     width: '100%',
@@ -868,7 +1266,7 @@ export default function GardenOverview() {
                     color: '#f4f4f4',
                     borderRadius: '16px',
                     boxShadow: '0 4px 24px rgba(24,31,42,0.18)',
-                    border: isOn ? '2px solid #00bcd4' : '2px solid #232b3b',
+                    border: `2px solid ${indicatorStyle.border}`,
                     cursor: 'pointer',
                     transition: 'border 0.2s',
                     padding: '10px',
@@ -893,14 +1291,15 @@ export default function GardenOverview() {
                           width: '16px',
                           height: '16px',
                           borderRadius: '50%',
-                          background: isOn ? '#00bcd4' : '#888',
+                          background: indicatorStyle.color,
                           display: 'inline-block',
                           border: '2px solid #222',
                           cursor: 'pointer',
-                          boxShadow: isOn ? '0 0 8px #00bcd4' : 'none'
+                          boxShadow: indicatorStyle.shadow,
+                          transition: 'all 0.3s ease'
                         }}
                         onClick={e => { e.stopPropagation(); setShowManualControl(showManualControl === z.zone_id ? null : z.zone_id); }}
-                        title="Manual control"
+                        title={indicatorStyle.title}
                       ></span>
                       <span style={{
                         color: '#00bcd4',
@@ -1313,4 +1712,4 @@ export default function GardenOverview() {
       </div>
     </div>
   );
-} 
+}  
