@@ -208,7 +208,7 @@ class WateringScheduler:
             lock_acquired = False
             save_needed = False
             try:
-                lock_acquired = self.lock.acquire(timeout=0.5)  # 500ms timeout
+                lock_acquired = self.lock.acquire(timeout=2.0)  # 2 second timeout
                 if lock_acquired:
                     # Update zone state
                     self.zone_states[zone_id] = zone_state
@@ -971,82 +971,84 @@ class WateringScheduler:
     def check_scheduled_events(self):
         """Check for scheduled events that should start now"""
         try:
+            # Copy data from cache quickly while holding lock
             with self.lock:
-                # Use cached schedule and settings
                 if not self.schedule or not self.settings:
-                    print("DEBUG: No schedule or settings available")
                     return
+                schedule = self.schedule.copy()
+                settings = self.settings.copy()
+                zone_states = self.zone_states.copy()
+            
+            # Process everything outside the lock
+            lat = settings.get('gps_lat', 0.0)
+            lon = settings.get('gps_lon', 0.0)
+            tz = settings.get('timezone', 'UTC')
 
-                schedule = self.schedule
-                lat = self.settings.get('gps_lat', 0.0)
-                lon = self.settings.get('gps_lon', 0.0)
-                tz = self.settings.get('timezone', 'UTC')
-
-                # Get solar times for today
-                city = LocationInfo(latitude=lat, longitude=lon, timezone=tz)
-                dt = self.get_current_time()
-                s = sun(city.observer, date=dt.date(), tzinfo=city.timezone)
+            # Get solar times for today
+            city = LocationInfo(latitude=lat, longitude=lon, timezone=tz)
+            dt = self.get_current_time()
+            s = sun(city.observer, date=dt.date(), tzinfo=city.timezone)
+            
+            for zone_id_str, zone_data in schedule.items():
+                zone_id = int(zone_id_str)
                 
-                for zone_id_str, zone_data in schedule.items():
-                    zone_id = int(zone_id_str)
+                # Skip disabled zones
+                mode = zone_data.get('mode', 'manual')
+                if mode == 'disabled':
+                    continue
+                
+                # Skip if zone is already active (check from copied state)
+                zone_state = zone_states.get(zone_id, {})
+                if zone_state.get('active', False):
+                    continue
+                
+                period = zone_data.get('period', 'D')
+                start_day = zone_data.get('startDay', '')
+                times = zone_data.get('times', [])
+                
+                # Check if this zone should run today
+                should_run_today = self._should_run_today(period, start_day, dt)
+                if not should_run_today:
+                    continue
+                
+                # Check each scheduled time
+                for event in times:
+                    value = event.get('value')
+                    duration_str = event.get('duration', '000100')
                     
-                    # Skip disabled zones
-                    mode = zone_data.get('mode', 'manual')
-                    if mode == 'disabled':
+                    # Resolve start_time
+                    start_time = self._resolve_event_time(value, s, dt)
+                    if not start_time:
                         continue
                     
-                    # Skip if zone is already active
-                    zone_state = self.zone_states.get(zone_id, {})
-                    if zone_state.get('active', False):
-                        continue
+                    # Parse duration
+                    try:
+                        duration = self._parse_duration(duration_str)
+                    except Exception as e:
+                        print(f"Duration parse failed: {e}, using default 1 min")
+                        duration = timedelta(minutes=1)
                     
-                    period = zone_data.get('period', 'D')
-                    start_day = zone_data.get('startDay', '')
-                    times = zone_data.get('times', [])
+                    # Check if it's time to start this event (within 60 seconds after start time for catch-up)
+                    time_since_start = (dt - start_time).total_seconds()
                     
-                    # Check if this zone should run today
-                    should_run_today = self._should_run_today(period, start_day, dt)
-                    if not should_run_today:
-                        continue
-                    
-                    # Check each scheduled time
-                    for event in times:
-                        value = event.get('value')
-                        duration_str = event.get('duration', '000100')
-                        
-                        # Resolve start_time
-                        start_time = self._resolve_event_time(value, s, dt)
-                        if not start_time:
-                            continue
-                        
-                        # Parse duration
-                        try:
-                            duration = self._parse_duration(duration_str)
-                        except Exception as e:
-                            print(f"Duration parse failed: {e}, using default 1 min")
-                            duration = timedelta(minutes=1)
-                        
-                        # Check if it's time to start this event (within 60 seconds after start time for catch-up)
-                        time_since_start = (dt - start_time).total_seconds()
-                        
-                        if 0 <= time_since_start < 60:  # Trigger within 60 seconds after scheduled time
-                            print(f"Scheduled event: Zone {zone_id} at {start_time.strftime('%H:%M:%S')} ({time_since_start:.1f}s after)")
-                            success = self.activate_zone_direct(zone_id, int(duration.total_seconds()), 'scheduled')
-                            if success:
-                                self._setup_logging()
-                                self.log_event(self.watering_logger, 'INFO', 
-                                             'Scheduled event started', 
-                                             zone_id=zone_id, 
-                                             scheduled_time=start_time.strftime('%H:%M'),
-                                             duration=int(duration.total_seconds()))
-                            else:
-                                self._setup_logging()
-                                self.log_event(self.error_logger, 'ERROR', 
-                                             'Failed to start scheduled event', 
-                                             zone_id=zone_id, 
-                                             scheduled_time=start_time.strftime('%H:%M'))
-                                print(f"ERROR: Failed to start scheduled event for zone {zone_id}")
-                            break  # Only start one event per zone per check
+                    if 0 <= time_since_start < 60:  # Trigger within 60 seconds after scheduled time
+                        print(f"Scheduled event: Zone {zone_id} at {start_time.strftime('%H:%M:%S')} ({time_since_start:.1f}s after)")
+                        success = self.activate_zone_direct(zone_id, int(duration.total_seconds()), 'scheduled')
+                        if success:
+                            self._setup_logging()
+                            self.log_event(self.watering_logger, 'INFO', 
+                                         'Scheduled event started', 
+                                         zone_id=zone_id, 
+                                         scheduled_time=start_time.strftime('%H:%M'),
+                                         duration=int(duration.total_seconds()))
+                        else:
+                            self._setup_logging()
+                            self.log_event(self.error_logger, 'ERROR', 
+                                         'Failed to start scheduled event', 
+                                         zone_id=zone_id, 
+                                         scheduled_time=start_time.strftime('%H:%M'))
+                            print(f"ERROR: Failed to start scheduled event for zone {zone_id}")
+                        break  # Only start one event per zone per check
                             
         except Exception as e:
             print(f"Error in check_scheduled_events: {e}")
