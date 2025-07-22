@@ -27,6 +27,8 @@ class WateringScheduler:
         
         # File paths
         self.active_zones_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'active_zones.json')
+        self.schedule_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'schedule.json')
+        self.settings_file = os.path.join(os.path.dirname(__file__), '..', 'config', 'settings.cfg')
         
         # Caching for performance
         self.schedule = {}  # Cached schedule
