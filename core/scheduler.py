@@ -19,21 +19,30 @@ from .gpio import setup_gpio, activate_zone, deactivate_zone, cleanup_gpio, get_
 
 class WateringScheduler:
     def __init__(self):
-        self.schedule_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "schedule.json")
-        self.settings_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "settings.cfg")
+        """Initialize the watering scheduler"""
         self.running = False
-        self.active_zones = {}  # zone_id -> end_time
-        self.zone_states = {}   # zone_id -> {'active': bool, 'end_time': datetime, 'type': 'manual'|'scheduled'}
-        self.active_zones_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "active_zones.json")
         self.thread = None
+        self.active_zones = {}  # zone_id -> end_time
+        self.zone_states = {}   # zone_id -> state dict
         
+        # File paths
+        self.active_zones_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'active_zones.json')
+        
+        # Caching for performance
         self.schedule = {}  # Cached schedule
         self.settings = {}  # Cached settings
         self._load_schedule()
         self._load_settings()
         
+        # Debug counters
+        self.check_count = 0
+        self.last_check_time = None
+        
         # Initialize zone states
         self._initialize_zone_states()
+        
+        # Setup logging
+        self._setup_logging()
         
         # Load any existing active zones from persistent storage
         self.load_active_zones()
@@ -193,9 +202,11 @@ class WateringScheduler:
         try:
             print(f"DEBUG: deactivate_zone_direct called - zone_id={zone_id}, reason={reason}")
             print(f"DEBUG: active_zones before deactivation: {self.active_zones}")
+            print(f"DEBUG: zone_states[{zone_id}] before deactivation: {self.zone_states.get(zone_id, {})}")
             
             # Deactivate the hardware
             deactivate_zone(zone_id)
+            print(f"DEBUG: Hardware deactivation completed for zone {zone_id}")
             
             # Update zone state
             self.zone_states[zone_id] = {
@@ -204,6 +215,7 @@ class WateringScheduler:
                 'type': None,
                 'remaining': 0
             }
+            print(f"DEBUG: Updated zone_states[{zone_id}] = {self.zone_states[zone_id]}")
             
             # Remove from active zones
             if zone_id in self.active_zones:
@@ -221,6 +233,9 @@ class WateringScheduler:
             return True
             
         except Exception as e:
+            print(f"ERROR in deactivate_zone_direct: {e}")
+            import traceback
+            traceback.print_exc()
             self._setup_logging()
             self.log_event(self.error_logger, 'ERROR', f'Zone deactivation failed', 
                          zone_id=zone_id, error=str(e))
@@ -667,13 +682,17 @@ class WateringScheduler:
     
     def check_and_stop_expired_zones(self):
         """Check for expired zones and stop them"""
+        # Increment debug counter
+        self.check_count += 1
+        self.last_check_time = datetime.now()
+        
         # Use timezone-aware datetime for comparison
         tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
         tz = pytz.timezone(tz_name)
         current_time = datetime.now(tz)
         zones_to_stop = []
         
-        print(f"DEBUG: check_and_stop_expired_zones - current_time={current_time} (timezone: {tz_name})")
+        print(f"DEBUG: check_and_stop_expired_zones #{self.check_count} - current_time={current_time} (timezone: {tz_name})")
         print(f"DEBUG: active_zones={self.active_zones}")
         
         for zone_id, end_time in self.active_zones.items():
