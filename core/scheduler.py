@@ -329,7 +329,7 @@ class WateringScheduler:
                         print(f"DEBUG: Removed zone {zone_id} from active_zones")
                         print(f"DEBUG: active_zones after removal: {self.active_zones}")
                         print(f"DEBUG: About to call save_active_zones...")
-                        self.save_active_zones()
+                        self.save_active_zones(skip_lock=True)
                         print(f"DEBUG: save_active_zones call completed")
                     else:
                         print(f"DEBUG: Zone {zone_id} not in active_zones, skipping removal")
@@ -803,41 +803,52 @@ class WateringScheduler:
             import traceback
             traceback.print_exc()
     
-    def save_active_zones(self):
+    def save_active_zones(self, skip_lock: bool = False):
         """Save active zones to persistent storage"""
         try:
-            with self.lock:
-                print(f"DEBUG: save_active_zones called")
-                print(f"DEBUG: Saving {len(self.active_zones)} active zones to {self.active_zones_file}")
-                print(f"DEBUG: Active zones: {self.active_zones}")
-                
-                # Save both end_time and event_type for each zone
-                data = {}
-                for zone_id, end_time in self.active_zones.items():
-                    zone_state = self.zone_states.get(zone_id, {})
-                    event_type = zone_state.get('type', 'manual')  # Default to manual if not set
-                    data[str(zone_id)] = {
-                        'end_time': end_time.isoformat(),
-                        'type': event_type
-                    }
-                
-                print(f"DEBUG: Saving data: {data}")
-                print(f"DEBUG: File path: {self.active_zones_file}")
-                print(f"DEBUG: File exists before save: {os.path.exists(self.active_zones_file)}")
-                
-                # Ensure directory exists
-                os.makedirs(os.path.dirname(self.active_zones_file), exist_ok=True)
-                
-                with open(self.active_zones_file, 'w') as f:
-                    json.dump(data, f, indent=2)
-                
-                print(f"DEBUG: File exists after save: {os.path.exists(self.active_zones_file)}")
-                print(f"DEBUG: File size after save: {os.path.getsize(self.active_zones_file) if os.path.exists(self.active_zones_file) else 'N/A'}")
-                print(f"✅ Active zones saved successfully")
+            if skip_lock:
+                # Assume lock is already held by caller
+                print(f"DEBUG: save_active_zones called (skip_lock=True)")
+            else:
+                # Acquire lock
+                print(f"DEBUG: save_active_zones called (skip_lock=False)")
+                self.lock.acquire()
+            
+            print(f"DEBUG: save_active_zones called")
+            print(f"DEBUG: Saving {len(self.active_zones)} active zones to {self.active_zones_file}")
+            print(f"DEBUG: Active zones: {self.active_zones}")
+            
+            # Save both end_time and event_type for each zone
+            data = {}
+            for zone_id, end_time in self.active_zones.items():
+                zone_state = self.zone_states.get(zone_id, {})
+                event_type = zone_state.get('type', 'manual')  # Default to manual if not set
+                data[str(zone_id)] = {
+                    'end_time': end_time.isoformat(),
+                    'type': event_type
+                }
+            
+            print(f"DEBUG: Saving data: {data}")
+            print(f"DEBUG: File path: {self.active_zones_file}")
+            print(f"DEBUG: File exists before save: {os.path.exists(self.active_zones_file)}")
+            
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(self.active_zones_file), exist_ok=True)
+            
+            with open(self.active_zones_file, 'w') as f:
+                json.dump(data, f, indent=2)
+            
+            print(f"DEBUG: File exists after save: {os.path.exists(self.active_zones_file)}")
+            print(f"DEBUG: File size after save: {os.path.getsize(self.active_zones_file) if os.path.exists(self.active_zones_file) else 'N/A'}")
+            print(f"✅ Active zones saved successfully")
+            
         except Exception as e:
             print(f"❌ Error saving active zones: {e}")
             import traceback
             traceback.print_exc()
+        finally:
+            if not skip_lock:
+                self.lock.release()
     
     def add_manual_timer(self, zone_id: int, duration_seconds: int) -> bool:
         """Add a manual timer for a zone (used by API)"""
