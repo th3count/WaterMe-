@@ -855,6 +855,11 @@ class WateringScheduler:
         while self.running:
             try:
                 loop_count += 1
+                
+                # IMMEDIATE DEBUG - print every iteration for first 10 loops
+                if loop_count <= 10:
+                    print(f"DEBUG: Scheduler loop iteration {loop_count} - calling check_and_stop_expired_zones()")
+                
                 if loop_count % 60 == 0:  # Log every 60 seconds
                     print(f"DEBUG: Scheduler loop iteration {loop_count}")
                 
