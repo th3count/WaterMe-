@@ -183,59 +183,67 @@ class WateringScheduler:
         Returns:
             bool: Success status
         """
+        print(f"DEBUG: activate_zone_direct called - zone_id={zone_id}, duration={duration_seconds}, type={event_type}")
+        print(f"DEBUG: About to acquire lock...")
+        
+        # Use a timeout to prevent deadlock
+        if not self.lock.acquire(timeout=5.0):  # 5 second timeout
+            print(f"DEBUG: Failed to acquire lock within 5 seconds - possible deadlock")
+            return False
+        
         try:
+            print(f"DEBUG: Lock acquired successfully")
             print(f"DEBUG: activate_zone_direct called - zone_id={zone_id}, duration={duration_seconds}, type={event_type}")
-            print(f"DEBUG: About to acquire lock...")
-            with self.lock:
-                print(f"DEBUG: Lock acquired successfully")
-                print(f"DEBUG: activate_zone_direct called - zone_id={zone_id}, duration={duration_seconds}, type={event_type}")
-                
-                # Tell gpio.py to activate the hardware
-                activate_zone(zone_id)
-                
-                # Update zone state using timezone-aware datetime
-                end_time = None
-                if duration_seconds:
-                    # Use timezone-aware datetime
-                    tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
-                    tz = pytz.timezone(tz_name)
-                    # Get current UTC time and convert to configured timezone
-                    utc_now = datetime.now(pytz.UTC)
-                    now = utc_now.astimezone(tz)
-                    end_time = now + timedelta(seconds=duration_seconds)
-                    print(f"DEBUG: Calculated end_time = {end_time} (timezone: {tz_name})")
-                
-                self.zone_states[zone_id] = {
-                    'active': True,
-                    'end_time': end_time,
-                    'type': event_type,
-                    'remaining': duration_seconds if duration_seconds else 0
-                }
-                
-                print(f"DEBUG: Updated zone_states[{zone_id}] = {self.zone_states[zone_id]}")
-                
-                # Add to active zones if duration specified
-                if duration_seconds:
-                    self.active_zones[zone_id] = end_time
-                    print(f"DEBUG: Added to active_zones[{zone_id}] = {end_time}")
-                    print(f"DEBUG: active_zones now contains: {self.active_zones}")
-                    self.save_active_zones()
-                else:
-                    print(f"DEBUG: No duration specified, not adding to active_zones")
-                
-                self._setup_logging()
-                self.log_event(self.watering_logger, 'INFO', f'{event_type.title()} zone activation', 
-                             zone_id=zone_id, duration=duration_seconds)
-                
-                print(f"Scheduler: Activated zone {zone_id} for {duration_seconds}s ({event_type})")
-                return True
-                
+            
+            # Tell gpio.py to activate the hardware
+            activate_zone(zone_id)
+            
+            # Update zone state using timezone-aware datetime
+            end_time = None
+            if duration_seconds:
+                # Use timezone-aware datetime
+                tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
+                tz = pytz.timezone(tz_name)
+                # Get current UTC time and convert to configured timezone
+                utc_now = datetime.now(pytz.UTC)
+                now = utc_now.astimezone(tz)
+                end_time = now + timedelta(seconds=duration_seconds)
+                print(f"DEBUG: Calculated end_time = {end_time} (timezone: {tz_name})")
+            
+            self.zone_states[zone_id] = {
+                'active': True,
+                'end_time': end_time,
+                'type': event_type,
+                'remaining': duration_seconds if duration_seconds else 0
+            }
+            
+            print(f"DEBUG: Updated zone_states[{zone_id}] = {self.zone_states[zone_id]}")
+            
+            # Add to active zones if duration specified
+            if duration_seconds:
+                self.active_zones[zone_id] = end_time
+                print(f"DEBUG: Added to active_zones[{zone_id}] = {end_time}")
+                print(f"DEBUG: active_zones now contains: {self.active_zones}")
+                self.save_active_zones()
+            else:
+                print(f"DEBUG: No duration specified, not adding to active_zones")
+            
+            self._setup_logging()
+            self.log_event(self.watering_logger, 'INFO', f'{event_type.title()} zone activation', 
+                         zone_id=zone_id, duration=duration_seconds)
+            
+            print(f"Scheduler: Activated zone {zone_id} for {duration_seconds}s ({event_type})")
+            return True
+            
         except Exception as e:
             self._setup_logging()
             self.log_event(self.error_logger, 'ERROR', f'Zone activation failed', 
                          zone_id=zone_id, error=str(e))
             print(f"Scheduler: Failed to activate zone {zone_id}: {e}")
             return False
+        finally:
+            self.lock.release()
+            print(f"DEBUG: Lock released")
     
     def deactivate_zone_direct(self, zone_id: int, reason: str = 'manual', skip_lock: bool = False) -> bool:
         """
