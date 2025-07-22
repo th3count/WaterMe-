@@ -56,7 +56,22 @@ except ImportError:
     GPIO = MockGPIO()
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={
+    r"/api/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Connection", "Authorization"],
+        "supports_credentials": False
+    }
+})
+
+@app.after_request
+def after_request(response):
+    """Add CORS headers to all responses"""
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Connection, Authorization')
+    return response
 
 SETTINGS_PATH = os.path.join(os.path.dirname(__file__), "config", "settings.cfg")
 GPIO_PATH = os.path.join(os.path.dirname(__file__), "config", "gpio.cfg")
