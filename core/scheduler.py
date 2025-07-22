@@ -156,7 +156,9 @@ class WateringScheduler:
                 # Use timezone-aware datetime
                 tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
                 tz = pytz.timezone(tz_name)
-                now = datetime.now(tz)
+                # Get current UTC time and convert to configured timezone
+                utc_now = datetime.now(pytz.UTC)
+                now = utc_now.astimezone(tz)
                 end_time = now + timedelta(seconds=duration_seconds)
                 print(f"DEBUG: Calculated end_time = {end_time} (timezone: {tz_name})")
             
@@ -258,7 +260,9 @@ class WateringScheduler:
             # Use timezone-aware datetime for calculation
             tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
             tz = pytz.timezone(tz_name)
-            current_time = datetime.now(tz)
+            # Get current UTC time and convert to configured timezone
+            utc_now = datetime.now(pytz.UTC)
+            current_time = utc_now.astimezone(tz)
             
             end_time = state['end_time']
             # Ensure end_time is timezone-aware
@@ -585,7 +589,9 @@ class WateringScheduler:
                     # Get timezone for proper datetime handling
                     tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
                     tz = pytz.timezone(tz_name)
-                    current_time = datetime.now(tz)
+                    # Get current UTC time and convert to configured timezone
+                    utc_now = datetime.now(pytz.UTC)
+                    current_time = utc_now.astimezone(tz)
                     
                     # Handle both old format (string) and new format (dict)
                     for zone_id, zone_data in data.items():
@@ -691,7 +697,9 @@ class WateringScheduler:
         # Use timezone-aware datetime for comparison
         tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
         tz = pytz.timezone(tz_name)
-        current_time = datetime.now(tz)
+        # Get current UTC time and convert to configured timezone
+        utc_now = datetime.now(pytz.UTC)
+        current_time = utc_now.astimezone(tz)
         zones_to_stop = []
         
         print(f"DEBUG: check_and_stop_expired_zones #{self.check_count} - current_time={current_time} (timezone: {tz_name})")
@@ -875,7 +883,9 @@ class WateringScheduler:
                     # Update remaining times for active zones
                     tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
                     tz = pytz.timezone(tz_name)
-                    current_time = datetime.now(tz)
+                    # Get current UTC time and convert to configured timezone
+                    utc_now = datetime.now(pytz.UTC)
+                    current_time = utc_now.astimezone(tz)
                     
                     for zone_id in list(self.zone_states.keys()):
                         state = self.zone_states[zone_id]
