@@ -139,11 +139,15 @@ class WateringScheduler:
             # Tell gpio.py to activate the hardware
             activate_zone(zone_id)
             
-            # Update zone state
+            # Update zone state using timezone-aware datetime
             end_time = None
             if duration_seconds:
-                end_time = datetime.now() + timedelta(seconds=duration_seconds)
-                print(f"DEBUG: Calculated end_time = {end_time}")
+                # Use timezone-aware datetime
+                tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
+                tz = pytz.timezone(tz_name)
+                now = datetime.now(tz)
+                end_time = now + timedelta(seconds=duration_seconds)
+                print(f"DEBUG: Calculated end_time = {end_time} (timezone: {tz_name})")
             
             self.zone_states[zone_id] = {
                 'active': True,
@@ -234,7 +238,17 @@ class WateringScheduler:
         
         # Update remaining time if active with timer
         if state['active'] and state['end_time']:
-            remaining = (state['end_time'] - datetime.now()).total_seconds()
+            # Use timezone-aware datetime for calculation
+            tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
+            tz = pytz.timezone(tz_name)
+            current_time = datetime.now(tz)
+            
+            end_time = state['end_time']
+            # Ensure end_time is timezone-aware
+            if end_time.tzinfo is None:
+                end_time = tz.localize(end_time)
+            
+            remaining = (end_time - current_time).total_seconds()
             state['remaining'] = max(0, int(remaining))
         
         return state.copy()
@@ -551,6 +565,11 @@ class WateringScheduler:
                     data = json.load(f)
                     print(f"Debug: Found {len(data)} active zones in file: {data}")
                     
+                    # Get timezone for proper datetime handling
+                    tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
+                    tz = pytz.timezone(tz_name)
+                    current_time = datetime.now(tz)
+                    
                     # Handle both old format (string) and new format (dict)
                     for zone_id, zone_data in data.items():
                         # Handle old format where zone_data is just a string
@@ -562,17 +581,22 @@ class WateringScheduler:
                             end_time_str = zone_data.get('end_time')
                             event_type = zone_data.get('type', 'manual')
                         
+                        # Parse the datetime and make it timezone-aware
                         end_time = datetime.fromisoformat(end_time_str)
-                        print(f"Debug: Zone {zone_id} end time: {end_time}, type: {event_type} (now: {datetime.now()})")
+                        if end_time.tzinfo is None:
+                            # If stored time is naive, assume it's in the configured timezone
+                            end_time = tz.localize(end_time)
+                        
+                        print(f"Debug: Zone {zone_id} end time: {end_time}, type: {event_type} (now: {current_time})")
                         
                         # Only restore if the timer hasn't expired
-                        if end_time > datetime.now():
+                        if end_time > current_time:
                             zone_id_int = int(zone_id)
                             self.active_zones[zone_id_int] = end_time
                             # Activate the hardware
                             activate_zone(zone_id_int)
                             # Update zone state with the correct event type
-                            remaining = int((end_time - datetime.now()).total_seconds())
+                            remaining = int((end_time - current_time).total_seconds())
                             self.zone_states[zone_id_int] = {
                                 'active': True,
                                 'end_time': end_time,
@@ -643,13 +667,22 @@ class WateringScheduler:
     
     def check_and_stop_expired_zones(self):
         """Check for expired zones and stop them"""
-        current_time = datetime.now()
+        # Use timezone-aware datetime for comparison
+        tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
+        tz = pytz.timezone(tz_name)
+        current_time = datetime.now(tz)
         zones_to_stop = []
         
-        print(f"DEBUG: check_and_stop_expired_zones - current_time={current_time}")
+        print(f"DEBUG: check_and_stop_expired_zones - current_time={current_time} (timezone: {tz_name})")
         print(f"DEBUG: active_zones={self.active_zones}")
         
         for zone_id, end_time in self.active_zones.items():
+            # Ensure end_time is timezone-aware for comparison
+            if end_time.tzinfo is None:
+                # If stored end_time is naive, assume it's in the configured timezone
+                end_time = tz.localize(end_time)
+                print(f"DEBUG: Converted naive end_time to timezone-aware: {end_time}")
+            
             print(f"DEBUG: Checking zone {zone_id}, end_time={end_time}, expired={current_time >= end_time}")
             if current_time >= end_time:
                 zones_to_stop.append(zone_id)
@@ -808,10 +841,19 @@ class WateringScheduler:
                     self.check_scheduled_events()
                 
                 # Update remaining times for active zones
+                tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
+                tz = pytz.timezone(tz_name)
+                current_time = datetime.now(tz)
+                
                 for zone_id in list(self.zone_states.keys()):
                     state = self.zone_states[zone_id]
                     if state['active'] and state['end_time']:
-                        remaining = (state['end_time'] - datetime.now()).total_seconds()
+                        end_time = state['end_time']
+                        # Ensure end_time is timezone-aware
+                        if end_time.tzinfo is None:
+                            end_time = tz.localize(end_time)
+                        
+                        remaining = (end_time - current_time).total_seconds()
                         state['remaining'] = max(0, int(remaining))
                         if loop_count % 10 == 0:  # Log every 10 seconds
                             print(f"DEBUG: Zone {zone_id} remaining time: {state['remaining']}s")
