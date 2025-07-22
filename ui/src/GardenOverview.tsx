@@ -233,7 +233,7 @@ export default function GardenOverview() {
     };
 
     fetchZoneStatuses();
-    const interval = setInterval(fetchZoneStatuses, 5000);  // Reduced to every 5 seconds
+    const interval = setInterval(fetchZoneStatuses, 1000);  // Poll every 1 second for smooth countdown
     return () => clearInterval(interval);
   }, []);
 

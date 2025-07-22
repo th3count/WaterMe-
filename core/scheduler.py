@@ -676,6 +676,9 @@ class WateringScheduler:
         # If we stopped any zones, add a small delay before next check
         if zones_to_stop:
             time.sleep(0.2)  # 200ms delay after stopping zones
+            print(f"DEBUG: Stopped {len(zones_to_stop)} expired zones")
+        else:
+            print(f"DEBUG: No expired zones to stop")
     
     def check_scheduled_events(self):
         """Check for scheduled events that should start now"""
@@ -797,11 +800,12 @@ class WateringScheduler:
                 if loop_count % 60 == 0:  # Log every 60 seconds
                     print(f"DEBUG: Scheduler loop iteration {loop_count}")
                 
-                # Check for expired manual timers
+                # Check for expired manual timers (MOST IMPORTANT - check every loop)
                 self.check_and_stop_expired_zones()
                 
-                # Check for scheduled events
-                self.check_scheduled_events()
+                # Check for scheduled events (less frequent)
+                if loop_count % 10 == 0:  # Check every 10 seconds
+                    self.check_scheduled_events()
                 
                 # Update remaining times for active zones
                 for zone_id in list(self.zone_states.keys()):
@@ -816,8 +820,8 @@ class WateringScheduler:
                 if loop_count % 30 == 0:
                     self.debug_zone_states()
                 
-                # Sleep for a short interval
-                time.sleep(1)
+                # Sleep for a shorter interval to catch expired timers faster
+                time.sleep(0.5)  # Check every 500ms instead of 1 second
                 
             except Exception as e:
                 print(f"ERROR in scheduler loop: {e}")
@@ -835,8 +839,15 @@ class WateringScheduler:
             self.running = True
             self.thread = threading.Thread(target=self.run_scheduler_loop, daemon=True)
             self.thread.start()
-            print("DEBUG: Scheduler thread started")
-            print("Watering scheduler started")
+            
+            # Wait a moment and verify the thread is alive
+            time.sleep(0.5)
+            if self.thread.is_alive():
+                print("DEBUG: Scheduler thread started and is alive")
+                print("Watering scheduler started")
+            else:
+                print("ERROR: Scheduler thread failed to start!")
+                self.running = False
         else:
             print("DEBUG: Scheduler already running")
     

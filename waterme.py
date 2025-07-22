@@ -217,25 +217,13 @@ class WaterMeSystem:
             urls['backend'].append(f"http://localhost:{self.config['backend_port']}")
             urls['frontend'].append(f"http://localhost:{self.config['ui_port']}")
             
-            # Get network IP addresses
-            hostname = socket.gethostname()
-            local_ip = socket.gethostbyname(hostname)
+            # Get actual LAN IP addresses
+            lan_ips = self._get_lan_ips()
             
-            # Add network URLs
-            urls['backend'].append(f"http://{local_ip}:{self.config['backend_port']}")
-            urls['frontend'].append(f"http://{local_ip}:{self.config['ui_port']}")
-            
-            # Try to get additional network interfaces
-            try:
-                # Get all network interfaces
-                for interface_name, interface_addresses in socket.getaddrinfo(hostname, None):
-                    if interface_name[0] == socket.AF_INET:  # IPv4 only
-                        ip = interface_addresses[4][0]
-                        if ip != '127.0.0.1' and ip != local_ip:
-                            urls['backend'].append(f"http://{ip}:{self.config['ui_port']}")
-                            urls['frontend'].append(f"http://{ip}:{self.config['ui_port']}")
-            except:
-                pass  # Ignore errors getting additional interfaces
+            # Add LAN URLs
+            for ip in lan_ips:
+                urls['backend'].append(f"http://{ip}:{self.config['backend_port']}")
+                urls['frontend'].append(f"http://{ip}:{self.config['ui_port']}")
                 
         except Exception as e:
             print(f"Warning: Could not get network URLs: {e}")
@@ -244,6 +232,40 @@ class WaterMeSystem:
             urls['frontend'] = [f"http://localhost:{self.config['ui_port']}"]
         
         return urls
+    
+    def _get_lan_ips(self):
+        """Get actual LAN IP addresses"""
+        import socket
+        
+        lan_ips = []
+        
+        try:
+            # Get all network interfaces
+            for interface_name, interface_addresses in socket.getaddrinfo(socket.gethostname(), None):
+                if interface_name[0] == socket.AF_INET:  # IPv4 only
+                    ip = interface_addresses[4][0]
+                    # Filter out loopback and link-local addresses
+                    if (ip != '127.0.0.1' and 
+                        ip != '127.0.1.1' and 
+                        not ip.startswith('169.254.') and
+                        not ip.startswith('::')):
+                        lan_ips.append(ip)
+        except Exception as e:
+            print(f"Warning: Could not get network interfaces: {e}")
+        
+        # If no LAN IPs found, try alternative method
+        if not lan_ips:
+            try:
+                # Try to connect to a remote address to determine our IP
+                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                    s.connect(("8.8.8.8", 80))
+                    local_ip = s.getsockname()[0]
+                    if local_ip != '127.0.0.1' and local_ip != '127.0.1.1':
+                        lan_ips.append(local_ip)
+            except Exception as e:
+                print(f"Warning: Could not determine local IP: {e}")
+        
+        return lan_ips
     
     def get_network_info(self):
         """Get detailed network information"""
@@ -259,18 +281,18 @@ class WaterMeSystem:
             hostname = socket.gethostname()
             info['hostname'] = hostname
             
-            local_ip = socket.gethostbyname(hostname)
-            info['local_ip'] = local_ip
-            
-            # Get additional network interfaces
-            try:
-                for interface_name, interface_addresses in socket.getaddrinfo(hostname, None):
-                    if interface_name[0] == socket.AF_INET:  # IPv4 only
-                        ip = interface_addresses[4][0]
-                        if ip != '127.0.0.1' and ip != local_ip:
-                            info['network_interfaces'].append(ip)
-            except:
-                pass
+            # Get actual LAN IPs
+            lan_ips = self._get_lan_ips()
+            if lan_ips:
+                info['local_ip'] = lan_ips[0]  # Use first LAN IP
+                info['network_interfaces'] = lan_ips
+            else:
+                # Fallback to hostname resolution
+                try:
+                    local_ip = socket.gethostbyname(hostname)
+                    info['local_ip'] = local_ip
+                except:
+                    pass
                 
         except Exception as e:
             print(f"Warning: Could not get network info: {e}")

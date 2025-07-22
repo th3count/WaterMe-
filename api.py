@@ -2197,7 +2197,8 @@ def test_scheduler():
             'scheduler_running': scheduler.running,
             'active_zones': scheduler.active_zones,
             'zone_states': scheduler.zone_states,
-            'thread_alive': scheduler.thread.is_alive() if scheduler.thread else False
+            'thread_alive': scheduler.thread.is_alive() if scheduler.thread else False,
+            'current_time': datetime.now().isoformat()
         })
     except Exception as e:
         return jsonify({
