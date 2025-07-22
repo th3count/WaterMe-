@@ -6,26 +6,12 @@ import logging
 from datetime import datetime
 import RPi.GPIO as GPIO
 
-# Setup logging
-logger = logging.getLogger('gpio')
-logger.setLevel(logging.INFO)
+# Import unified logging system
+from .logging import log_event, setup_logger
 
-# Create file handler if it doesn't exist
-log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logs')
-os.makedirs(log_dir, exist_ok=True)
-log_file = os.path.join(log_dir, 'gpio.log')
-
-# Check if handler already exists to avoid duplicates
-if not logger.handlers:
-    file_handler = logging.FileHandler(log_file)
-    file_handler.setLevel(logging.INFO)
-    
-    # Create formatter
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    file_handler.setFormatter(formatter)
-    
-    # Add handler to logger
-    logger.addHandler(file_handler)
+# Setup loggers using unified system
+gpio_logger = setup_logger('gpio', 'gpio.log')
+system_logger = setup_logger('system', 'system.log')
 
 # Read config/gpio.cfg
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'gpio.cfg')
@@ -86,95 +72,101 @@ def setup_gpio():
         raise
 
 def activate_zone(zone_id):
-    logger.info(f"=== ACTIVATING ZONE {zone_id} ===")
     setup_gpio()
     
     if zone_id not in ZONE_PINS:
-        logger.warning(f"Zone {zone_id} not in configured pins: {list(ZONE_PINS.keys())}")
+        log_event(gpio_logger, 'WARNING', 'Zone activation failed - invalid zone', 
+                 zone_id=zone_id, 
+                 valid_zones=list(ZONE_PINS.keys()))
         return
     
     pin = ZONE_PINS[zone_id]
-    logger.info(f"Zone {zone_id} mapped to pin {pin}")
     
     # Check current state before activation
     try:
         current_state = GPIO.input(pin)
-        logger.info(f"Zone {zone_id} current state: {'ON' if (current_state == GPIO.LOW) == ACTIVE_LOW else 'OFF'}")
+        current_on = (current_state == GPIO.LOW) == ACTIVE_LOW
     except Exception as e:
-        logger.warning(f"Could not read current state for zone {zone_id}: {e}")
+        log_event(gpio_logger, 'WARNING', 'Could not read current zone state', 
+                 zone_id=zone_id, pin=pin, error=str(e))
+        current_on = False
     
     # For activeLow, ON = LOW; for activeHigh, ON = HIGH
     target_state = GPIO.LOW if ACTIVE_LOW else GPIO.HIGH
     GPIO.output(pin, target_state)
-    logger.info(f"Zone {zone_id} (pin {pin}) activated - set to {'LOW' if target_state == GPIO.LOW else 'HIGH'}")
     
     # Track active zone
     _active_zones.add(zone_id)
-    logger.info(f"Active zones after activation: {sorted(_active_zones)}")
+    
+    # Log activation with structured data
+    log_event(gpio_logger, 'INFO', 'Zone activated', 
+             zone_id=zone_id, 
+             pin=pin,
+             previous_state='ON' if current_on else 'OFF',
+             active_zones=sorted(_active_zones))
     
     # If pump is configured and this isn't the pump zone itself, activate pump
     if PUMP_INDEX > 0 and zone_id != PUMP_INDEX and PUMP_INDEX in ZONE_PINS:
         pump_pin = ZONE_PINS[PUMP_INDEX]
-        logger.info(f"Activating pump (zone {PUMP_INDEX}) on pin {pump_pin}")
         GPIO.output(pump_pin, GPIO.LOW if ACTIVE_LOW else GPIO.HIGH)
-        logger.info(f"Pump (zone {PUMP_INDEX}) activated")
-    elif PUMP_INDEX == 0:
-        logger.info("No pump configured, skipping pump activation")
+        log_event(gpio_logger, 'INFO', 'Pump activated for zone', 
+                 zone_id=zone_id, 
+                 pump_zone=PUMP_INDEX, 
+                 pump_pin=pump_pin)
     elif zone_id == PUMP_INDEX:
-        logger.info("Activating pump zone itself, no additional pump activation needed")
-    else:
-        logger.warning(f"Pump zone {PUMP_INDEX} not found in configured pins")
-    
-    logger.info(f"=== ZONE {zone_id} ACTIVATION COMPLETE ===")
+        log_event(gpio_logger, 'INFO', 'Pump zone activated directly', zone_id=zone_id)
 
 def deactivate_zone(zone_id):
-    logger.info(f"=== DEACTIVATING ZONE {zone_id} ===")
     setup_gpio()
     
     if zone_id not in ZONE_PINS:
-        logger.warning(f"Zone {zone_id} not in configured pins: {list(ZONE_PINS.keys())}")
+        log_event(gpio_logger, 'WARNING', 'Zone deactivation failed - invalid zone', 
+                 zone_id=zone_id, 
+                 valid_zones=list(ZONE_PINS.keys()))
         return
         
     pin = ZONE_PINS[zone_id]
-    logger.info(f"Zone {zone_id} mapped to pin {pin}")
     
     # Check current state before deactivation
     try:
         current_state = GPIO.input(pin)
-        logger.info(f"Zone {zone_id} current state: {'ON' if (current_state == GPIO.LOW) == ACTIVE_LOW else 'OFF'}")
+        current_on = (current_state == GPIO.LOW) == ACTIVE_LOW
     except Exception as e:
-        logger.warning(f"Could not read current state for zone {zone_id}: {e}")
+        log_event(gpio_logger, 'WARNING', 'Could not read current zone state', 
+                 zone_id=zone_id, pin=pin, error=str(e))
+        current_on = False
     
     # For activeLow, OFF = HIGH; for activeHigh, OFF = LOW
     target_state = GPIO.HIGH if ACTIVE_LOW else GPIO.LOW
     GPIO.output(pin, target_state)
-    logger.info(f"Zone {zone_id} (pin {pin}) deactivated - set to {'HIGH' if target_state == GPIO.HIGH else 'LOW'}")
     
     # Remove from active zones BEFORE checking pump status
     was_in_active = zone_id in _active_zones
     _active_zones.discard(zone_id)
-    logger.info(f"Removed zone {zone_id} from _active_zones. Was active: {was_in_active}")
-    logger.info(f"Active zones after deactivation: {sorted(_active_zones)}")
+    
+    # Log deactivation with structured data
+    log_event(gpio_logger, 'INFO', 'Zone deactivated', 
+             zone_id=zone_id, 
+             pin=pin,
+             previous_state='ON' if current_on else 'OFF',
+             was_tracked=was_in_active,
+             active_zones=sorted(_active_zones))
     
     # If pump is configured and no other zones are active, deactivate pump
     if PUMP_INDEX > 0 and PUMP_INDEX in ZONE_PINS:
         # Check if any non-pump zones are still active
         other_active = _active_zones - {PUMP_INDEX}
-        logger.info(f"After deactivating zone {zone_id}, other active zones (excluding pump): {sorted(other_active)}")
         
         if not other_active:
             pump_pin = ZONE_PINS[PUMP_INDEX]
-            logger.info(f"Deactivating pump (zone {PUMP_INDEX}) on pin {pump_pin} - no other zones active")
             GPIO.output(pump_pin, GPIO.HIGH if ACTIVE_LOW else GPIO.LOW)
-            logger.info(f"Pump (zone {PUMP_INDEX}) deactivated")
+            log_event(gpio_logger, 'INFO', 'Pump deactivated - no zones active', 
+                     pump_zone=PUMP_INDEX, 
+                     pump_pin=pump_pin)
         else:
-            logger.info(f"Pump kept ON - other zones still active: {sorted(other_active)}")
-    elif PUMP_INDEX == 0:
-        logger.info("No pump configured, skipping pump deactivation check")
-    else:
-        logger.warning(f"Pump zone {PUMP_INDEX} not found in configured pins")
-    
-    logger.info(f"=== ZONE {zone_id} DEACTIVATION COMPLETE ===")
+            log_event(gpio_logger, 'INFO', 'Pump kept active - other zones running', 
+                     pump_zone=PUMP_INDEX,
+                     other_active_zones=sorted(other_active))
 
 def get_zone_state(zone_id):
     """Get the current hardware state of a zone"""
@@ -203,8 +195,13 @@ def get_all_zone_states():
         states[zone_id] = get_zone_state(zone_id)
     
     active_zones = [zone_id for zone_id, is_on in states.items() if is_on]
-    logger.info(f"All zone states: {states}")
-    logger.info(f"Currently active zones: {active_zones}")
+    
+    # Use unified logging structure
+    log_event(system_logger, 'INFO', 'GPIO status check completed', 
+             total_zones=len(states),
+             active_zones=active_zones,
+             zone_states=states)
+    
     return states
 
 def cleanup_gpio():
