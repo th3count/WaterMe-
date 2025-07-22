@@ -241,6 +241,7 @@ export default function GardenOverview() {
         const statuses: Record<number, { active: boolean, remaining: number, type?: string }> = {};
         
         // data is already in the format { "1": { active: true, remaining: 30, type: "manual" }, ... }
+        console.log('Current pending actions:', Array.from(pendingActions));
         Object.entries(data).forEach(([zoneIdStr, value]: [string, any]) => {
           const zoneId = parseInt(zoneIdStr);
           statuses[zoneId] = {
@@ -696,6 +697,16 @@ export default function GardenOverview() {
         shadow: '0 0 8px #00ff00', 
         border: '#00ff00',
         title: 'Active: Zone is running'
+      };
+    }
+    
+    // Red: Pending action has timed out (error state)
+    if (isPending && isPendingTimedOut) {
+      return { 
+        color: '#ff0000', 
+        shadow: '0 0 8px #ff0000', 
+        border: '#ff0000',
+        title: `Error: Pending action timed out after ${Math.round(pendingDuration)}s`
       };
     }
     
