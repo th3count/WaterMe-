@@ -39,6 +39,10 @@
 - [x] Primary `/waterme.py` entrypoint
 - [x] Configuration backup/restore functionality
 - [x] Settings import/export
+- [x] Color-coded zone status indicators (green/orange/red/gray system)
+- [x] Real-time zone status monitoring with GPIO state validation
+- [x] Improved scheduled event detection and catch-up logic
+- [x] Enhanced manual timer controls with immediate visual feedback
 
 ### 🔌 Version 2.x.x - Hardware Integration
 **Focus: Physical system integration and sensors**
@@ -132,6 +136,10 @@
 - [x] Orphaned plant common name display
 - [x] UI/UX improvements (conditional button visibility, collapsible alerts)
 - [x] Incremental JSON operations for data integrity
+- [x] Color-coded zone status indicators (green/orange/red/gray system)
+- [x] Real-time zone status monitoring with GPIO state validation
+- [x] Improved scheduled event detection and catch-up logic
+- [x] Enhanced manual timer controls with immediate visual feedback
 
 ## 🔧 Configuration & Settings
 - [x] INI format configuration files (human-readable)

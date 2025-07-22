@@ -397,19 +397,49 @@ class WateringScheduler:
         """Get status of all zones"""
         status = {}
         try:
+            # Acquire lock once and copy all data quickly
             with self.lock:
-                for zone_id in ZONE_PINS.keys():
-                    try:
-                        status[zone_id] = self.get_zone_status(zone_id)
-                    except Exception as e:
-                        print(f"Error getting status for zone {zone_id}: {e}")
-                        status[zone_id] = {
-                            'active': False,
-                            'end_time': None,
-                            'type': None,
-                            'remaining': 0,
-                            'error': str(e)
-                        }
+                zone_states_copy = self.zone_states.copy()
+                settings_copy = self.settings.copy()
+            
+            # Process data outside of lock
+            tz_name = settings_copy.get('timezone', 'UTC') if settings_copy else 'UTC'
+            tz = pytz.timezone(tz_name)
+            utc_now = datetime.now(pytz.UTC)
+            current_time = utc_now.astimezone(tz)
+            
+            for zone_id in ZONE_PINS.keys():
+                try:
+                    state = zone_states_copy.get(zone_id, {
+                        'active': False,
+                        'end_time': None,
+                        'type': None,
+                        'remaining': 0
+                    })
+                    
+                    # Update remaining time if active with timer
+                    if state.get('active', False) and state.get('end_time'):
+                        try:
+                            end_time = state['end_time']
+                            if end_time.tzinfo is None:
+                                end_time = tz.localize(end_time)
+                            
+                            remaining = (end_time - current_time).total_seconds()
+                            state['remaining'] = max(0, int(remaining))
+                        except Exception as e:
+                            print(f"Error calculating remaining time for zone {zone_id}: {e}")
+                            state['remaining'] = 0
+                    
+                    status[zone_id] = state.copy()
+                except Exception as e:
+                    print(f"Error getting status for zone {zone_id}: {e}")
+                    status[zone_id] = {
+                        'active': False,
+                        'end_time': None,
+                        'type': None,
+                        'remaining': 0,
+                        'error': str(e)
+                    }
             return status
         except Exception as e:
             print(f"Error in get_all_zone_status: {e}")
@@ -1060,11 +1090,11 @@ class WateringScheduler:
                             print(f"Duration parse failed: {e}, using default 1 min")
                             duration = timedelta(minutes=1)
                         
-                        # Check if it's time to start this event (within 5 seconds after start time)
+                        # Check if it's time to start this event (within 60 seconds after start time for catch-up)
                         time_since_start = (dt - start_time).total_seconds()
                         print(f"DEBUG: time_since_start={time_since_start:.1f}s")
                         
-                        if 0 <= time_since_start < 5:  # Trigger within 5 seconds after scheduled time
+                        if 0 <= time_since_start < 60:  # Trigger within 60 seconds after scheduled time
                             print(f"Scheduled event triggered for zone {zone_id} at {start_time} (detected {time_since_start:.1f}s after)")
                             success = self.activate_zone_direct(zone_id, int(duration.total_seconds()), 'scheduled')
                             if success:
@@ -1084,7 +1114,10 @@ class WateringScheduler:
                                 print(f"ERROR: Failed to start scheduled event for zone {zone_id}")
                             break  # Only start one event per zone per check
                         else:
-                            print(f"DEBUG: Not time yet for zone {zone_id} event (time_since_start={time_since_start:.1f}s)")
+                            if time_since_start > 0:
+                                print(f"DEBUG: Zone {zone_id} event missed - too late (time_since_start={time_since_start:.1f}s)")
+                            else:
+                                print(f"DEBUG: Not time yet for zone {zone_id} event (time_since_start={time_since_start:.1f}s)")
                             
         except Exception as e:
             print(f"ERROR in check_scheduled_events: {e}")
@@ -1113,8 +1146,8 @@ class WateringScheduler:
                     # Check for expired manual timers (MOST IMPORTANT - check every loop)
                     self.check_and_stop_expired_zones()
                     
-                    # Check for scheduled events (less frequent)
-                    if loop_count % 10 == 0:  # Check every 10 seconds
+                    # Check for scheduled events (more frequent)
+                    if loop_count % 2 == 0:  # Check every 2 seconds (2 * 1s sleep)
                         self.check_scheduled_events()
                     
                     # Update remaining times for active zones
@@ -1143,8 +1176,8 @@ class WateringScheduler:
                     if loop_count % 30 == 0:
                         self.debug_zone_states()
                     
-                    # Sleep for a shorter interval to catch expired timers faster
-                    time.sleep(0.5)  # Check every 500ms instead of 1 second
+                    # Sleep for a reasonable interval - balance between responsiveness and performance
+                    time.sleep(1.0)  # Check every 1 second
                     
                 except Exception as e:
                     print(f"ERROR in scheduler loop iteration {loop_count}: {e}")
