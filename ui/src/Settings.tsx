@@ -56,6 +56,8 @@ export default function Settings() {
   const [citySearch, setCitySearch] = useState('');
   const [geoLoading, setGeoLoading] = useState(false);
   const [testingZone, setTestingZone] = useState<number | null>(null);
+  const [gpioStatus, setGpioStatus] = useState<any>(null);
+  const [loadingGpioStatus, setLoadingGpioStatus] = useState(false);
 
   // Expandable sections state
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
@@ -376,12 +378,48 @@ export default function Settings() {
   };
 
   // Test GPIO zone function
+  const checkGpioStatus = async () => {
+    setLoadingGpioStatus(true);
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/api/gpio/status/detailed`);
+      if (response.ok) {
+        const status = await response.json();
+        setGpioStatus(status);
+      } else {
+        console.error('Failed to get GPIO status:', response.status);
+      }
+    } catch (error) {
+      console.error('Error getting GPIO status:', error);
+    } finally {
+      setLoadingGpioStatus(false);
+    }
+  };
+
   const testZone = async (zoneId: number) => {
     if (testingZone === zoneId) return; // Prevent double-clicking
     
     setTestingZone(zoneId);
     try {
-      // Activate zone for 2 seconds
+      // Try direct GPIO test first (bypasses scheduler)
+      console.log(`Testing zone ${zoneId} with direct GPIO test...`);
+      const directResponse = await fetch(`${getApiBaseUrl()}/api/gpio/test/${zoneId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ duration: 2 })
+      });
+      
+      if (directResponse.ok) {
+        console.log('Direct GPIO test successful');
+        // Wait 2.5 seconds then check if it's still active
+        setTimeout(() => {
+          setTestingZone(null);
+        }, 2500);
+        return;
+      } else {
+        console.log('Direct GPIO test failed, trying scheduler method...');
+      }
+      
+      // Fallback to scheduler method
       const response = await fetch(`${getApiBaseUrl()}/api/manual-timer/${zoneId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -996,14 +1034,38 @@ export default function Settings() {
           padding: '24px',
           border: '1px solid #2d3748'
         }}>
-          <h2 style={{
-            color: '#f4f4f4',
-            marginBottom: '24px',
-            fontSize: '20px',
-            fontWeight: 600
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '24px'
           }}>
-            GPIO Configuration
-          </h2>
+            <h2 style={{
+              color: '#f4f4f4',
+              fontSize: '20px',
+              fontWeight: 600,
+              margin: 0
+            }}>
+              GPIO Configuration
+            </h2>
+            <button
+              onClick={checkGpioStatus}
+              disabled={loadingGpioStatus}
+              style={{
+                background: loadingGpioStatus ? '#666' : '#00bcd4',
+                color: '#181f2a',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '8px 16px',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: loadingGpioStatus ? 'not-allowed' : 'pointer',
+                opacity: loadingGpioStatus ? 0.6 : 1
+              }}
+            >
+              {loadingGpioStatus ? 'Checking...' : 'Check GPIO Status'}
+            </button>
+          </div>
           
           {/* Debug info - remove this later */}
           <div style={{
@@ -1016,6 +1078,45 @@ export default function Settings() {
           }}>
             Debug: GPIO Mode: {gpioConfig.mode}, Channels: {Object.keys(gpioConfig.channels || {}).length}
           </div>
+
+          {/* GPIO Status Display */}
+          {gpioStatus && (
+            <div style={{
+              background: '#1a1f2a',
+              padding: '16px',
+              borderRadius: '8px',
+              marginBottom: '16px',
+              border: '1px solid #2d3748'
+            }}>
+              <h3 style={{
+                color: '#00bcd4',
+                fontSize: '16px',
+                fontWeight: 600,
+                margin: '0 0 12px 0'
+              }}>
+                GPIO Status
+              </h3>
+              <div style={{
+                fontSize: '12px',
+                color: '#bdbdbd',
+                fontFamily: 'monospace'
+              }}>
+                <div>Initialized: {gpioStatus.initialized ? 'Yes' : 'No'}</div>
+                <div>Active Zones: {gpioStatus.active_zones?.join(', ') || 'None'}</div>
+                <div>Pump Index: {gpioStatus.pump_index || 'None'}</div>
+                <div>Active Low: {gpioStatus.active_low ? 'Yes' : 'No'}</div>
+                <div>Mode: {gpioStatus.mode}</div>
+                <div style={{ marginTop: '8px' }}>
+                  <strong>Hardware States:</strong>
+                  {Object.entries(gpioStatus.hardware_states || {}).map(([zone, state]: [string, any]) => (
+                    <div key={zone} style={{ marginLeft: '8px' }}>
+                      Zone {zone} (Pin {state.pin}): {state.error ? `Error: ${state.error}` : `${state.is_on ? 'ON' : 'OFF'} (raw: ${state.raw_state})`}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* GPIO Mode Section */}
           <ExpandableSection

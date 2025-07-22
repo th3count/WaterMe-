@@ -2194,6 +2194,41 @@ def start_watering_scheduler():
     except Exception as e:
         system_logger.error(f"Failed to start scheduled watering system: {e}")
 
+@app.route('/api/gpio/test/<int:zone_id>', methods=['POST'])
+def test_gpio_direct(zone_id):
+    """Test GPIO functionality directly without scheduler"""
+    try:
+        data = request.get_json() or {}
+        duration = data.get('duration', 2)
+        
+        from core.gpio import test_gpio_direct
+        success = test_gpio_direct(zone_id, duration)
+        
+        if success:
+            log_event(user_logger, 'INFO', f'Direct GPIO test successful', zone_id=zone_id, duration=duration)
+            return jsonify({
+                'status': 'success',
+                'message': f'GPIO test completed for zone {zone_id}'
+            })
+        else:
+            log_event(error_logger, 'ERROR', f'Direct GPIO test failed', zone_id=zone_id)
+            return jsonify({'error': f'GPIO test failed for zone {zone_id}'}), 500
+            
+    except Exception as e:
+        log_event(error_logger, 'ERROR', f'Direct GPIO test exception', zone_id=zone_id, error=str(e))
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/gpio/status/detailed', methods=['GET'])
+def get_gpio_status_detailed():
+    """Get detailed GPIO status"""
+    try:
+        from core.gpio import get_gpio_status
+        status = get_gpio_status()
+        return jsonify(status)
+    except Exception as e:
+        log_event(error_logger, 'ERROR', f'GPIO status query failed', error=str(e))
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/scheduler/test', methods=['GET'])
 def test_scheduler():
     """Test if scheduler is running and show debug info"""

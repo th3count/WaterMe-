@@ -49,8 +49,40 @@ class WateringScheduler:
         # Load any existing active zones from persistent storage
         self.load_active_zones()
         
-        # Catch up on missed events
-        self.catch_up_missed_events()
+        # Catch up on missed events with timeout protection
+        try:
+            # Use threading-based timeout for cross-platform compatibility
+            catch_up_completed = threading.Event()
+            catch_up_error = None
+            
+            def catch_up_worker():
+                nonlocal catch_up_error
+                try:
+                    self.catch_up_missed_events()
+                    catch_up_completed.set()
+                except Exception as e:
+                    catch_up_error = e
+                    catch_up_completed.set()
+            
+            # Start catch-up in a separate thread
+            catch_up_thread = threading.Thread(target=catch_up_worker, daemon=True)
+            catch_up_thread.start()
+            
+            # Wait for completion with 30-second timeout
+            if catch_up_completed.wait(timeout=30):
+                if catch_up_error:
+                    print(f"Debug: Catch-up failed: {catch_up_error}")
+                    self._setup_logging()
+                    self.log_event(self.error_logger, 'ERROR', f'Catch-up failed', error=str(catch_up_error))
+            else:
+                print("Debug: Catch-up timed out after 30 seconds, continuing without catch-up")
+                self._setup_logging()
+                self.log_event(self.error_logger, 'WARN', 'Catch-up timed out, continuing without catch-up')
+                
+        except Exception as e:
+            print(f"Debug: Catch-up setup failed: {e}, skipping")
+            self._setup_logging()
+            self.log_event(self.error_logger, 'WARN', 'Catch-up setup failed, skipping', error=str(e))
 
     def get_current_time(self):
         """Get current time in configured timezone"""
@@ -378,11 +410,15 @@ class WateringScheduler:
                     tz = self.settings.get('timezone', 'UTC')
                     print(f"Debug: Using cached settings - lat: {lat}, lon: {lon}, tz: {tz}")
                 
-                # Get solar times for today
-                city = LocationInfo(latitude=lat, longitude=lon, timezone=tz)
-                dt = now.astimezone(pytz.timezone(tz))
-                s = sun(city.observer, date=dt.date(), tzinfo=city.timezone)
-                print(f"Debug: Solar times for today: sunrise={s['sunrise']}, sunset={s['sunset']}, noon={s['noon']}")
+                # Get solar times for today - add timeout protection
+                try:
+                    city = LocationInfo(latitude=lat, longitude=lon, timezone=tz)
+                    dt = now.astimezone(pytz.timezone(tz))
+                    s = sun(city.observer, date=dt.date(), tzinfo=city.timezone)
+                    print(f"Debug: Solar times for today: sunrise={s['sunrise']}, sunset={s['sunset']}, noon={s['noon']}")
+                except Exception as e:
+                    print(f"Debug: Failed to calculate solar times: {e}, skipping catch-up")
+                    return
                 
                 # Determine outage window to check for missed events
                 # Check events from the last 24 hours that might have been missed
@@ -390,9 +426,16 @@ class WateringScheduler:
                 print(f"Debug: Checking for missed events since {outage_start}")
                 
                 restored_count = 0
+                processed_zones = 0
                 
                 for zone_id_str, zone_data in schedule.items():
                     zone_id = int(zone_id_str)
+                    processed_zones += 1
+                    
+                    # Add timeout protection - limit processing time
+                    if processed_zones > 20:  # Limit to 20 zones max
+                        print(f"Debug: Reached zone processing limit, stopping catch-up")
+                        break
                     
                     # Skip disabled zones  
                     mode = zone_data.get('mode', 'manual')
@@ -419,8 +462,8 @@ class WateringScheduler:
                     
                     print(f"Debug: Zone {zone_id} should run today")
                     
-                    # Check each scheduled time
-                    for event_idx, event in enumerate(times):
+                    # Check each scheduled time - limit to 5 events per zone
+                    for event_idx, event in enumerate(times[:5]):
                         value = event.get('value')
                         duration_str = event.get('duration', '000100')
                         print(f"Debug:   Event {event_idx+1} - code: {value}, duration: {duration_str}")
@@ -461,7 +504,7 @@ class WateringScheduler:
                             else:
                                 print(f"Debug:     Too little time remaining ({remaining:.1f}s), skipping")
                         
-                        # NEW: Check for events that should have started during outage but are now past their window
+                        # Check for events that should have started during outage but are now past their window
                         elif start_time >= outage_start and start_time < dt:
                             # Event should have started during the outage window but is now past
                             time_since_start = (dt - start_time).total_seconds()
@@ -498,6 +541,8 @@ class WateringScheduler:
                     
         except Exception as e:
             print(f"Error in catch_up_missed_events: {e}")
+            import traceback
+            traceback.print_exc()
             self._setup_logging()
             self.log_event(self.error_logger, 'ERROR', f'Catch-up failed', error=str(e))
     

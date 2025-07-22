@@ -4,12 +4,7 @@ import os
 import configparser
 import logging
 from datetime import datetime
-try:
-    import RPi.GPIO as GPIO
-except ImportError:
-    # Allow import on non-Pi systems for dev
-    from unittest import mock
-    GPIO = mock.MagicMock()
+import RPi.GPIO as GPIO
 
 # Setup logging
 logger = logging.getLogger('gpio')
@@ -269,3 +264,79 @@ def log_gpio_status():
                 logger.error(f"  Zone {zone_id} (pin {pin}): Error reading state - {e}")
     
     logger.info("=== END GPIO STATUS REPORT ===") 
+
+def test_gpio_direct(zone_id: int, duration_seconds: int = 2):
+    """
+    Test GPIO functionality directly without scheduler
+    This is a simple test function to verify GPIO is working
+    """
+    try:
+        logger.info(f"=== DIRECT GPIO TEST - Zone {zone_id} for {duration_seconds}s ===")
+        
+        # Setup GPIO
+        setup_gpio()
+        
+        # Check if zone exists
+        if zone_id not in ZONE_PINS:
+            logger.error(f"Zone {zone_id} not in configured pins: {list(ZONE_PINS.keys())}")
+            return False
+        
+        pin = ZONE_PINS[zone_id]
+        logger.info(f"Testing zone {zone_id} on pin {pin}")
+        
+        # Activate zone
+        activate_zone(zone_id)
+        logger.info(f"Zone {zone_id} activated")
+        
+        # Wait for duration
+        import time
+        time.sleep(duration_seconds)
+        
+        # Deactivate zone
+        deactivate_zone(zone_id)
+        logger.info(f"Zone {zone_id} deactivated")
+        
+        logger.info(f"=== DIRECT GPIO TEST COMPLETE ===")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Direct GPIO test failed: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+def get_gpio_status():
+    """Get current GPIO status for debugging"""
+    try:
+        setup_gpio()
+        status = {
+            'initialized': _initialized,
+            'active_zones': sorted(_active_zones),
+            'zone_pins': ZONE_PINS,
+            'pump_index': PUMP_INDEX,
+            'active_low': ACTIVE_LOW,
+            'mode': MODE,
+            'hardware_states': {}
+        }
+        
+        # Get actual hardware states
+        for zone_id, pin in ZONE_PINS.items():
+            try:
+                state = GPIO.input(pin)
+                is_on = (state == GPIO.LOW) if ACTIVE_LOW else (state == GPIO.HIGH)
+                status['hardware_states'][zone_id] = {
+                    'pin': pin,
+                    'raw_state': state,
+                    'is_on': is_on
+                }
+            except Exception as e:
+                status['hardware_states'][zone_id] = {
+                    'pin': pin,
+                    'error': str(e)
+                }
+        
+        return status
+        
+    except Exception as e:
+        logger.error(f"Failed to get GPIO status: {e}")
+        return {'error': str(e)} 
