@@ -64,13 +64,23 @@ export default function GardenOverview() {
   };
 
   useEffect(() => {
-    fetch(`${getApiBaseUrl()}/api/locations`)
+    // Add timeout to all initial API calls
+    const fetchWithTimeout = (url: string, timeout = 10000) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      return fetch(url, { signal: controller.signal })
+        .finally(() => clearTimeout(timeoutId));
+    };
+
+    fetchWithTimeout(`${getApiBaseUrl()}/api/locations`)
       .then(res => res.json())
-      .then(data => setLocations(data));
-    fetch(`${getApiBaseUrl()}/api/map`)
+      .then(data => setLocations(data))
+      .catch(err => console.warn('Failed to load locations:', err));
+    fetchWithTimeout(`${getApiBaseUrl()}/api/map`)
       .then(res => res.json())
-      .then(data => setMap(data));
-    fetch(`${getApiBaseUrl()}/api/schedule`)
+      .then(data => setMap(data))
+      .catch(err => console.warn('Failed to load map:', err));
+    fetchWithTimeout(`${getApiBaseUrl()}/api/schedule`)
       .then(res => res.json())
       .then(data => {
         setZones(data);
@@ -84,7 +94,7 @@ export default function GardenOverview() {
           }
           if (codes.length) {
             try {
-              const settingsResp = await fetch(`${getApiBaseUrl()}/config/settings.cfg`);
+              const settingsResp = await fetchWithTimeout(`${getApiBaseUrl()}/config/settings.cfg`);
               const settings = await settingsResp.json();
               // Check for new format first (gps_lat, gps_lon)
               let lat, lon;
@@ -98,11 +108,15 @@ export default function GardenOverview() {
                 lon = coords[0];
               }
               const query = { codes, date, lat, lon };
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 10000);
               const resp = await fetch(`${getApiBaseUrl()}/api/resolve_times`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(query)
+                body: JSON.stringify(query),
+                signal: controller.signal
               });
+              clearTimeout(timeoutId);
               const resolvedArr = await resp.json();
               // Map each code to its resolved time
               const codeToTime: Record<string, string> = {};
@@ -117,14 +131,14 @@ export default function GardenOverview() {
         });
       });
     // Fetch plant library files and build lookup
-    fetch(`${getApiBaseUrl()}/api/library-files`)
+    fetchWithTimeout(`${getApiBaseUrl()}/api/library-files`)
       .then(res => res.json())
       .then(async (files: any[]) => {
         const lookup: Record<string, Record<number, string>> = {};
         const latinLookup: Record<string, Record<number, string>> = {};
         await Promise.all(files.map(async (fileObj: any) => {
           const filename = fileObj.filename;
-          const resp = await fetch(`${getApiBaseUrl()}/library/${filename}`);
+          const resp = await fetchWithTimeout(`${getApiBaseUrl()}/library/${filename}`);
           if (!resp.ok) return;
           const data = await resp.json();
           let book: Record<number, string> = {};
@@ -148,13 +162,13 @@ export default function GardenOverview() {
       });
     
     // Load timer multiplier from settings
-    fetch(`${getApiBaseUrl()}/config/settings.cfg`)
+    fetchWithTimeout(`${getApiBaseUrl()}/config/settings.cfg`)
       .then(res => res.json())
       .then(data => setTimerMultiplier(data.timer_multiplier || 1.0))
       .catch(() => setTimerMultiplier(1.0));
     
     // Load pump information from GPIO config
-    fetch(`${getApiBaseUrl()}/config/gpio.cfg`)
+    fetchWithTimeout(`${getApiBaseUrl()}/config/gpio.cfg`)
       .then(res => res.json())
       .then(data => {
         const pumpIndex = data.pumpIndex && data.pumpIndex > 0 ? data.pumpIndex : null;
@@ -164,7 +178,7 @@ export default function GardenOverview() {
       .catch(() => setPumpInfo(prev => ({ ...prev, pumpIndex: null })));
 
     // Load health alerts
-    fetch(`${getApiBaseUrl()}/api/health/alerts`)
+    fetchWithTimeout(`${getApiBaseUrl()}/api/health/alerts`)
       .then(res => res.json())
       .then(data => {
         const ignoredAlertsSet = new Set<string>(
@@ -729,13 +743,18 @@ export default function GardenOverview() {
         message: `Zone ${zoneId} state mismatch: expected ${expectedState.active ? 'ON' : 'OFF'} (${expectedState.type}), actual ${realStatus.active ? 'ON' : 'OFF'} (${realStatus.type}) for ${Math.round(duration)}s`
       };
       
-      // Log to backend
+      // Log to backend with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for logging
+      
       fetch(`${getApiBaseUrl()}/api/logs/event`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(logData)
+        body: JSON.stringify(logData),
+        signal: controller.signal
       })
       .then(response => {
+        clearTimeout(timeoutId);
         if (response.ok) {
           console.log(`Red light event logged for zone ${zoneId}:`, logData.message);
         } else {
@@ -743,7 +762,12 @@ export default function GardenOverview() {
         }
       })
       .catch(error => {
-        console.error(`Error logging red light event for zone ${zoneId}:`, error);
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+          console.warn(`Logging request timed out for zone ${zoneId}`);
+        } else {
+          console.error(`Error logging red light event for zone ${zoneId}:`, error);
+        }
       });
     }
   }
@@ -806,13 +830,18 @@ export default function GardenOverview() {
     }));
     console.log(`Zone ${zone_id}: Set expected state to active for manual timer`);
     
-    // Use the standard manual timer endpoint (scheduler-based)
+    // Use the standard manual timer endpoint (scheduler-based) with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    
     fetch(`${getApiBaseUrl()}/api/manual-timer/${zone_id}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ duration: seconds })
+      body: JSON.stringify({ duration: seconds }),
+      signal: controller.signal
     })
     .then(response => {
+      clearTimeout(timeoutId);
       console.log(`API Response status: ${response.status}`);
       if (response.ok) {
         console.log('Manual timer started successfully');
@@ -840,8 +869,14 @@ export default function GardenOverview() {
       }
     })
     .catch(error => {
-      console.error('Error starting manual timer:', error);
-      alert('Error starting manual timer. Please try again.');
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        console.error('Manual timer request timed out');
+        alert('Request timed out. Please try again.');
+      } else {
+        console.error('Error starting manual timer:', error);
+        alert('Error starting manual timer. Please try again.');
+      }
       // Clear pending state on error
       setPendingActions(prev => {
         const newSet = new Set(prev);
@@ -1002,15 +1037,20 @@ export default function GardenOverview() {
       setPendingActions(prev => new Set(prev).add(zone_id));
     }, 100); // 100ms delay to let the API call start
     
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    
     fetch(`${getApiBaseUrl()}/api/manual-timer/${zone_id}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
         'Connection': 'close'
       },
-      mode: 'cors'
+      mode: 'cors',
+      signal: controller.signal
     })
     .then(response => {
+      clearTimeout(timeoutId);
       console.log(`DELETE Response status: ${response.status}`);
       console.log(`DELETE Response headers:`, response.headers);
       if (response.ok) {
@@ -1035,14 +1075,20 @@ export default function GardenOverview() {
       }
     })
     .catch(error => {
-      console.error('Error canceling manual timer:', error);
-      console.error('Error details:', error.message, error.stack);
-      console.error('Error type:', error.constructor.name);
-      console.error('Error name:', error.name);
-      if (error instanceof TypeError) {
-        console.error('This is a TypeError - likely a CORS or network issue');
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        console.error('Cancel timer request timed out');
+        alert('Request timed out. Please try again.');
+      } else {
+        console.error('Error canceling manual timer:', error);
+        console.error('Error details:', error.message, error.stack);
+        console.error('Error type:', error.constructor.name);
+        console.error('Error name:', error.name);
+        if (error instanceof TypeError) {
+          console.error('This is a TypeError - likely a CORS or network issue');
+        }
+        alert('Error canceling manual timer. Please try again.');
       }
-      alert('Error canceling manual timer. Please try again.');
       // Clear pending state on error
       setPendingActions(prev => {
         const newSet = new Set(prev);
