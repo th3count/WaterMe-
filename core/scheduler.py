@@ -184,50 +184,50 @@ class WateringScheduler:
             bool: Success status
         """
         print(f"DEBUG: activate_zone_direct called - zone_id={zone_id}, duration={duration_seconds}, type={event_type}")
-        print(f"DEBUG: About to acquire lock...")
         
-        # Use a timeout to prevent deadlock
-        if not self.lock.acquire(timeout=5.0):  # 5 second timeout
-            print(f"DEBUG: Failed to acquire lock within 5 seconds - possible deadlock")
-            return False
+        # Do all calculations OUTSIDE the lock
+        end_time = None
+        if duration_seconds:
+            tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
+            tz = pytz.timezone(tz_name)
+            utc_now = datetime.now(pytz.UTC)
+            now = utc_now.astimezone(tz)
+            end_time = now + timedelta(seconds=duration_seconds)
+            print(f"DEBUG: Calculated end_time = {end_time} (timezone: {tz_name})")
+        
+        zone_state = {
+            'active': True,
+            'end_time': end_time,
+            'type': event_type,
+            'remaining': duration_seconds if duration_seconds else 0
+        }
         
         try:
-            print(f"DEBUG: Lock acquired successfully")
-            print(f"DEBUG: activate_zone_direct called - zone_id={zone_id}, duration={duration_seconds}, type={event_type}")
-            
-            # Tell gpio.py to activate the hardware
+            # Activate hardware OUTSIDE the lock (GPIO operations are atomic)
             activate_zone(zone_id)
+            print(f"DEBUG: GPIO activation completed for zone {zone_id}")
             
-            # Update zone state using timezone-aware datetime
-            end_time = None
-            if duration_seconds:
-                # Use timezone-aware datetime
-                tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
-                tz = pytz.timezone(tz_name)
-                # Get current UTC time and convert to configured timezone
-                utc_now = datetime.now(pytz.UTC)
-                now = utc_now.astimezone(tz)
-                end_time = now + timedelta(seconds=duration_seconds)
-                print(f"DEBUG: Calculated end_time = {end_time} (timezone: {tz_name})")
+            # Now acquire lock for minimal time to update data structures
+            print(f"DEBUG: About to acquire lock for data update...")
+            with self.lock:
+                print(f"DEBUG: Lock acquired - updating data structures")
+                
+                # Update zone state
+                self.zone_states[zone_id] = zone_state
+                print(f"DEBUG: Updated zone_states[{zone_id}] = {self.zone_states[zone_id]}")
+                
+                # Add to active zones if duration specified
+                if duration_seconds:
+                    self.active_zones[zone_id] = end_time
+                    print(f"DEBUG: Added to active_zones[{zone_id}] = {end_time}")
+                    print(f"DEBUG: active_zones now contains: {self.active_zones}")
+                    self.save_active_zones()
+                else:
+                    print(f"DEBUG: No duration specified, not adding to active_zones")
             
-            self.zone_states[zone_id] = {
-                'active': True,
-                'end_time': end_time,
-                'type': event_type,
-                'remaining': duration_seconds if duration_seconds else 0
-            }
+            print(f"DEBUG: Lock released after data update")
             
-            print(f"DEBUG: Updated zone_states[{zone_id}] = {self.zone_states[zone_id]}")
-            
-            # Add to active zones if duration specified
-            if duration_seconds:
-                self.active_zones[zone_id] = end_time
-                print(f"DEBUG: Added to active_zones[{zone_id}] = {end_time}")
-                print(f"DEBUG: active_zones now contains: {self.active_zones}")
-                self.save_active_zones()
-            else:
-                print(f"DEBUG: No duration specified, not adding to active_zones")
-            
+            # Logging outside the lock
             self._setup_logging()
             self.log_event(self.watering_logger, 'INFO', f'{event_type.title()} zone activation', 
                          zone_id=zone_id, duration=duration_seconds)
@@ -241,9 +241,6 @@ class WateringScheduler:
                          zone_id=zone_id, error=str(e))
             print(f"Scheduler: Failed to activate zone {zone_id}: {e}")
             return False
-        finally:
-            self.lock.release()
-            print(f"DEBUG: Lock released")
     
     def deactivate_zone_direct(self, zone_id: int, reason: str = 'manual', skip_lock: bool = False) -> bool:
         """
@@ -837,17 +834,9 @@ class WateringScheduler:
         return None
     
     def check_and_stop_expired_zones(self):
-        """Check for expired zones and stop them - external interface"""
-        try:
-            if self.lock.acquire(timeout=1.0):  # 1 second timeout
-                try:
-                    self._check_and_stop_expired_zones_internal()
-                finally:
-                    self.lock.release()
-            else:
-                print(f"DEBUG: check_and_stop_expired_zones - lock timeout")
-        except Exception as e:
-            print(f"DEBUG: Error in check_and_stop_expired_zones: {e}")
+        """Check for expired zones and stop them"""
+        with self.lock:
+            self._check_and_stop_expired_zones_internal()
     
     def _check_and_stop_expired_zones_internal(self):
         """Internal method - assumes lock is already held"""
@@ -912,7 +901,7 @@ class WateringScheduler:
     def check_scheduled_events(self):
         """Check for scheduled events that should start now"""
         try:
-            # Lock is now acquired externally by the caller
+            with self.lock:
                 # Use cached schedule and settings
                 if not self.schedule or not self.settings:
                     print("DEBUG: No schedule or settings available")
@@ -1036,30 +1025,12 @@ class WateringScheduler:
                     if loop_count % 60 == 0:  # Log every 60 seconds
                         print(f"DEBUG: Scheduler loop iteration {loop_count} - still running")
                     
-                    # Check for expired manual timers (MOST IMPORTANT - check every loop) - use timeout to prevent blocking
-                    try:
-                        if self.lock.acquire(timeout=0.5):  # 500ms timeout
-                            try:
-                                self._check_and_stop_expired_zones_internal()
-                            finally:
-                                self.lock.release()
-                        else:
-                            print(f"DEBUG: Skipping expired zones check - lock timeout")
-                    except Exception as e:
-                        print(f"DEBUG: Error in expired zones check: {e}")
+                    # Check for expired manual timers (MOST IMPORTANT - check every loop)
+                    self.check_and_stop_expired_zones()
                     
-                    # Check for scheduled events (less frequent) - use timeout to prevent blocking
+                    # Check for scheduled events (less frequent)
                     if loop_count % 10 == 0:  # Check every 10 seconds
-                        try:
-                            if self.lock.acquire(timeout=1.0):  # 1 second timeout
-                                try:
-                                    self.check_scheduled_events()
-                                finally:
-                                    self.lock.release()
-                            else:
-                                print(f"DEBUG: Skipping scheduled events check - lock timeout")
-                        except Exception as e:
-                            print(f"DEBUG: Error in scheduled events check: {e}")
+                        self.check_scheduled_events()
                     
                     # Update remaining times for active zones
                     tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
