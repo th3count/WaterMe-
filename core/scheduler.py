@@ -682,6 +682,10 @@ class WateringScheduler:
                 # If stored end_time is naive, assume it's in the configured timezone
                 end_time = tz.localize(end_time)
                 print(f"DEBUG: Converted naive end_time to timezone-aware: {end_time}")
+            else:
+                # If it has timezone info, convert to our timezone for comparison
+                end_time = end_time.astimezone(tz)
+                print(f"DEBUG: Converted end_time to local timezone: {end_time}")
             
             print(f"DEBUG: Checking zone {zone_id}, end_time={end_time}, expired={current_time >= end_time}")
             if current_time >= end_time:
