@@ -24,6 +24,7 @@ class WateringScheduler:
         self.thread = None
         self.active_zones = {}  # zone_id -> end_time
         self.zone_states = {}   # zone_id -> state dict
+        self.canceled_timers = set()  # Track manually canceled timers to prevent restoration
         
         # File paths
         self.active_zones_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'active_zones.json')
@@ -543,6 +544,11 @@ class WateringScheduler:
                         print(f"Debug: Zone {zone_id} is already active, skipping catch-up")
                         continue
                     
+                    # Skip if zone was manually canceled
+                    if zone_id in self.canceled_timers:
+                        print(f"Debug: Zone {zone_id} was manually canceled, skipping catch-up")
+                        continue
+                    
                     period = zone_data.get('period', 'D')
                     start_day = zone_data.get('startDay', '')
                     times = zone_data.get('times', [])
@@ -769,9 +775,11 @@ class WateringScheduler:
                             
                             print(f"Debug: Zone {zone_id} end time: {end_time}, type: {event_type} (now: {current_time})")
                             
-                            # Only restore if the timer hasn't expired
-                            if end_time > current_time:
-                                zone_id_int = int(zone_id)
+                            # Only restore if the timer hasn't expired and wasn't manually canceled
+                            zone_id_int = int(zone_id)
+                            if zone_id_int in self.canceled_timers:
+                                print(f"⚠️  Zone {zone_id} was manually canceled, not restoring")
+                            elif end_time > current_time:
                                 self.active_zones[zone_id_int] = end_time
                                 # Activate the hardware
                                 activate_zone(zone_id_int)
@@ -840,6 +848,10 @@ class WateringScheduler:
         print(f"DEBUG: remove_manual_timer called - zone_id={zone_id}")
         print(f"DEBUG: active_zones before removal: {self.active_zones}")
         try:
+            # Mark this timer as manually canceled to prevent restoration
+            self.canceled_timers.add(zone_id)
+            print(f"DEBUG: Added zone {zone_id} to canceled_timers set")
+            
             result = self.deactivate_zone_direct(zone_id, 'manual')
             print(f"DEBUG: remove_manual_timer result = {result}")
             print(f"DEBUG: active_zones after removal: {self.active_zones}")
