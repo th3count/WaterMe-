@@ -328,7 +328,9 @@ class WateringScheduler:
                         del self.active_zones[zone_id]
                         print(f"DEBUG: Removed zone {zone_id} from active_zones")
                         print(f"DEBUG: active_zones after removal: {self.active_zones}")
+                        print(f"DEBUG: About to call save_active_zones...")
                         self.save_active_zones()
+                        print(f"DEBUG: save_active_zones call completed")
                     else:
                         print(f"DEBUG: Zone {zone_id} not in active_zones, skipping removal")
                 
