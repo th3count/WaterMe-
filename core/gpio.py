@@ -30,14 +30,14 @@ MODE = config.get('GPIO', 'mode', fallback='BCM').upper()
 
 ZONE_PINS = {i+1: pin for i, pin in enumerate(PINS)}
 
-# Log configuration
-logger.info(f"GPIO Configuration loaded:")
-logger.info(f"  Zone count: {ZONE_COUNT}")
-logger.info(f"  Pins: {PINS}")
-logger.info(f"  Zone pins mapping: {ZONE_PINS}")
-logger.info(f"  Pump index: {PUMP_INDEX}")
-logger.info(f"  Active low: {ACTIVE_LOW}")
-logger.info(f"  Mode: {MODE}")
+# Log configuration using unified logging
+log_event(gpio_logger, 'INFO', 'GPIO configuration loaded',
+         zone_count=ZONE_COUNT,
+         pins=PINS,
+         zone_pins=ZONE_PINS,
+         pump_index=PUMP_INDEX,
+         active_low=ACTIVE_LOW,
+         mode=MODE)
 
 _initialized = False
 _active_zones = set()  # Track which zones are currently active
@@ -45,10 +45,9 @@ _active_zones = set()  # Track which zones are currently active
 def setup_gpio():
     global _initialized
     if _initialized:
-        logger.debug("GPIO already initialized, skipping setup")
         return
     
-    logger.info(f"Initializing GPIO with mode: {MODE}")
+    log_event(gpio_logger, 'INFO', 'Initializing GPIO', mode=MODE)
     try:
         if MODE == 'BCM':
             GPIO.setmode(GPIO.BCM)
@@ -57,18 +56,19 @@ def setup_gpio():
         else:
             raise ValueError(f"Unknown GPIO mode: {MODE}")
         
-        logger.info(f"Setting up {len(ZONE_PINS)} zone pins: {list(ZONE_PINS.values())}")
         for zone_id, pin in ZONE_PINS.items():
             GPIO.setup(pin, GPIO.OUT)
             # Ensure all are off at start
             initial_state = GPIO.LOW if not ACTIVE_LOW else GPIO.HIGH
             GPIO.output(pin, initial_state)
-            logger.info(f"Zone {zone_id} (pin {pin}) initialized to {'OFF' if initial_state == GPIO.HIGH else 'ON'}")
         
         _initialized = True
-        logger.info("GPIO initialization completed successfully")
+        log_event(gpio_logger, 'INFO', 'GPIO initialization completed', 
+                 zone_count=len(ZONE_PINS),
+                 pins=list(ZONE_PINS.values()),
+                 mode=MODE)
     except Exception as e:
-        logger.error(f"GPIO initialization failed: {e}")
+        log_event(gpio_logger, 'ERROR', 'GPIO initialization failed', error=str(e))
         raise
 
 def activate_zone(zone_id):
@@ -172,7 +172,9 @@ def get_zone_state(zone_id):
     """Get the current hardware state of a zone"""
     setup_gpio()
     if zone_id not in ZONE_PINS:
-        logger.warning(f"Zone {zone_id} not in configured pins: {list(ZONE_PINS.keys())}")
+        log_event(gpio_logger, 'WARNING', 'Zone state check failed - invalid zone', 
+                 zone_id=zone_id, 
+                 valid_zones=list(ZONE_PINS.keys()))
         return False
     
     pin = ZONE_PINS[zone_id]
@@ -181,15 +183,14 @@ def get_zone_state(zone_id):
         # For active low: LOW = ON (True), HIGH = OFF (False)
         # For active high: HIGH = ON (True), LOW = OFF (False)
         is_on = (state == GPIO.LOW) if ACTIVE_LOW else (state == GPIO.HIGH)
-        logger.debug(f"Zone {zone_id} (pin {pin}) state: {'ON' if is_on else 'OFF'} (raw: {state})")
         return is_on
     except Exception as e:
-        logger.error(f"Error reading zone {zone_id} state: {e}")
+        log_event(gpio_logger, 'ERROR', 'Error reading zone state', 
+                 zone_id=zone_id, pin=pin, error=str(e))
         return False
 
 def get_all_zone_states():
     """Get the current hardware state of all zones"""
-    logger.debug("Getting states for all zones")
     states = {}
     for zone_id in ZONE_PINS.keys():
         states[zone_id] = get_zone_state(zone_id)
