@@ -255,23 +255,32 @@ export default function GardenOverview() {
           // Removed excessive debug logging
           
           // Clear pending state when GPIO confirms the action
-          if (pendingActions.has(zoneId) || (value.active && pendingActions.has(zoneId))) {
-            setPendingActions(prev => {
-              const newSet = new Set(prev);
-              newSet.delete(zoneId);
-              return newSet;
-            });
-            // Clear error tracking when pending action succeeds
-            setErrorStartTimes(prev => {
-              const newTimes = { ...prev };
-              delete newTimes[zoneId];
-              return newTimes;
-            });
-            setErrorDurations(prev => {
-              const newDurations = { ...prev };
-              delete newDurations[zoneId];
-              return newDurations;
-            });
+          // This happens when:
+          // 1. Zone becomes active (timer start confirmed)
+          // 2. Zone becomes inactive and we were expecting it to be active (timer completion confirmed)
+          if (pendingActions.has(zoneId)) {
+            const expectedState = expectedZoneStates[zoneId];
+            const shouldClearPending = value.active || // Zone activated (start confirmed)
+                                     (!value.active && expectedState?.active); // Zone deactivated when expected active (completion confirmed)
+            
+            if (shouldClearPending) {
+              setPendingActions(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(zoneId);
+                return newSet;
+              });
+              // Clear error tracking when pending action succeeds
+              setErrorStartTimes(prev => {
+                const newTimes = { ...prev };
+                delete newTimes[zoneId];
+                return newTimes;
+              });
+              setErrorDurations(prev => {
+                const newDurations = { ...prev };
+                delete newDurations[zoneId];
+                return newDurations;
+              });
+            }
           }
           
           // Clear error tracking when states match or zone becomes active
