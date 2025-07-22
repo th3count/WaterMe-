@@ -308,35 +308,26 @@ class WateringScheduler:
     def catch_up_missed_events(self):
         """On startup, catch up on any missed watering events that are still within their window"""
         try:
-            # Load schedule
-            if not os.path.exists(self.schedule_file):
-                print("Debug: Schedule file does not exist, skipping catch-up")
+            # Use cached schedule and settings
+            if not self.schedule:
+                print("Debug: No cached schedule, skipping catch-up")
                 return
-            print(f"Debug: Loading schedule from {self.schedule_file}")
+            print(f"Debug: Using cached schedule with {len(self.schedule)} zones")
             
-            with open(self.schedule_file, 'r') as f:
-                schedule = json.load(f)
+            schedule = self.schedule
             
             now = datetime.now()
             print(f"Debug: Current time: {now}")
             
-            # Load settings for lat/lon/timezone
-            if not os.path.exists(self.settings_file):
-                print("Debug: Settings file does not exist, using defaults for catch-up")
+            # Use cached settings
+            if not self.settings:
+                print("Debug: No cached settings, using defaults for catch-up")
                 lat, lon, tz = 0.0, 0.0, 'UTC'
             else:
-                print(f"Debug: Loading settings from {self.settings_file}")
-                config = configparser.ConfigParser()
-                config.read(self.settings_file)
-                if 'Garden' in config:
-                    garden = config['Garden']
-                    lat = float(garden.get('gps_lat', 0.0))
-                    lon = float(garden.get('gps_lon', 0.0))
-                    tz = garden.get('timezone', 'UTC')
-                    print(f"Debug: Loaded settings - lat: {lat}, lon: {lon}, tz: {tz}")
-                else:
-                    lat, lon, tz = 0.0, 0.0, 'UTC'
-                    print(f"Debug: No Garden section in settings, using defaults")
+                lat = self.settings.get('gps_lat', 0.0)
+                lon = self.settings.get('gps_lon', 0.0)
+                tz = self.settings.get('timezone', 'UTC')
+                print(f"Debug: Using cached settings - lat: {lat}, lon: {lon}, tz: {tz}")
             
             # Get solar times for today
             city = LocationInfo(latitude=lat, longitude=lon, timezone=tz)

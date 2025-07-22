@@ -2123,7 +2123,7 @@ def get_system_time():
         now = datetime.now(tz)
         
         # Format for display
-        formatted_time = now.strftime('%b %d, %Y %I:%M %p')
+        formatted_time = now.strftime('%b %d, %Y %H:%M:%S')
         
         return jsonify({
             'formatted_time': formatted_time,
