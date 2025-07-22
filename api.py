@@ -16,6 +16,7 @@ import zipfile
 import tempfile
 import shutil
 import io
+import time
 # GPIO imports removed - scheduler is now primary controller
 
 # Conditional GPIO import for development vs production
@@ -321,24 +322,6 @@ def get_pin_for_channel(channel):
     except Exception as e:
         print(f"Error getting pin for channel {channel}: {e}")
     return None
-
-def activate_channel(channel):
-    """Activate a specific channel through scheduler"""
-    try:
-        from core.scheduler import scheduler
-        return scheduler.activate_zone_direct(zone_id=channel, duration_seconds=None, event_type='manual')
-    except Exception as e:
-        logging.error(f"Failed to activate zone {channel}: {e}")
-        return False
-
-def deactivate_channel(channel):
-    """Deactivate a specific channel through scheduler"""
-    try:
-        from core.scheduler import scheduler
-        return scheduler.deactivate_zone_direct(zone_id=channel, reason='manual')
-    except Exception as e:
-        logging.error(f"Failed to deactivate zone {channel}: {e}")
-        return False
 
 def get_channel_status(channel):
     """Get current status of a channel from scheduler"""
@@ -1379,24 +1362,46 @@ def delete_plant_instance(instance_id):
 @app.route('/api/gpio/activate/<int:channel>', methods=['POST'])
 def activate_gpio_channel(channel):
     """Activate a specific GPIO channel"""
-    success = activate_channel(channel)
-    if success:
+    try:
+        # Import GPIO functions for testing
+        from core.gpio import activate_zone, cleanup_gpio
+        
+        # Activate the zone
+        activate_zone(channel)
+        
+        # Brief delay to allow hardware to respond
+        time.sleep(0.1)
+        
+        # Clean up GPIO state to allow repeated tests
+        cleanup_gpio()
+        
         log_event(watering_logger, 'INFO', f'Zone activated', zone_id=channel)
-        return jsonify({'status': 'success', 'message': f'Channel {channel} activated'})
-    else:
-        log_event(error_logger, 'ERROR', f'Zone activation failed', zone_id=channel)
-        return jsonify({'status': 'error', 'message': f'Failed to activate channel {channel}'}), 400
+        return jsonify({'status': 'success', 'message': f'Channel {channel} activated and cleaned up'})
+    except Exception as e:
+        log_event(error_logger, 'ERROR', f'Zone activation failed', zone_id=channel, error=str(e))
+        return jsonify({'status': 'error', 'message': f'Failed to activate channel {channel}: {str(e)}'}), 400
 
 @app.route('/api/gpio/deactivate/<int:channel>', methods=['POST'])
 def deactivate_gpio_channel(channel):
     """Deactivate a specific GPIO channel"""
-    success = deactivate_channel(channel)
-    if success:
+    try:
+        # Import GPIO functions for testing
+        from core.gpio import deactivate_zone, cleanup_gpio
+        
+        # Deactivate the zone
+        deactivate_zone(channel)
+        
+        # Brief delay to allow hardware to respond
+        time.sleep(0.1)
+        
+        # Clean up GPIO state to allow repeated tests
+        cleanup_gpio()
+        
         log_event(watering_logger, 'INFO', f'Zone deactivated', zone_id=channel)
-        return jsonify({'status': 'success', 'message': f'Channel {channel} deactivated'})
-    else:
-        log_event(error_logger, 'ERROR', f'Zone deactivation failed', zone_id=channel)
-        return jsonify({'status': 'error', 'message': f'Failed to deactivate channel {channel}'}), 400
+        return jsonify({'status': 'success', 'message': f'Channel {channel} deactivated and cleaned up'})
+    except Exception as e:
+        log_event(error_logger, 'ERROR', f'Zone deactivation failed', zone_id=channel, error=str(e))
+        return jsonify({'status': 'error', 'message': f'Failed to deactivate channel {channel}: {str(e)}'}), 400
 
 @app.route('/api/gpio/status/<int:channel>', methods=['GET'])
 def get_gpio_channel_status(channel):
