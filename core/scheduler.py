@@ -209,23 +209,35 @@ class WateringScheduler:
             
             # Now acquire lock for minimal time to update data structures
             print(f"DEBUG: About to acquire lock for data update...")
-            with self.lock:
-                print(f"DEBUG: Lock acquired - updating data structures")
-                
-                # Update zone state
-                self.zone_states[zone_id] = zone_state
-                print(f"DEBUG: Updated zone_states[{zone_id}] = {self.zone_states[zone_id]}")
-                
-                # Add to active zones if duration specified
-                if duration_seconds:
-                    self.active_zones[zone_id] = end_time
-                    print(f"DEBUG: Added to active_zones[{zone_id}] = {end_time}")
-                    print(f"DEBUG: active_zones now contains: {self.active_zones}")
-                    self.save_active_zones()
-                else:
-                    print(f"DEBUG: No duration specified, not adding to active_zones")
             
-            print(f"DEBUG: Lock released after data update")
+            # Try to acquire lock with timeout to prevent deadlock
+            lock_acquired = False
+            try:
+                lock_acquired = self.lock.acquire(timeout=0.5)  # 500ms timeout
+                if lock_acquired:
+                    print(f"DEBUG: Lock acquired - updating data structures")
+                    
+                    # Update zone state
+                    self.zone_states[zone_id] = zone_state
+                    print(f"DEBUG: Updated zone_states[{zone_id}] = {self.zone_states[zone_id]}")
+                    
+                    # Add to active zones if duration specified
+                    if duration_seconds:
+                        self.active_zones[zone_id] = end_time
+                        print(f"DEBUG: Added to active_zones[{zone_id}] = {end_time}")
+                        print(f"DEBUG: active_zones now contains: {self.active_zones}")
+                        self.save_active_zones()
+                    else:
+                        print(f"DEBUG: No duration specified, not adding to active_zones")
+                    
+                    print(f"DEBUG: Lock released after data update")
+                else:
+                    print(f"DEBUG: Could not acquire lock for data update - scheduler may be busy")
+                    print(f"WARNING: Zone {zone_id} GPIO activated but not tracked by scheduler!")
+                    return False
+            finally:
+                if lock_acquired:
+                    self.lock.release()
             
             # Logging outside the lock
             self._setup_logging()
@@ -835,8 +847,11 @@ class WateringScheduler:
     
     def check_and_stop_expired_zones(self):
         """Check for expired zones and stop them"""
+        print(f"DEBUG: check_and_stop_expired_zones - trying to acquire lock...")
         with self.lock:
+            print(f"DEBUG: check_and_stop_expired_zones - lock acquired")
             self._check_and_stop_expired_zones_internal()
+        print(f"DEBUG: check_and_stop_expired_zones - lock released")
     
     def _check_and_stop_expired_zones_internal(self):
         """Internal method - assumes lock is already held"""
