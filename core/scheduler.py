@@ -51,6 +51,9 @@ class WateringScheduler:
         
         # Catch up on missed events
         self.catch_up_missed_events()
+
+        # Initialize threading lock
+        self.lock = threading.Lock()
     
     def get_current_time(self):
         """Get current time in configured timezone"""
@@ -152,48 +155,49 @@ class WateringScheduler:
             bool: Success status
         """
         try:
-            print(f"DEBUG: activate_zone_direct called - zone_id={zone_id}, duration={duration_seconds}, type={event_type}")
-            
-            # Tell gpio.py to activate the hardware
-            activate_zone(zone_id)
-            
-            # Update zone state using timezone-aware datetime
-            end_time = None
-            if duration_seconds:
-                # Use timezone-aware datetime
-                tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
-                tz = pytz.timezone(tz_name)
-                # Get current UTC time and convert to configured timezone
-                utc_now = datetime.now(pytz.UTC)
-                now = utc_now.astimezone(tz)
-                end_time = now + timedelta(seconds=duration_seconds)
-                print(f"DEBUG: Calculated end_time = {end_time} (timezone: {tz_name})")
-            
-            self.zone_states[zone_id] = {
-                'active': True,
-                'end_time': end_time,
-                'type': event_type,
-                'remaining': duration_seconds if duration_seconds else 0
-            }
-            
-            print(f"DEBUG: Updated zone_states[{zone_id}] = {self.zone_states[zone_id]}")
-            
-            # Add to active zones if duration specified
-            if duration_seconds:
-                self.active_zones[zone_id] = end_time
-                print(f"DEBUG: Added to active_zones[{zone_id}] = {end_time}")
-                print(f"DEBUG: active_zones now contains: {self.active_zones}")
-                self.save_active_zones()
-            else:
-                print(f"DEBUG: No duration specified, not adding to active_zones")
-            
-            self._setup_logging()
-            self.log_event(self.watering_logger, 'INFO', f'{event_type.title()} zone activation', 
-                         zone_id=zone_id, duration=duration_seconds)
-            
-            print(f"Scheduler: Activated zone {zone_id} for {duration_seconds}s ({event_type})")
-            return True
-            
+            with self.lock:
+                print(f"DEBUG: activate_zone_direct called - zone_id={zone_id}, duration={duration_seconds}, type={event_type}")
+                
+                # Tell gpio.py to activate the hardware
+                activate_zone(zone_id)
+                
+                # Update zone state using timezone-aware datetime
+                end_time = None
+                if duration_seconds:
+                    # Use timezone-aware datetime
+                    tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
+                    tz = pytz.timezone(tz_name)
+                    # Get current UTC time and convert to configured timezone
+                    utc_now = datetime.now(pytz.UTC)
+                    now = utc_now.astimezone(tz)
+                    end_time = now + timedelta(seconds=duration_seconds)
+                    print(f"DEBUG: Calculated end_time = {end_time} (timezone: {tz_name})")
+                
+                self.zone_states[zone_id] = {
+                    'active': True,
+                    'end_time': end_time,
+                    'type': event_type,
+                    'remaining': duration_seconds if duration_seconds else 0
+                }
+                
+                print(f"DEBUG: Updated zone_states[{zone_id}] = {self.zone_states[zone_id]}")
+                
+                # Add to active zones if duration specified
+                if duration_seconds:
+                    self.active_zones[zone_id] = end_time
+                    print(f"DEBUG: Added to active_zones[{zone_id}] = {end_time}")
+                    print(f"DEBUG: active_zones now contains: {self.active_zones}")
+                    self.save_active_zones()
+                else:
+                    print(f"DEBUG: No duration specified, not adding to active_zones")
+                
+                self._setup_logging()
+                self.log_event(self.watering_logger, 'INFO', f'{event_type.title()} zone activation', 
+                             zone_id=zone_id, duration=duration_seconds)
+                
+                print(f"Scheduler: Activated zone {zone_id} for {duration_seconds}s ({event_type})")
+                return True
+                
         except Exception as e:
             self._setup_logging()
             self.log_event(self.error_logger, 'ERROR', f'Zone activation failed', 
@@ -211,38 +215,39 @@ class WateringScheduler:
             bool: Success status
         """
         try:
-            print(f"DEBUG: deactivate_zone_direct called - zone_id={zone_id}, reason={reason}")
-            print(f"DEBUG: active_zones before deactivation: {self.active_zones}")
-            print(f"DEBUG: zone_states[{zone_id}] before deactivation: {self.zone_states.get(zone_id, {})}")
-            
-            # Deactivate the hardware
-            deactivate_zone(zone_id)
-            print(f"DEBUG: Hardware deactivation completed for zone {zone_id}")
-            
-            # Update zone state
-            self.zone_states[zone_id] = {
-                'active': False,
-                'end_time': None,
-                'type': None,
-                'remaining': 0
-            }
-            print(f"DEBUG: Updated zone_states[{zone_id}] = {self.zone_states[zone_id]}")
-            
-            # Remove from active zones
-            if zone_id in self.active_zones:
-                del self.active_zones[zone_id]
-                print(f"DEBUG: Removed zone {zone_id} from active_zones")
-                print(f"DEBUG: active_zones after removal: {self.active_zones}")
-                self.save_active_zones()
-            else:
-                print(f"DEBUG: Zone {zone_id} not in active_zones, skipping removal")
-            
-            self._setup_logging()
-            self.log_event(self.watering_logger, 'INFO', f'Zone deactivated - {reason}', zone_id=zone_id)
-            
-            print(f"Scheduler: Deactivated zone {zone_id} - {reason}")
-            return True
-            
+            with self.lock:
+                print(f"DEBUG: deactivate_zone_direct called - zone_id={zone_id}, reason={reason}")
+                print(f"DEBUG: active_zones before deactivation: {self.active_zones}")
+                print(f"DEBUG: zone_states[{zone_id}] before deactivation: {self.zone_states.get(zone_id, {})}")
+                
+                # Deactivate the hardware
+                deactivate_zone(zone_id)
+                print(f"DEBUG: Hardware deactivation completed for zone {zone_id}")
+                
+                # Update zone state
+                self.zone_states[zone_id] = {
+                    'active': False,
+                    'end_time': None,
+                    'type': None,
+                    'remaining': 0
+                }
+                print(f"DEBUG: Updated zone_states[{zone_id}] = {self.zone_states[zone_id]}")
+                
+                # Remove from active zones
+                if zone_id in self.active_zones:
+                    del self.active_zones[zone_id]
+                    print(f"DEBUG: Removed zone {zone_id} from active_zones")
+                    print(f"DEBUG: active_zones after removal: {self.active_zones}")
+                    self.save_active_zones()
+                else:
+                    print(f"DEBUG: Zone {zone_id} not in active_zones, skipping removal")
+                
+                self._setup_logging()
+                self.log_event(self.watering_logger, 'INFO', f'Zone deactivated - {reason}', zone_id=zone_id)
+                
+                print(f"Scheduler: Deactivated zone {zone_id} - {reason}")
+                return True
+                
         except Exception as e:
             print(f"ERROR in deactivate_zone_direct: {e}")
             import traceback
@@ -255,37 +260,39 @@ class WateringScheduler:
     
     def get_zone_status(self, zone_id: int) -> Dict:
         """Get current status of a zone"""
-        state = self.zone_states.get(zone_id, {
-            'active': False,
-            'end_time': None,
-            'type': None,
-            'remaining': 0
-        })
-        
-        # Update remaining time if active with timer
-        if state['active'] and state['end_time']:
-            # Use timezone-aware datetime for calculation
-            tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
-            tz = pytz.timezone(tz_name)
-            # Get current UTC time and convert to configured timezone
-            utc_now = datetime.now(pytz.UTC)
-            current_time = utc_now.astimezone(tz)
+        with self.lock:
+            state = self.zone_states.get(zone_id, {
+                'active': False,
+                'end_time': None,
+                'type': None,
+                'remaining': 0
+            })
             
-            end_time = state['end_time']
-            # Ensure end_time is timezone-aware
-            if end_time.tzinfo is None:
-                end_time = tz.localize(end_time)
+            # Update remaining time if active with timer
+            if state['active'] and state['end_time']:
+                # Use timezone-aware datetime for calculation
+                tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
+                tz = pytz.timezone(tz_name)
+                # Get current UTC time and convert to configured timezone
+                utc_now = datetime.now(pytz.UTC)
+                current_time = utc_now.astimezone(tz)
+                
+                end_time = state['end_time']
+                # Ensure end_time is timezone-aware
+                if end_time.tzinfo is None:
+                    end_time = tz.localize(end_time)
+                
+                remaining = (end_time - current_time).total_seconds()
+                state['remaining'] = max(0, int(remaining))
             
-            remaining = (end_time - current_time).total_seconds()
-            state['remaining'] = max(0, int(remaining))
-        
-        return state.copy()
+            return state.copy()
     
     def get_all_zone_status(self) -> Dict[int, Dict]:
         """Get status of all zones"""
         status = {}
-        for zone_id in ZONE_PINS.keys():
-            status[zone_id] = self.get_zone_status(zone_id)
+        with self.lock:
+            for zone_id in ZONE_PINS.keys():
+                status[zone_id] = self.get_zone_status(zone_id)
         return status
     
     def emergency_stop_all_zones(self) -> bool:
@@ -295,10 +302,11 @@ class WateringScheduler:
             print(f"DEBUG: active_zones before emergency stop: {self.active_zones}")
             
             success_count = 0
-            for zone_id in ZONE_PINS.keys():
-                if self.zone_states.get(zone_id, {}).get('active', False):
-                    if self.deactivate_zone_direct(zone_id, 'emergency_stop'):
-                        success_count += 1
+            with self.lock:
+                for zone_id in ZONE_PINS.keys():
+                    if self.zone_states.get(zone_id, {}).get('active', False):
+                        if self.deactivate_zone_direct(zone_id, 'emergency_stop'):
+                            success_count += 1
             
             print(f"DEBUG: active_zones after emergency stop: {self.active_zones}")
             
@@ -318,19 +326,20 @@ class WateringScheduler:
             print(f"DEBUG: active_zones before shutdown stop: {self.active_zones}")
             
             success_count = 0
-            for zone_id in ZONE_PINS.keys():
-                if self.zone_states.get(zone_id, {}).get('active', False):
-                    print(f"DEBUG: Shutdown stop preserving active_zones for zone {zone_id}")
-                    # Only deactivate hardware, preserve active_zones
-                    deactivate_zone(zone_id)
-                    # Update zone state but keep end_time for restoration
-                    self.zone_states[zone_id] = {
-                        'active': False,
-                        'end_time': self.zone_states[zone_id]['end_time'],  # Keep for restoration
-                        'type': self.zone_states[zone_id]['type'],
-                        'remaining': 0
-                    }
-                    success_count += 1
+            with self.lock:
+                for zone_id in ZONE_PINS.keys():
+                    if self.zone_states.get(zone_id, {}).get('active', False):
+                        print(f"DEBUG: Shutdown stop preserving active_zones for zone {zone_id}")
+                        # Only deactivate hardware, preserve active_zones
+                        deactivate_zone(zone_id)
+                        # Update zone state but keep end_time for restoration
+                        self.zone_states[zone_id] = {
+                            'active': False,
+                            'end_time': self.zone_states[zone_id]['end_time'],  # Keep for restoration
+                            'type': self.zone_states[zone_id]['type'],
+                            'remaining': 0
+                        }
+                        success_count += 1
             
             print(f"DEBUG: active_zones after shutdown stop: {self.active_zones}")
             
@@ -350,143 +359,146 @@ class WateringScheduler:
     def catch_up_missed_events(self):
         """On startup, catch up on any missed watering events that are still within their window"""
         try:
-            # Use cached schedule and settings
-            if not self.schedule:
-                print("Debug: No cached schedule, skipping catch-up")
-                return
-            print(f"Debug: Using cached schedule with {len(self.schedule)} zones")
-            
-            schedule = self.schedule
-            
-            now = self.get_current_time()
-            print(f"Debug: Current time: {now}")
-            
-            # Use cached settings
-            if not self.settings:
-                print("Debug: No cached settings, using defaults for catch-up")
-                lat, lon, tz = 0.0, 0.0, 'UTC'
-            else:
-                lat = self.settings.get('gps_lat', 0.0)
-                lon = self.settings.get('gps_lon', 0.0)
-                tz = self.settings.get('timezone', 'UTC')
-                print(f"Debug: Using cached settings - lat: {lat}, lon: {lon}, tz: {tz}")
-            
-            # Get solar times for today
-            city = LocationInfo(latitude=lat, longitude=lon, timezone=tz)
-            dt = now.astimezone(pytz.timezone(tz))
-            s = sun(city.observer, date=dt.date(), tzinfo=city.timezone)
-            print(f"Debug: Solar times for today: sunrise={s['sunrise']}, sunset={s['sunset']}, noon={s['noon']}")
-            
-            # Determine outage window to check for missed events
-            # Check events from the last 24 hours that might have been missed
-            outage_start = dt - timedelta(hours=24)
-            print(f"Debug: Checking for missed events since {outage_start}")
-            
-            restored_count = 0
-            
-            for zone_id_str, zone_data in schedule.items():
-                zone_id = int(zone_id_str)
+            with self.lock:
+                # Use cached schedule and settings
+                if not self.schedule:
+                    print("Debug: No cached schedule, skipping catch-up")
+                    return
+                print(f"Debug: Using cached schedule with {len(self.schedule)} zones")
                 
-                # Skip disabled zones  
-                mode = zone_data.get('mode', 'manual')
-                if mode == 'disabled':
-                    print(f"Debug: Zone {zone_id} is disabled, skipping")
-                    continue
+                schedule = self.schedule
                 
-                # Skip if zone is already active
-                if self.zone_states.get(zone_id, {}).get('active', False):
-                    print(f"Debug: Zone {zone_id} is already active, skipping catch-up")
-                    continue
+                now = self.get_current_time()
+                print(f"Debug: Current time: {now}")
                 
-                period = zone_data.get('period', 'D')
-                start_day = zone_data.get('startDay', '')
-                times = zone_data.get('times', [])
-                print(f"Debug: Checking zone {zone_id} - mode: {mode}, period: {period}, events: {len(times)}")
+                # Use cached settings
+                if not self.settings:
+                    print("Debug: No cached settings, using defaults for catch-up")
+                    lat, lon, tz = 0.0, 0.0, 'UTC'
+                else:
+                    lat = self.settings.get('gps_lat', 0.0)
+                    lon = self.settings.get('gps_lon', 0.0)
+                    tz = self.settings.get('timezone', 'UTC')
+                    print(f"Debug: Using cached settings - lat: {lat}, lon: {lon}, tz: {tz}")
                 
-                # Check if this zone should run today based on period
-                should_run_today = self._should_run_today(period, start_day, dt)
+                # Get solar times for today
+                city = LocationInfo(latitude=lat, longitude=lon, timezone=tz)
+                dt = now.astimezone(pytz.timezone(tz))
+                s = sun(city.observer, date=dt.date(), tzinfo=city.timezone)
+                print(f"Debug: Solar times for today: sunrise={s['sunrise']}, sunset={s['sunset']}, noon={s['noon']}")
                 
-                if not should_run_today:
-                    print(f"Debug:   Zone {zone_id} not scheduled for today, skipping")
-                    continue
+                # Determine outage window to check for missed events
+                # Check events from the last 24 hours that might have been missed
+                outage_start = dt - timedelta(hours=24)
+                print(f"Debug: Checking for missed events since {outage_start}")
                 
-                # Check each scheduled time
-                for event_idx, event in enumerate(times):
-                    value = event.get('value')
-                    duration_str = event.get('duration', '000100')
-                    print(f"Debug:   Event {event_idx+1} - code: {value}, duration: {duration_str}")
+                restored_count = 0
+                
+                for zone_id_str, zone_data in schedule.items():
+                    zone_id = int(zone_id_str)
                     
-                    # Resolve start_time
-                    start_time = self._resolve_event_time(value, s, dt)
-                    if not start_time:
-                        print(f"Debug:     Skipping unknown code: {value}")
+                    # Skip disabled zones  
+                    mode = zone_data.get('mode', 'manual')
+                    if mode == 'disabled':
+                        print(f"Debug: Zone {zone_id} is disabled, skipping")
                         continue
                     
-                    # Parse duration
-                    try:
-                        duration = self._parse_duration(duration_str)
-                        print(f"Debug:     Duration parsed as {duration}")
-                    except Exception as e:
-                        print(f"Debug:     Duration parse failed: {e}, using default 1 min")
-                        duration = timedelta(minutes=1)
+                    # Skip if zone is already active
+                    if self.zone_states.get(zone_id, {}).get('active', False):
+                        print(f"Debug: Zone {zone_id} is already active, skipping catch-up")
+                        continue
                     
-                    end_time = start_time + duration
-                    print(f"Debug:     Event window: {start_time} to {end_time}")
+                    period = zone_data.get('period', 'D')
+                    start_day = zone_data.get('startDay', '')
+                    times = zone_data.get('times', [])
+                    print(f"Debug: Checking zone {zone_id} - mode: {mode}, period: {period}, events: {len(times)}")
                     
-                    # Check if we're currently within the event window
-                    if start_time <= dt <= end_time:
-                        remaining = (end_time - dt).total_seconds()
-                        print(f"Debug:     Event is ongoing! Remaining: {remaining:.1f} sec")
+                    # Check if this zone should run today based on period
+                    should_run_today = self._should_run_today(period, start_day, dt)
+                    
+                    if not should_run_today:
+                        print(f"Debug:   Zone {zone_id} not scheduled for today, skipping")
+                        continue
+                    
+                    print(f"Debug: Zone {zone_id} should run today")
+                    
+                    # Check each scheduled time
+                    for event_idx, event in enumerate(times):
+                        value = event.get('value')
+                        duration_str = event.get('duration', '000100')
+                        print(f"Debug:   Event {event_idx+1} - code: {value}, duration: {duration_str}")
                         
-                        if remaining > 5:  # Only restore if more than 5 seconds remaining
-                            print(f"Debug:     Restoring zone {zone_id} for remaining {int(remaining)} sec")
-                            success = self.activate_zone_direct(zone_id, int(remaining), 'scheduled')
-                            if success:
-                                restored_count += 1
-                                self._setup_logging()
-                                self.log_event(self.watering_logger, 'INFO', 
-                                             'Catch-up: Restored missed scheduled event', 
-                                             zone_id=zone_id, remaining=int(remaining))
+                        # Resolve start_time
+                        start_time = self._resolve_event_time(value, s, dt)
+                        if not start_time:
+                            print(f"Debug:     Skipping unknown code: {value}")
+                            continue
+                        
+                        # Parse duration
+                        try:
+                            duration = self._parse_duration(duration_str)
+                            print(f"Debug:     Duration parsed as {duration}")
+                        except Exception as e:
+                            print(f"Debug:     Duration parse failed: {e}, using default 1 min")
+                            duration = timedelta(minutes=1)
+                        
+                        end_time = start_time + duration
+                        print(f"Debug:     Event window: {start_time} to {end_time}")
+                        
+                        # Check if we're currently within the event window
+                        if start_time <= dt <= end_time:
+                            remaining = (end_time - dt).total_seconds()
+                            print(f"Debug:     Event is ongoing! Remaining: {remaining:.1f} sec")
+                            
+                            if remaining > 5:  # Only restore if more than 5 seconds remaining
+                                print(f"Debug:     Restoring zone {zone_id} for remaining {int(remaining)} sec")
+                                success = self.activate_zone_direct(zone_id, int(remaining), 'scheduled')
+                                if success:
+                                    restored_count += 1
+                                    self._setup_logging()
+                                    self.log_event(self.watering_logger, 'INFO', 
+                                                 'Catch-up: Restored missed scheduled event', 
+                                                 zone_id=zone_id, remaining=int(remaining))
+                                else:
+                                    print(f"Debug:     Failed to restore zone {zone_id}")
                             else:
-                                print(f"Debug:     Failed to restore zone {zone_id}")
-                        else:
-                            print(f"Debug:     Too little time remaining ({remaining:.1f}s), skipping")
-                    
-                    # NEW: Check for events that should have started during outage but are now past their window
-                    elif start_time >= outage_start and start_time < dt:
-                        # Event should have started during the outage window but is now past
-                        time_since_start = (dt - start_time).total_seconds()
-                        event_duration_seconds = duration.total_seconds()
+                                print(f"Debug:     Too little time remaining ({remaining:.1f}s), skipping")
                         
-                        print(f"Debug:     Event should have started during outage (started {time_since_start:.0f}s ago)")
-                        
-                        # If the event would still be running (within its duration), start it for remaining time
-                        if time_since_start < event_duration_seconds:
-                            remaining = event_duration_seconds - time_since_start
-                            print(f"Debug:     Event would still be running! Starting for remaining {int(remaining)} sec")
-                            success = self.activate_zone_direct(zone_id, int(remaining), 'scheduled')
-                            if success:
-                                restored_count += 1
-                                self._setup_logging()
-                                self.log_event(self.watering_logger, 'INFO', 
-                                             'Catch-up: Started missed event from outage', 
-                                             zone_id=zone_id, 
-                                             missed_start=start_time.strftime('%H:%M'),
-                                             remaining=int(remaining))
+                        # NEW: Check for events that should have started during outage but are now past their window
+                        elif start_time >= outage_start and start_time < dt:
+                            # Event should have started during the outage window but is now past
+                            time_since_start = (dt - start_time).total_seconds()
+                            event_duration_seconds = duration.total_seconds()
+                            
+                            print(f"Debug:     Event should have started during outage (started {time_since_start:.0f}s ago)")
+                            
+                            # If the event would still be running (within its duration), start it for remaining time
+                            if time_since_start < event_duration_seconds:
+                                remaining = event_duration_seconds - time_since_start
+                                print(f"Debug:     Event would still be running! Starting for remaining {int(remaining)} sec")
+                                success = self.activate_zone_direct(zone_id, int(remaining), 'scheduled')
+                                if success:
+                                    restored_count += 1
+                                    self._setup_logging()
+                                    self.log_event(self.watering_logger, 'INFO', 
+                                                 'Catch-up: Started missed event from outage', 
+                                                 zone_id=zone_id, 
+                                                 missed_start=start_time.strftime('%H:%M'),
+                                                 remaining=int(remaining))
+                                else:
+                                    print(f"Debug:     Failed to start missed event for zone {zone_id}")
                             else:
-                                print(f"Debug:     Failed to start missed event for zone {zone_id}")
+                                print(f"Debug:     Event would have already finished ({time_since_start:.0f}s > {event_duration_seconds:.0f}s), skipping")
                         else:
-                            print(f"Debug:     Event would have already finished ({time_since_start:.0f}s > {event_duration_seconds:.0f}s), skipping")
-                    else:
-                        print("Debug:     Event not currently active and not in outage window")
-            
-            if restored_count > 0:
-                print(f"Catch-up complete: Restored {restored_count} missed events")
-                self._setup_logging()
-                self.log_event(self.watering_logger, 'INFO', f'Startup catch-up completed', events_restored=restored_count)
-            else:
-                print("Catch-up complete: No missed events to restore")
+                            print("Debug:     Event not currently active and not in outage window")
                 
+                if restored_count > 0:
+                    print(f"Catch-up complete: Restored {restored_count} missed events")
+                    self._setup_logging()
+                    self.log_event(self.watering_logger, 'INFO', f'Startup catch-up completed', events_restored=restored_count)
+                else:
+                    print("Catch-up complete: No missed events to restore")
+                    
         except Exception as e:
             print(f"Error in catch_up_missed_events: {e}")
             self._setup_logging()
@@ -587,57 +599,58 @@ class WateringScheduler:
     def load_active_zones(self):
         """Load active zones from persistent storage"""
         try:
-            print(f"Debug: Loading active zones from {self.active_zones_file}")
-            if os.path.exists(self.active_zones_file):
-                with open(self.active_zones_file, 'r') as f:
-                    data = json.load(f)
-                    print(f"Debug: Found {len(data)} active zones in file: {data}")
-                    
-                    # Get timezone for proper datetime handling
-                    tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
-                    tz = pytz.timezone(tz_name)
-                    # Get current UTC time and convert to configured timezone
-                    utc_now = datetime.now(pytz.UTC)
-                    current_time = utc_now.astimezone(tz)
-                    
-                    # Handle both old format (string) and new format (dict)
-                    for zone_id, zone_data in data.items():
-                        # Handle old format where zone_data is just a string
-                        if isinstance(zone_data, str):
-                            end_time_str = zone_data
-                            event_type = 'manual'  # Default for old format
-                        else:
-                            # New format where zone_data is a dict
-                            end_time_str = zone_data.get('end_time')
-                            event_type = zone_data.get('type', 'manual')
+            with self.lock:
+                print(f"Debug: Loading active zones from {self.active_zones_file}")
+                if os.path.exists(self.active_zones_file):
+                    with open(self.active_zones_file, 'r') as f:
+                        data = json.load(f)
+                        print(f"Debug: Found {len(data)} active zones in file: {data}")
                         
-                        # Parse the datetime and make it timezone-aware
-                        end_time = datetime.fromisoformat(end_time_str)
-                        if end_time.tzinfo is None:
-                            # If stored time is naive, assume it's in the configured timezone
-                            end_time = tz.localize(end_time)
+                        # Get timezone for proper datetime handling
+                        tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
+                        tz = pytz.timezone(tz_name)
+                        # Get current UTC time and convert to configured timezone
+                        utc_now = datetime.now(pytz.UTC)
+                        current_time = utc_now.astimezone(tz)
                         
-                        print(f"Debug: Zone {zone_id} end time: {end_time}, type: {event_type} (now: {current_time})")
-                        
-                        # Only restore if the timer hasn't expired
-                        if end_time > current_time:
-                            zone_id_int = int(zone_id)
-                            self.active_zones[zone_id_int] = end_time
-                            # Activate the hardware
-                            activate_zone(zone_id_int)
-                            # Update zone state with the correct event type
-                            remaining = int((end_time - current_time).total_seconds())
-                            self.zone_states[zone_id_int] = {
-                                'active': True,
-                                'end_time': end_time,
-                                'type': event_type,  # Use the saved event type
-                                'remaining': remaining
-                            }
-                            print(f"✅ Restored active zone {zone_id} with end time {end_time}, type: {event_type} (remaining: {remaining}s)")
-                        else:
-                            print(f"⚠️  Zone {zone_id} timer expired at {end_time}, not restoring")
-            else:
-                print(f"Debug: Active zones file does not exist: {self.active_zones_file}")
+                        # Handle both old format (string) and new format (dict)
+                        for zone_id, zone_data in data.items():
+                            # Handle old format where zone_data is just a string
+                            if isinstance(zone_data, str):
+                                end_time_str = zone_data
+                                event_type = 'manual'  # Default for old format
+                            else:
+                                # New format where zone_data is a dict
+                                end_time_str = zone_data.get('end_time')
+                                event_type = zone_data.get('type', 'manual')
+                            
+                            # Parse the datetime and make it timezone-aware
+                            end_time = datetime.fromisoformat(end_time_str)
+                            if end_time.tzinfo is None:
+                                # If stored time is naive, assume it's in the configured timezone
+                                end_time = tz.localize(end_time)
+                            
+                            print(f"Debug: Zone {zone_id} end time: {end_time}, type: {event_type} (now: {current_time})")
+                            
+                            # Only restore if the timer hasn't expired
+                            if end_time > current_time:
+                                zone_id_int = int(zone_id)
+                                self.active_zones[zone_id_int] = end_time
+                                # Activate the hardware
+                                activate_zone(zone_id_int)
+                                # Update zone state with the correct event type
+                                remaining = int((end_time - current_time).total_seconds())
+                                self.zone_states[zone_id_int] = {
+                                    'active': True,
+                                    'end_time': end_time,
+                                    'type': event_type,  # Use the saved event type
+                                    'remaining': remaining
+                                }
+                                print(f"✅ Restored active zone {zone_id} with end time {end_time}, type: {event_type} (remaining: {remaining}s)")
+                            else:
+                                print(f"⚠️  Zone {zone_id} timer expired at {end_time}, not restoring")
+                else:
+                    print(f"Debug: Active zones file does not exist: {self.active_zones_file}")
         except Exception as e:
             print(f"❌ Error loading active zones: {e}")
             import traceback
@@ -646,26 +659,27 @@ class WateringScheduler:
     def save_active_zones(self):
         """Save active zones to persistent storage"""
         try:
-            print(f"DEBUG: save_active_zones called")
-            print(f"DEBUG: Saving {len(self.active_zones)} active zones to {self.active_zones_file}")
-            print(f"DEBUG: Active zones: {self.active_zones}")
-            
-            # Save both end_time and event_type for each zone
-            data = {}
-            for zone_id, end_time in self.active_zones.items():
-                zone_state = self.zone_states.get(zone_id, {})
-                event_type = zone_state.get('type', 'manual')  # Default to manual if not set
-                data[str(zone_id)] = {
-                    'end_time': end_time.isoformat(),
-                    'type': event_type
-                }
-            
-            print(f"DEBUG: Saving data: {data}")
-            
-            with open(self.active_zones_file, 'w') as f:
-                json.dump(data, f, indent=2)
-            
-            print(f"✅ Active zones saved successfully")
+            with self.lock:
+                print(f"DEBUG: save_active_zones called")
+                print(f"DEBUG: Saving {len(self.active_zones)} active zones to {self.active_zones_file}")
+                print(f"DEBUG: Active zones: {self.active_zones}")
+                
+                # Save both end_time and event_type for each zone
+                data = {}
+                for zone_id, end_time in self.active_zones.items():
+                    zone_state = self.zone_states.get(zone_id, {})
+                    event_type = zone_state.get('type', 'manual')  # Default to manual if not set
+                    data[str(zone_id)] = {
+                        'end_time': end_time.isoformat(),
+                        'type': event_type
+                    }
+                
+                print(f"DEBUG: Saving data: {data}")
+                
+                with open(self.active_zones_file, 'w') as f:
+                    json.dump(data, f, indent=2)
+                
+                print(f"✅ Active zones saved successfully")
         except Exception as e:
             print(f"❌ Error saving active zones: {e}")
             import traceback
@@ -712,22 +726,23 @@ class WateringScheduler:
         print(f"DEBUG: check_and_stop_expired_zones #{self.check_count} - current_time={current_time} (timezone: {tz_name})")
         print(f"DEBUG: active_zones={self.active_zones}")
         
-        for zone_id, end_time in list(self.active_zones.items()):
-            # Convert end_time to the same timezone as current_time for proper comparison
-            if end_time.tzinfo is None:
-                # If stored end_time is naive, assume it's in the configured timezone
-                end_time_tz = tz.localize(end_time)
-                print(f"DEBUG: Converted naive end_time to timezone-aware: {end_time_tz}")
-            else:
-                # If it has timezone info, convert to our timezone for comparison
-                end_time_tz = end_time.astimezone(tz)
-                print(f"DEBUG: Converted end_time to local timezone: {end_time_tz}")
-            
-            print(f"DEBUG: Checking zone {zone_id}, end_time={end_time_tz}, current_time={current_time}, expired={current_time >= end_time_tz}")
-            
-            if current_time >= end_time_tz:
-                zones_to_stop.append(zone_id)
-                print(f"DEBUG: Zone {zone_id} marked for stopping (expired)")
+        with self.lock:
+            for zone_id, end_time in list(self.active_zones.items()):
+                # Convert end_time to the same timezone as current_time for proper comparison
+                if end_time.tzinfo is None:
+                    # If stored end_time is naive, assume it's in the configured timezone
+                    end_time_tz = tz.localize(end_time)
+                    print(f"DEBUG: Converted naive end_time to timezone-aware: {end_time_tz}")
+                else:
+                    # If it has timezone info, convert to our timezone for comparison
+                    end_time_tz = end_time.astimezone(tz)
+                    print(f"DEBUG: Converted end_time to local timezone: {end_time_tz}")
+                
+                print(f"DEBUG: Checking zone {zone_id}, end_time={end_time_tz}, current_time={current_time}, expired={current_time >= end_time_tz}")
+                
+                if current_time >= end_time_tz:
+                    zones_to_stop.append(zone_id)
+                    print(f"DEBUG: Zone {zone_id} marked for stopping (expired)")
         
         print(f"DEBUG: Zones to stop: {zones_to_stop}")
         
@@ -757,105 +772,106 @@ class WateringScheduler:
     def check_scheduled_events(self):
         """Check for scheduled events that should start now"""
         try:
-            # Use cached schedule and settings
-            if not self.schedule or not self.settings:
-                print("DEBUG: No schedule or settings available")
-                return
+            with self.lock:
+                # Use cached schedule and settings
+                if not self.schedule or not self.settings:
+                    print("DEBUG: No schedule or settings available")
+                    return
 
-            schedule = self.schedule
-            lat = self.settings.get('gps_lat', 0.0)
-            lon = self.settings.get('gps_lon', 0.0)
-            tz = self.settings.get('timezone', 'UTC')
+                schedule = self.schedule
+                lat = self.settings.get('gps_lat', 0.0)
+                lon = self.settings.get('gps_lon', 0.0)
+                tz = self.settings.get('timezone', 'UTC')
 
-            print(f"DEBUG: check_scheduled_events - tz={tz}, lat={lat}, lon={lon}")
+                print(f"DEBUG: check_scheduled_events - tz={tz}, lat={lat}, lon={lon}")
 
-            # Get solar times for today
-            city = LocationInfo(latitude=lat, longitude=lon, timezone=tz)
-            dt = self.get_current_time()
-            s = sun(city.observer, date=dt.date(), tzinfo=city.timezone)
-            
-            print(f"DEBUG: Current time in {tz}: {dt}")
-            print(f"DEBUG: Schedule zones: {list(schedule.keys())}")
-            
-            for zone_id_str, zone_data in schedule.items():
-                zone_id = int(zone_id_str)
+                # Get solar times for today
+                city = LocationInfo(latitude=lat, longitude=lon, timezone=tz)
+                dt = self.get_current_time()
+                s = sun(city.observer, date=dt.date(), tzinfo=city.timezone)
                 
-                print(f"DEBUG: Checking zone {zone_id}")
+                print(f"DEBUG: Current time in {tz}: {dt}")
+                print(f"DEBUG: Schedule zones: {list(schedule.keys())}")
                 
-                # Skip disabled zones
-                mode = zone_data.get('mode', 'manual')
-                if mode == 'disabled':
-                    print(f"DEBUG: Zone {zone_id} is disabled, skipping")
-                    continue
-                
-                # Skip if zone is already active
-                zone_state = self.zone_states.get(zone_id, {})
-                if zone_state.get('active', False):
-                    print(f"DEBUG: Zone {zone_id} is already active, skipping")
-                    continue
-                
-                period = zone_data.get('period', 'D')
-                start_day = zone_data.get('startDay', '')
-                times = zone_data.get('times', [])
-                
-                print(f"DEBUG: Zone {zone_id} - period={period}, start_day={start_day}, times={times}")
-                
-                # Check if this zone should run today
-                should_run_today = self._should_run_today(period, start_day, dt)
-                if not should_run_today:
-                    print(f"DEBUG: Zone {zone_id} should not run today")
-                    continue
-                
-                print(f"DEBUG: Zone {zone_id} should run today")
-                
-                # Check each scheduled time
-                for event in times:
-                    value = event.get('value')
-                    duration_str = event.get('duration', '000100')
+                for zone_id_str, zone_data in schedule.items():
+                    zone_id = int(zone_id_str)
                     
-                    print(f"DEBUG: Checking event - value={value}, duration={duration_str}")
+                    print(f"DEBUG: Checking zone {zone_id}")
                     
-                    # Resolve start_time
-                    start_time = self._resolve_event_time(value, s, dt)
-                    if not start_time:
-                        print(f"DEBUG: Could not resolve start_time for event {value}")
+                    # Skip disabled zones
+                    mode = zone_data.get('mode', 'manual')
+                    if mode == 'disabled':
+                        print(f"DEBUG: Zone {zone_id} is disabled, skipping")
                         continue
                     
-                    print(f"DEBUG: Resolved start_time={start_time}")
+                    # Skip if zone is already active
+                    zone_state = self.zone_states.get(zone_id, {})
+                    if zone_state.get('active', False):
+                        print(f"DEBUG: Zone {zone_id} is already active, skipping")
+                        continue
                     
-                    # Parse duration
-                    try:
-                        duration = self._parse_duration(duration_str)
-                    except Exception as e:
-                        print(f"Duration parse failed: {e}, using default 1 min")
-                        duration = timedelta(minutes=1)
+                    period = zone_data.get('period', 'D')
+                    start_day = zone_data.get('startDay', '')
+                    times = zone_data.get('times', [])
                     
-                    # Check if it's time to start this event (within 5 seconds after start time)
-                    time_since_start = (dt - start_time).total_seconds()
-                    print(f"DEBUG: time_since_start={time_since_start:.1f}s")
+                    print(f"DEBUG: Zone {zone_id} - period={period}, start_day={start_day}, times={times}")
                     
-                    if 0 <= time_since_start < 5:  # Trigger within 5 seconds after scheduled time
-                        print(f"Scheduled event triggered for zone {zone_id} at {start_time} (detected {time_since_start:.1f}s after)")
-                        success = self.activate_zone_direct(zone_id, int(duration.total_seconds()), 'scheduled')
-                        if success:
-                            self._setup_logging()
-                            self.log_event(self.watering_logger, 'INFO', 
-                                         'Scheduled event started', 
-                                         zone_id=zone_id, 
-                                         scheduled_time=start_time.strftime('%H:%M'),
-                                         duration=int(duration.total_seconds()))
-                            print(f"SUCCESS: Scheduled event started for zone {zone_id}")
-                        else:
-                            self._setup_logging()
-                            self.log_event(self.error_logger, 'ERROR', 
-                                         'Failed to start scheduled event', 
-                                         zone_id=zone_id, 
-                                         scheduled_time=start_time.strftime('%H:%M'))
-                            print(f"ERROR: Failed to start scheduled event for zone {zone_id}")
-                        break  # Only start one event per zone per check
-                    else:
-                        print(f"DEBUG: Not time yet for zone {zone_id} event (time_since_start={time_since_start:.1f}s)")
+                    # Check if this zone should run today
+                    should_run_today = self._should_run_today(period, start_day, dt)
+                    if not should_run_today:
+                        print(f"DEBUG: Zone {zone_id} should not run today")
+                        continue
+                    
+                    print(f"DEBUG: Zone {zone_id} should run today")
+                    
+                    # Check each scheduled time
+                    for event in times:
+                        value = event.get('value')
+                        duration_str = event.get('duration', '000100')
                         
+                        print(f"DEBUG: Checking event - value={value}, duration={duration_str}")
+                        
+                        # Resolve start_time
+                        start_time = self._resolve_event_time(value, s, dt)
+                        if not start_time:
+                            print(f"DEBUG: Could not resolve start_time for event {value}")
+                            continue
+                        
+                        print(f"DEBUG: Resolved start_time={start_time}")
+                        
+                        # Parse duration
+                        try:
+                            duration = self._parse_duration(duration_str)
+                        except Exception as e:
+                            print(f"Duration parse failed: {e}, using default 1 min")
+                            duration = timedelta(minutes=1)
+                        
+                        # Check if it's time to start this event (within 5 seconds after start time)
+                        time_since_start = (dt - start_time).total_seconds()
+                        print(f"DEBUG: time_since_start={time_since_start:.1f}s")
+                        
+                        if 0 <= time_since_start < 5:  # Trigger within 5 seconds after scheduled time
+                            print(f"Scheduled event triggered for zone {zone_id} at {start_time} (detected {time_since_start:.1f}s after)")
+                            success = self.activate_zone_direct(zone_id, int(duration.total_seconds()), 'scheduled')
+                            if success:
+                                self._setup_logging()
+                                self.log_event(self.watering_logger, 'INFO', 
+                                             'Scheduled event started', 
+                                             zone_id=zone_id, 
+                                             scheduled_time=start_time.strftime('%H:%M'),
+                                             duration=int(duration.total_seconds()))
+                                print(f"SUCCESS: Scheduled event started for zone {zone_id}")
+                            else:
+                                self._setup_logging()
+                                self.log_event(self.error_logger, 'ERROR', 
+                                             'Failed to start scheduled event', 
+                                             zone_id=zone_id, 
+                                             scheduled_time=start_time.strftime('%H:%M'))
+                                print(f"ERROR: Failed to start scheduled event for zone {zone_id}")
+                            break  # Only start one event per zone per check
+                        else:
+                            print(f"DEBUG: Not time yet for zone {zone_id} event (time_since_start={time_since_start:.1f}s)")
+                            
         except Exception as e:
             print(f"ERROR in check_scheduled_events: {e}")
             import traceback
@@ -986,26 +1002,27 @@ class WateringScheduler:
     def debug_zone_states(self):
         """Debug method to show current state of all zones"""
         print("\n=== ZONE STATE DEBUG ===")
-        print(f"Active zones (scheduler): {self.active_zones}")
-        print(f"Zone states (scheduler): {self.zone_states}")
-        
-        # Get actual GPIO states
-        from .gpio import get_all_zone_states, ZONE_PINS
-        gpio_states = get_all_zone_states()
-        print(f"GPIO states (hardware): {gpio_states}")
-        
-        print("\nDetailed zone status:")
-        for zone_id in sorted(ZONE_PINS.keys()):
-            scheduler_state = self.zone_states.get(zone_id, {})
-            gpio_state = gpio_states.get(zone_id, False)
-            active_in_scheduler = zone_id in self.active_zones
+        with self.lock:
+            print(f"Active zones (scheduler): {self.active_zones}")
+            print(f"Zone states (scheduler): {self.zone_states}")
             
-            print(f"Zone {zone_id}:")
-            print(f"  Scheduler active: {active_in_scheduler}")
-            print(f"  Scheduler state: {scheduler_state}")
-            print(f"  GPIO state: {gpio_state}")
-            print(f"  Mismatch: {'YES' if scheduler_state.get('active', False) != gpio_state else 'NO'}")
-        
+            # Get actual GPIO states
+            from .gpio import get_all_zone_states, ZONE_PINS
+            gpio_states = get_all_zone_states()
+            print(f"GPIO states (hardware): {gpio_states}")
+            
+            print("\nDetailed zone status:")
+            for zone_id in sorted(ZONE_PINS.keys()):
+                scheduler_state = self.zone_states.get(zone_id, {})
+                gpio_state = gpio_states.get(zone_id, False)
+                active_in_scheduler = zone_id in self.active_zones
+                
+                print(f"Zone {zone_id}:")
+                print(f"  Scheduler active: {active_in_scheduler}")
+                print(f"  Scheduler state: {scheduler_state}")
+                print(f"  GPIO state: {gpio_state}")
+                print(f"  Mismatch: {'YES' if scheduler_state.get('active', False) != gpio_state else 'NO'}")
+            
         print("=== END DEBUG ===\n")
 
 # Global scheduler instance
