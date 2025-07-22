@@ -697,19 +697,20 @@ class WateringScheduler:
         print(f"DEBUG: check_and_stop_expired_zones #{self.check_count} - current_time={current_time} (timezone: {tz_name})")
         print(f"DEBUG: active_zones={self.active_zones}")
         
-        for zone_id, end_time in self.active_zones.items():
-            # Ensure end_time is timezone-aware for comparison
+        for zone_id, end_time in list(self.active_zones.items()):
+            # Convert end_time to the same timezone as current_time for proper comparison
             if end_time.tzinfo is None:
                 # If stored end_time is naive, assume it's in the configured timezone
-                end_time = tz.localize(end_time)
-                print(f"DEBUG: Converted naive end_time to timezone-aware: {end_time}")
+                end_time_tz = tz.localize(end_time)
+                print(f"DEBUG: Converted naive end_time to timezone-aware: {end_time_tz}")
             else:
                 # If it has timezone info, convert to our timezone for comparison
-                end_time = end_time.astimezone(tz)
-                print(f"DEBUG: Converted end_time to local timezone: {end_time}")
+                end_time_tz = end_time.astimezone(tz)
+                print(f"DEBUG: Converted end_time to local timezone: {end_time_tz}")
             
-            print(f"DEBUG: Checking zone {zone_id}, end_time={end_time}, expired={current_time >= end_time}")
-            if current_time >= end_time:
+            print(f"DEBUG: Checking zone {zone_id}, end_time={end_time_tz}, current_time={current_time}, expired={current_time >= end_time_tz}")
+            
+            if current_time >= end_time_tz:
                 zones_to_stop.append(zone_id)
                 print(f"DEBUG: Zone {zone_id} marked for stopping (expired)")
         
@@ -849,57 +850,65 @@ class WateringScheduler:
     
     def run_scheduler_loop(self):
         """Main scheduler loop"""
-        print("DEBUG: Scheduler loop started")
+        print("DEBUG: Scheduler loop started successfully")
         loop_count = 0
         
-        while self.running:
-            try:
-                loop_count += 1
-                
-                # IMMEDIATE DEBUG - print every iteration for first 10 loops
-                if loop_count <= 10:
-                    print(f"DEBUG: Scheduler loop iteration {loop_count} - calling check_and_stop_expired_zones()")
-                
-                if loop_count % 60 == 0:  # Log every 60 seconds
-                    print(f"DEBUG: Scheduler loop iteration {loop_count}")
-                
-                # Check for expired manual timers (MOST IMPORTANT - check every loop)
-                self.check_and_stop_expired_zones()
-                
-                # Check for scheduled events (less frequent)
-                if loop_count % 10 == 0:  # Check every 10 seconds
-                    self.check_scheduled_events()
-                
-                # Update remaining times for active zones
-                tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
-                tz = pytz.timezone(tz_name)
-                current_time = datetime.now(tz)
-                
-                for zone_id in list(self.zone_states.keys()):
-                    state = self.zone_states[zone_id]
-                    if state['active'] and state['end_time']:
-                        end_time = state['end_time']
-                        # Ensure end_time is timezone-aware
-                        if end_time.tzinfo is None:
-                            end_time = tz.localize(end_time)
-                        
-                        remaining = (end_time - current_time).total_seconds()
-                        state['remaining'] = max(0, int(remaining))
-                        if loop_count % 10 == 0:  # Log every 10 seconds
-                            print(f"DEBUG: Zone {zone_id} remaining time: {state['remaining']}s")
-                
-                # Debug zone states every 30 seconds to catch mismatches
-                if loop_count % 30 == 0:
-                    self.debug_zone_states()
-                
-                # Sleep for a shorter interval to catch expired timers faster
-                time.sleep(0.5)  # Check every 500ms instead of 1 second
-                
-            except Exception as e:
-                print(f"ERROR in scheduler loop: {e}")
-                import traceback
-                traceback.print_exc()
-                time.sleep(5)  # Wait longer on error
+        try:
+            while self.running:
+                try:
+                    loop_count += 1
+                    
+                    # IMMEDIATE DEBUG - print every iteration for first 10 loops
+                    if loop_count <= 10:
+                        print(f"DEBUG: Scheduler loop iteration {loop_count} - calling check_and_stop_expired_zones()")
+                    
+                    if loop_count % 60 == 0:  # Log every 60 seconds
+                        print(f"DEBUG: Scheduler loop iteration {loop_count} - still running")
+                    
+                    # Check for expired manual timers (MOST IMPORTANT - check every loop)
+                    self.check_and_stop_expired_zones()
+                    
+                    # Check for scheduled events (less frequent)
+                    if loop_count % 10 == 0:  # Check every 10 seconds
+                        self.check_scheduled_events()
+                    
+                    # Update remaining times for active zones
+                    tz_name = self.settings.get('timezone', 'UTC') if self.settings else 'UTC'
+                    tz = pytz.timezone(tz_name)
+                    current_time = datetime.now(tz)
+                    
+                    for zone_id in list(self.zone_states.keys()):
+                        state = self.zone_states[zone_id]
+                        if state['active'] and state['end_time']:
+                            end_time = state['end_time']
+                            # Ensure end_time is timezone-aware
+                            if end_time.tzinfo is None:
+                                end_time = tz.localize(end_time)
+                            else:
+                                end_time = end_time.astimezone(tz)
+                            
+                            remaining = (end_time - current_time).total_seconds()
+                            state['remaining'] = max(0, int(remaining))
+                            if loop_count % 10 == 0:  # Log every 10 seconds
+                                print(f"DEBUG: Zone {zone_id} remaining time: {state['remaining']}s")
+                    
+                    # Debug zone states every 30 seconds to catch mismatches
+                    if loop_count % 30 == 0:
+                        self.debug_zone_states()
+                    
+                    # Sleep for a shorter interval to catch expired timers faster
+                    time.sleep(0.5)  # Check every 500ms instead of 1 second
+                    
+                except Exception as e:
+                    print(f"ERROR in scheduler loop iteration {loop_count}: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    time.sleep(5)  # Wait longer on error
+                    
+        except Exception as e:
+            print(f"FATAL ERROR in scheduler loop: {e}")
+            import traceback
+            traceback.print_exc()
         
         print("DEBUG: Scheduler loop ended")
     
