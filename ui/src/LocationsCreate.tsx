@@ -31,8 +31,8 @@ interface ScheduleZone {
   cycles?: number;
   duration?: string;
   comment?: string;
-  times?: { value: string; duration: string }[];
-  time?: { value: string; duration: string };
+  times?: { value: string; duration: string; start_time?: string }[];
+  time?: { value: string; duration: string; start_time?: string };
   startDay?: string;
   zone_id?: number; // Added zone_id to the interface
 }
@@ -50,9 +50,136 @@ function formatDuration(d: string): string {
   return out.trim() || '0s';
 }
 
+// Helper functions for next scheduled time calculation
+function getNextScheduledDate(zone: any): Date | null {
+  if (!zone || !zone.period || !zone.cycles) return null;
+  
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  switch (zone.period) {
+    case 'D': // Daily
+      return today;
+      
+    case 'W': // Weekly
+      const daysSinceStart = Math.floor(now.getTime() / (24 * 60 * 60 * 1000));
+      const weeksSinceStart = Math.floor(daysSinceStart / 7);
+      const nextWeekStart = new Date(today.getTime() + (weeksSinceStart + 1) * 7 * 24 * 60 * 60 * 1000);
+      return nextWeekStart;
+      
+    case 'M': // Monthly
+      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      return nextMonth;
+      
+    default:
+      return null;
+  }
+}
+
+function getNextDailyTime(zone: any, zoneResolvedTimes: Record<number, Record<string, string>>): string {
+  if (zone.period !== 'D') return '...';
+  
+  const now = new Date();
+  const currentTime = now.getHours() * 60 + now.getMinutes(); // Current time in minutes
+  
+  // Get all times for this zone
+  let allTimes: Array<{ time: string; minutes: number; original: any }> = [];
+  
+  if (Array.isArray(zone.times)) {
+    // All times in array
+    allTimes = zone.times.map((t: any) => {
+      const resolved = zoneResolvedTimes[zone.zone_id]?.[t.value];
+      if (resolved && resolved !== 'N/A' && resolved !== '...') {
+        // Convert HH:MM to minutes for comparison
+        const [h, m] = resolved.split(':').map(Number);
+        return { time: resolved, minutes: h * 60 + m, original: t.value };
+      }
+      return null;
+    }).filter(Boolean) as Array<{ time: string; minutes: number; original: any }>;
+  }
+  
+  if (allTimes.length === 0) return '...';
+  
+  // Find the next time (first time that's after current time)
+  const nextTime = allTimes
+    .filter(t => t.minutes > currentTime)
+    .sort((a, b) => a.minutes - b.minutes)[0];
+  
+  if (nextTime) {
+    return nextTime.time;
+  }
+  
+  // If no times today, return the first time for tomorrow
+  return allTimes.sort((a, b) => a.minutes - b.minutes)[0].time;
+}
+
+function formatNextScheduledTime(zone: any, zoneResolvedTimes: Record<number, Record<string, string>>, dateSpecificResolvedTimes: Record<string, Record<string, string>>): string {
+  // For daily schedules, find the next time
+  if (zone.period === 'D') {
+    return getNextDailyTime(zone, zoneResolvedTimes);
+  }
+  
+  // For weekly and monthly schedules, calculate the actual date first
+  const nextDate = getNextScheduledDate(zone);
+  if (!nextDate) return '...';
+  
+  // Get the time code to resolve
+  const timeCode = zone.times?.[0]?.value;
+  if (!timeCode) return '...';
+  
+  // Try to get date-specific resolved time first
+  const dateKey = nextDate.toISOString().slice(0, 10);
+  let resolved = dateSpecificResolvedTimes[dateKey]?.[timeCode];
+  
+  // Fallback to today's resolved time if date-specific not available
+  if (!resolved || resolved === 'N/A' || resolved === '...') {
+    resolved = zoneResolvedTimes[zone.zone_id]?.[timeCode] || '...';
+  }
+  
+  if (!resolved || resolved === 'N/A' || resolved === '...') return '...';
+  
+  // Extract time from resolved (assuming HH:MM format)
+  let timeStr = resolved;
+  if (resolved.includes(':')) {
+    timeStr = resolved;
+  } else if (resolved.includes('-') || resolved.includes('/')) {
+    // If resolved contains full date-time, extract just the time
+    try {
+      const dateTime = new Date(resolved);
+      if (!isNaN(dateTime.getTime())) {
+        timeStr = dateTime.toLocaleTimeString('en-US', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: false 
+        });
+      }
+    } catch {
+      timeStr = resolved;
+    }
+  }
+  
+  // Format the display
+  const today = new Date();
+  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+  const targetDate = new Date(nextDate.getFullYear(), nextDate.getMonth(), nextDate.getDate());
+  
+  if (targetDate.getTime() === today.getTime()) {
+    return `Today ${timeStr}`;
+  } else if (targetDate.getTime() === tomorrow.getTime()) {
+    return `Tomorrow ${timeStr}`;
+  } else {
+    return `${nextDate.toLocaleDateString('en-US', { 
+      month: '2-digit', 
+      day: '2-digit' 
+    })} ${timeStr}`;
+  }
+}
+
 export default function LocationsCreate() {
   const [zones, setZones] = useState<ScheduleZone[]>([]);
   const [resolvedTimes, setResolvedTimes] = useState<Record<number, string[] | null>>({});
+  // Store resolved times for specific dates (for weekly/monthly schedules)
+  const [dateSpecificResolvedTimes, setDateSpecificResolvedTimes] = useState<Record<string, Record<string, string>>>({});
   const [pumpIndex, setPumpIndex] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -116,7 +243,7 @@ export default function LocationsCreate() {
           let codes: string[] = [];
           let date = zone.startDay || new Date().toISOString().slice(0, 10);
           if (Array.isArray(zone.times)) {
-            codes = zone.times.map(t => t.value).filter(Boolean);
+            codes = zone.times.map(t => t.start_time || t.value).filter(Boolean);
           }
           if (codes.length) {
             try {
@@ -746,34 +873,34 @@ export default function LocationsCreate() {
                 {zones.filter(z => z.mode !== 'disabled').map((zone, idx) => {
                   const zoneCode = (zone.period || '-') + (zone.cycles || '');
                   let durationDisplay = 'N/A';
-                  let startTimeDisplay = 'N/A';
-                  let resolvedStartDisplay: string | null = null;
-                  let codesToResolve: string[] = [];
-                  if (zone.period === 'D' && Array.isArray(zone.times)) {
+                  let nextRunDisplay = 'N/A';
+                  
+                  // Get duration - check both times array and single time
+                  if (Array.isArray(zone.times)) {
                     const durations = zone.times.map((t: any) => t.duration).filter(Boolean);
                     if (durations.length) durationDisplay = durations.map(formatDuration).join(', ');
-                    const times = zone.times.map((t: any) => t.value).filter(Boolean);
-                    if (times.length) {
-                      startTimeDisplay = times.join(', ');
-                      codesToResolve = times.filter(val => !/^\d{4}$/.test(val));
-                      if (codesToResolve.length) {
-                        resolvedStartDisplay = (resolvedTimes[idx] && resolvedTimes[idx]!.length)
-                          ? resolvedTimes[idx]!.join(', ')
-                          : (resolvedTimes[idx] === null ? 'N/A' : 'Loading...');
-                      }
-                    }
                   } else if (zone.time && zone.time.duration) {
                     durationDisplay = formatDuration(zone.time.duration);
-                    if (zone.time.value) {
-                      startTimeDisplay = zone.time.value;
-                      if (!/^\d{4}$/.test(zone.time.value)) {
-                        codesToResolve = [zone.time.value];
-                        resolvedStartDisplay = (resolvedTimes[idx] && resolvedTimes[idx]!.length)
-                          ? resolvedTimes[idx]![0]
-                          : (resolvedTimes[idx] === null ? 'N/A' : 'Loading...');
-                      }
-                    }
                   }
+                  
+                  // Convert resolvedTimes format to zoneResolvedTimes format
+                  const zoneResolvedTimes: Record<number, Record<string, string>> = {};
+                  if (resolvedTimes[idx] && Array.isArray(resolvedTimes[idx])) {
+                    const times = zone.times || [];
+                    resolvedTimes[idx]!.forEach((resolved: string, timeIdx: number) => {
+                      if (times[timeIdx]) {
+                        if (!zoneResolvedTimes[zone.zone_id || idx]) {
+                          zoneResolvedTimes[zone.zone_id || idx] = {};
+                        }
+                        const timeCode = times[timeIdx].start_time || times[timeIdx].value;
+                        zoneResolvedTimes[zone.zone_id || idx][timeCode] = resolved;
+                      }
+                    });
+                  }
+                  
+                  // Get next run using the formatNextScheduledTime function
+                  nextRunDisplay = formatNextScheduledTime(zone, zoneResolvedTimes, dateSpecificResolvedTimes);
+                  
                   return (
                     <div key={idx} style={{
                       background: '#1a1f2a',
@@ -786,10 +913,7 @@ export default function LocationsCreate() {
                       <div style={{ color: '#00bcd4', fontWeight: 700, marginBottom: '4px' }}>Zone {zone.zone_id || idx + 1}</div>
                       <div style={{ marginBottom: '2px' }}>Code: <b>{zoneCode}</b></div>
                       <div style={{ marginBottom: '2px' }}>Duration: <b>{durationDisplay}</b></div>
-                      <div style={{ marginBottom: '2px' }}>Start: <b>{startTimeDisplay}</b></div>
-                      {codesToResolve.length > 0 && (
-                        <div style={{ marginBottom: '2px', color: '#00bcd4' }}>(resolved: <b>{resolvedStartDisplay}</b>)</div>
-                      )}
+                      <div style={{ marginBottom: '2px' }}>Next: <b>{nextRunDisplay}</b></div>
                       <div style={{ color: '#bdbdbd', fontSize: '12px' }}>{zone.comment || <span style={{ color: '#555' }}>No description</span>}</div>
                     </div>
                   );

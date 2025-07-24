@@ -1,0 +1,585 @@
+{
+  "Book Name": "Fruit Trees",
+  "plants": [
+    {
+      "plant_id": 1,
+      "common_name": "Honeycrisp Apple",
+      "alternative_name": "Honey Crisp",
+      "latin_name": "Malus domestica",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 20,
+      "water_optimal_in_week": 1.25,
+      "tolerance_min_in_week": 0.7,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "3-8",
+      "soil_preference": "Well-drained, loamy, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Early September",
+      "planting_time": "Early Spring or Fall",
+      "spacing_inches": 96,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 2,
+      "common_name": "Gala Apple",
+      "alternative_name": "Royal Gala",
+      "latin_name": "Malus domestica 'Gala'",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 18,
+      "water_optimal_in_week": 1.15,
+      "tolerance_min_in_week": 0.8,
+      "tolerance_max_in_week": 1.5,
+      "usda_zones": "4-8",
+      "soil_preference": "Well-drained, loamy, pH 6.0-6.5",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Mid to Late August",
+      "planting_time": "Early Spring or Fall",
+      "spacing_inches": 96,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 3,
+      "common_name": "Granny Smith Apple",
+      "alternative_name": "",
+      "latin_name": "Malus domestica 'Granny Smith'",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 20,
+      "water_optimal_in_week": 1.2,
+      "tolerance_min_in_week": 0.85,
+      "tolerance_max_in_week": 1.55,
+      "usda_zones": "5-9",
+      "soil_preference": "Deep, fertile, well-drained, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Late October",
+      "planting_time": "Early Spring or Fall",
+      "spacing_inches": 96,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 4,
+      "common_name": "Red Delicious Apple",
+      "alternative_name": "",
+      "latin_name": "Malus domestica",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 20,
+      "water_optimal_in_week": 1.2,
+      "tolerance_min_in_week": 0.7,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "4-8",
+      "soil_preference": "Well-drained, loamy, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Mid-September to Mid-October",
+      "planting_time": "Early Spring or Fall",
+      "spacing_inches": 96,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 5,
+      "common_name": "McIntosh Apple",
+      "alternative_name": "Mac Apple",
+      "latin_name": "Malus domestica",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 18,
+      "water_optimal_in_week": 1.0,
+      "tolerance_min_in_week": 0.6,
+      "tolerance_max_in_week": 1.8,
+      "usda_zones": "3-7",
+      "soil_preference": "Well-drained, loamy, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Late September to Early October",
+      "planting_time": "Early Spring or Fall",
+      "spacing_inches": 96,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 6,
+      "common_name": "Fuji Apple",
+      "alternative_name": "",
+      "latin_name": "Malus domestica",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 22,
+      "water_optimal_in_week": 1.3,
+      "tolerance_min_in_week": 0.8,
+      "tolerance_max_in_week": 2.1,
+      "usda_zones": "4-8",
+      "soil_preference": "Well-drained, loamy, pH 6.0-6.5",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Mid-October",
+      "planting_time": "Early Spring or Fall",
+      "spacing_inches": 96,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 7,
+      "common_name": "Golden Delicious Apple",
+      "alternative_name": "Yellow Delicious",
+      "latin_name": "Malus domestica 'Golden Delicious'",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 19,
+      "water_optimal_in_week": 1.2,
+      "tolerance_min_in_week": 0.85,
+      "tolerance_max_in_week": 1.55,
+      "usda_zones": "4-9",
+      "soil_preference": "Well-drained, fertile, pH 6.0-6.8",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Mid-September",
+      "planting_time": "Early Spring or Fall",
+      "spacing_inches": 96,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 8,
+      "common_name": "Elberta Peach",
+      "alternative_name": "",
+      "latin_name": "Prunus persica 'Elberta'",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 25,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "5-9",
+      "soil_preference": "Well-drained, loamy, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Mid-August",
+      "planting_time": "Early Spring or Fall",
+      "spacing_inches": 144,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 9,
+      "common_name": "Redhaven Peach",
+      "alternative_name": "",
+      "latin_name": "Prunus persica 'Redhaven'",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 24,
+      "water_optimal_in_week": 1.45,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 1.9,
+      "usda_zones": "5-8",
+      "soil_preference": "Well-drained, loamy, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Late July to Early August",
+      "planting_time": "Early Spring or Fall",
+      "spacing_inches": 144,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 10,
+      "common_name": "Santa Rosa Plum",
+      "alternative_name": "",
+      "latin_name": "Prunus salicina 'Santa Rosa'",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 22,
+      "water_optimal_in_week": 1.3,
+      "tolerance_min_in_week": 0.9,
+      "tolerance_max_in_week": 1.7,
+      "usda_zones": "5-10",
+      "soil_preference": "Well-drained, loamy, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Late June to Early July",
+      "planting_time": "Early Spring or Fall",
+      "spacing_inches": 120,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 11,
+      "common_name": "Methley Plum",
+      "alternative_name": "",
+      "latin_name": "Prunus salicina 'Methley'",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 22,
+      "water_optimal_in_week": 1.35,
+      "tolerance_min_in_week": 0.8,
+      "tolerance_max_in_week": 2.3,
+      "usda_zones": "5-9",
+      "soil_preference": "Well-drained, fertile, pH 5.5-6.5",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Early to Mid-July",
+      "planting_time": "Early Spring or Fall",
+      "spacing_inches": 120,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 12,
+      "common_name": "Meyer Lemon",
+      "alternative_name": "Improved Meyer",
+      "latin_name": "Citrus x limon 'Meyer'",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 28,
+      "water_optimal_in_week": 1.75,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 3.0,
+      "usda_zones": "8-11",
+      "soil_preference": "Well-drained, slightly acidic, pH 5.5-6.5",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "Year-round (peak winter-spring)",
+      "planting_time": "Spring after frost danger",
+      "spacing_inches": 96,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 13,
+      "common_name": "Eureka Lemon",
+      "alternative_name": "",
+      "latin_name": "Citrus limon 'Eureka'",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 30,
+      "water_optimal_in_week": 1.85,
+      "tolerance_min_in_week": 1.1,
+      "tolerance_max_in_week": 3.2,
+      "usda_zones": "9-11",
+      "soil_preference": "Well-drained, loamy, pH 6.0-6.5",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Year-round (peak late winter-spring)",
+      "planting_time": "Spring after frost danger",
+      "spacing_inches": 120,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 14,
+      "common_name": "Valencia Orange",
+      "alternative_name": "",
+      "latin_name": "Citrus sinensis 'Valencia'",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 32,
+      "water_optimal_in_week": 2.0,
+      "tolerance_min_in_week": 1.2,
+      "tolerance_max_in_week": 3.4,
+      "usda_zones": "9-11",
+      "soil_preference": "Well-drained, sandy loam, pH 6.0-6.5",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Spring to Summer",
+      "planting_time": "Spring after frost danger",
+      "spacing_inches": 144,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 15,
+      "common_name": "Navel Orange",
+      "alternative_name": "Washington Navel",
+      "latin_name": "Citrus sinensis 'Washington Navel'",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 32,
+      "water_optimal_in_week": 1.95,
+      "tolerance_min_in_week": 1.15,
+      "tolerance_max_in_week": 3.3,
+      "usda_zones": "9-11",
+      "soil_preference": "Well-drained, sandy loam, pH 6.0-6.5",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Winter to Early Spring",
+      "planting_time": "Spring after frost danger",
+      "spacing_inches": 144,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 16,
+      "common_name": "Rainier Cherry",
+      "alternative_name": "",
+      "latin_name": "Prunus avium 'Rainier'",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 30,
+      "water_optimal_in_week": 1.85,
+      "tolerance_min_in_week": 1.1,
+      "tolerance_max_in_week": 3.1,
+      "usda_zones": "5-9",
+      "soil_preference": "Well-drained, fertile loam, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Late June to July",
+      "planting_time": "Early Spring or Fall",
+      "spacing_inches": 180,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 17,
+      "common_name": "Bing Cherry",
+      "alternative_name": "",
+      "latin_name": "Prunus avium 'Bing'",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 32,
+      "water_optimal_in_week": 1.95,
+      "tolerance_min_in_week": 1.15,
+      "tolerance_max_in_week": 3.3,
+      "usda_zones": "5-8",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Mid to Late June",
+      "planting_time": "Early Spring or Fall",
+      "spacing_inches": 180,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 18,
+      "common_name": "Bartlett Pear",
+      "alternative_name": "Williams",
+      "latin_name": "Pyrus communis 'Bartlett'",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 26,
+      "water_optimal_in_week": 1.6,
+      "tolerance_min_in_week": 0.95,
+      "tolerance_max_in_week": 2.7,
+      "usda_zones": "5-8",
+      "soil_preference": "Well-drained, loamy, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Late August to September",
+      "planting_time": "Early Spring or Fall",
+      "spacing_inches": 144,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 19,
+      "common_name": "Bosc Pear",
+      "alternative_name": "Beurré Bosc",
+      "latin_name": "Pyrus communis 'Bosc'",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 26,
+      "water_optimal_in_week": 1.55,
+      "tolerance_min_in_week": 0.9,
+      "tolerance_max_in_week": 2.6,
+      "usda_zones": "5-9",
+      "soil_preference": "Well-drained, loamy, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "September to October",
+      "planting_time": "Early Spring or Fall",
+      "spacing_inches": 144,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 20,
+      "common_name": "Montmorency Cherry",
+      "alternative_name": "",
+      "latin_name": "Prunus cerasus 'Montmorency'",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 28,
+      "water_optimal_in_week": 1.7,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.9,
+      "usda_zones": "4-7",
+      "soil_preference": "Well-drained, loamy, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Late June to July",
+      "planting_time": "Early Spring or Fall",
+      "spacing_inches": 144,
+      "growth_type": "Perennial"
+    }
+  ]
+} 

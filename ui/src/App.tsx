@@ -3,9 +3,8 @@ import { useState, useEffect } from 'react';
 import { DateTime } from 'luxon';
 import ZoneSetup from './ZoneSetup';
 import ZoneSchedule from './ZoneSchedule';
-import LocationsCreate from './LocationsCreate';
-import Plants from './Plants';
-import GardenOverview from './GardenOverview';
+import GardenOverview from './GardenOverview'; // Using GardenOverview.tsx as Garden component
+// import GardenOverview from './GardenOverview'; // Archived - replaced by Garden component
 import Health from './Health';
 import Library from './Library';
 import Logs from './Logs';
@@ -856,11 +855,12 @@ function App() {
       <Sidebar />
       <Routes>
         <Route path="/" element={<GardenOverview />} />
+        <Route path="/garden" element={<GardenOverview />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/zones" element={<ZoneSchedule />} />
         <Route path="/zoneschedule" element={<ZoneSchedule />} />
-        <Route path="/locations" element={<LocationsCreate />} />
-        <Route path="/plants" element={<Plants />} />
+        <Route path="/plants" element={<GardenOverview />} />
+        {/* <Route path="/overview" element={<GardenOverview />} /> */}
         <Route path="/library" element={<Library />} />
         <Route path="/health" element={<Health />} />
         <Route path="/logs" element={<Logs />} />

@@ -8,7 +8,12 @@
     "zone_id": 5,
     "location_id": 4,
     "comments": "",
-    "planted_date": "2025-07-19"
+    "planted_date": "2025-07-19",
+    "smart_overrides": {
+      "zone_selection": "manual",
+      "emitter_sizing": "manual",
+      "duration": "manual"
+    }
   },
   "3": {
     "library_book": "fruitbushes",
@@ -19,7 +24,12 @@
     "zone_id": 5,
     "location_id": 2,
     "comments": "",
-    "planted_date": "2025-07-19"
+    "planted_date": "2025-07-19",
+    "smart_overrides": {
+      "zone_selection": "manual",
+      "emitter_sizing": "manual",
+      "duration": "manual"
+    }
   },
   "4": {
     "library_book": "fruitbushes",
@@ -30,7 +40,12 @@
     "zone_id": 1,
     "location_id": 2,
     "comments": "",
-    "planted_date": "2025-07-19"
+    "planted_date": "2025-07-19",
+    "smart_overrides": {
+      "zone_selection": "manual",
+      "emitter_sizing": "manual",
+      "duration": "manual"
+    }
   },
   "5": {
     "library_book": "fruitbushes",
@@ -41,28 +56,27 @@
     "zone_id": 1,
     "location_id": 2,
     "comments": "",
-    "planted_date": "2025-07-19"
-  },
-  "7": {
-    "library_book": "fruitbushes",
-    "plant_id": 4,
-    "common_name": "Blueberry, Highbush",
-    "quantity": 3,
-    "emitter_size": 4,
-    "zone_id": 3,
-    "location_id": 2,
-    "comments": "",
-    "planted_date": "2025-07-21"
+    "planted_date": "2025-07-19",
+    "smart_overrides": {
+      "zone_selection": "manual",
+      "emitter_sizing": "manual",
+      "duration": "manual"
+    }
   },
   "2": {
     "library_book": "fruitbushes",
     "plant_id": 1,
     "common_name": "Strawberry, Red",
-    "quantity": 2,
-    "emitter_size": 1,
-    "zone_id": 3,
+    "quantity": 1,
+    "emitter_size": 4,
+    "zone_id": 1,
     "location_id": 2,
     "comments": "",
-    "planted_date": "2025-07-21"
+    "planted_date": "2025-07-24",
+    "smart_overrides": {
+      "zone_selection": "manual",
+      "emitter_sizing": "manual",
+      "duration": "manual"
+    }
   }
 }

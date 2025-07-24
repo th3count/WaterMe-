@@ -1,4 +1,16 @@
 {
   "ignored_alerts": [],
-  "last_check": null
+  "last_check": "2025-01-27T12:00:00Z",
+  "orphaned_plants": [
+    {
+      "instanceId": "1",
+      "plant_id": 1,
+      "library_book": "fruitbushes.json",
+      "common_name": "Strawberry, Red",
+      "zone_id": 1,
+      "quantity": 1,
+      "emitter_size": 4,
+      "location_id": 999
+    }
+  ]
 }

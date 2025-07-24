@@ -3,12 +3,15 @@
     "comment": "Grass",
     "cycles": 1,
     "mode": "manual",
+    "originalIndex": 0,
     "period": "D",
+    "showTimePicker": 0,
     "startDay": "2025-07-19",
     "times": [
       {
         "duration": "000100",
-        "value": "0035"
+        "start_time": "00:49",
+        "value": "00:49"
       }
     ]
   },
@@ -30,17 +33,7 @@
     ]
   },
   "3": {
-    "comment": "Hedges",
-    "cycles": 1,
-    "mode": "manual",
-    "period": "W",
-    "startDay": "2025-07-19",
-    "times": [
-      {
-        "duration": "010000",
-        "value": "SUNRISE"
-      }
-    ]
+    "mode": "disabled"
   },
   "4": {
     "comment": "big trees",
@@ -51,68 +44,20 @@
     "times": [
       {
         "duration": "020000",
-        "value": "0800"
+        "value": "08:00"
       }
     ]
   },
   "5": {
-    "comment": "veg",
-    "cycles": 3,
-    "mode": "manual",
-    "period": "D",
-    "startDay": "2025-07-19",
-    "times": [
-      {
-        "duration": "001500",
-        "value": "SUNRISE"
-      },
-      {
-        "duration": "001500",
-        "value": "ZENITH"
-      },
-      {
-        "duration": "001500",
-        "value": "SUNSET"
-      }
-    ]
+    "mode": "disabled"
   },
   "6": {
-    "comment": "",
-    "cycles": 1,
-    "mode": "disabled",
-    "period": "D",
-    "startDay": "2025-07-19",
-    "times": [
-      {
-        "duration": "",
-        "value": "0600"
-      }
-    ]
+    "mode": "disabled"
   },
   "7": {
-    "comment": "",
-    "cycles": 1,
-    "mode": "disabled",
-    "period": "D",
-    "startDay": "2025-07-19",
-    "times": [
-      {
-        "duration": "",
-        "value": "0600"
-      }
-    ]
+    "mode": "disabled"
   },
   "8": {
-    "comment": "",
-    "cycles": 1,
-    "mode": "disabled",
-    "period": "D",
-    "startDay": "2025-07-19",
-    "times": [
-      {
-        "duration": "",
-        "value": "0600"
-      }
-    ]
+    "mode": "disabled"
   }
 }

@@ -10,6 +10,7 @@ interface GardenSettings {
   timezone: string;
   timer_multiplier: number;
   mode: string;
+  simulate?: boolean;
 }
 
 interface GpioConfig {
@@ -36,7 +37,8 @@ export default function Settings() {
     city: '',
     timezone: 'UTC',
     timer_multiplier: 1.0,
-    mode: 'manual'
+    mode: 'manual',
+    simulate: false
   });
   const [gpioConfig, setGpioConfig] = useState<GpioConfig>({
     channels: {},
@@ -59,10 +61,12 @@ export default function Settings() {
   const [gpioStatus, setGpioStatus] = useState<any>(null);
   const [loadingGpioStatus, setLoadingGpioStatus] = useState(false);
 
+
+
   // Expandable sections state
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
     'garden-basic': true,
-    'garden-advanced': false,
+    'garden-advanced': true,
     'location-settings': true,
     'datetime-timezone': true,
     'gpio-mode': true,
@@ -441,6 +445,23 @@ export default function Settings() {
     }
   };
 
+  const getTimezoneAbbreviation = (timezone: string): string => {
+    try {
+      const now = new Date();
+      const options: Intl.DateTimeFormatOptions = {
+        timeZone: timezone,
+        timeZoneName: 'short'
+      };
+      const formatter = new Intl.DateTimeFormat('en-US', options);
+      const parts = formatter.formatToParts(now);
+      const timeZonePart = parts.find(part => part.type === 'timeZoneName');
+      return timeZonePart ? timeZonePart.value : timezone.split('/').pop() || timezone;
+    } catch (error) {
+      // Fallback to extracting the last part of the timezone name
+      return timezone.split('/').pop() || timezone;
+    }
+  };
+
   if (loading) {
     return (
       <div style={{
@@ -664,48 +685,6 @@ export default function Settings() {
                   marginBottom: '8px',
                   display: 'block'
                 }}>
-                  Timer Multiplier:
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0.1"
-                  max="10.0"
-                  value={gardenSettings.timer_multiplier}
-                  onChange={(e) => setGardenSettings({...gardenSettings, timer_multiplier: parseFloat(e.target.value) || 1.0})}
-                  disabled={gardenSettings.mode === 'smart'}
-                  style={{
-                    width: '100%',
-                    background: gardenSettings.mode === 'smart' ? '#1a1f2a' : '#2d3748',
-                    color: gardenSettings.mode === 'smart' ? '#666' : '#f4f4f4',
-                    border: '1px solid #4a5568',
-                    borderRadius: '4px',
-                    padding: '10px 12px',
-                    fontSize: '14px',
-                    cursor: gardenSettings.mode === 'smart' ? 'not-allowed' : 'text'
-                  }}
-                  placeholder="1.0"
-                />
-                {gardenSettings.mode === 'smart' && (
-                  <div style={{
-                    color: '#888',
-                    fontSize: '12px',
-                    marginTop: '4px',
-                    fontStyle: 'italic'
-                  }}>
-                    Timer multiplier is disabled in Smart mode
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label style={{
-                  color: '#f4f4f4',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  marginBottom: '8px',
-                  display: 'block'
-                }}>
                   Mode:
                 </label>
                 <select
@@ -722,7 +701,7 @@ export default function Settings() {
                   }}
                 >
                   <option value="manual">Manual</option>
-                  <option value="smart" disabled style={{ color: '#666' }}>Smart (Future)</option>
+                  <option value="smart">Smart</option>
                 </select>
                 <div style={{
                   color: '#888',
@@ -730,8 +709,91 @@ export default function Settings() {
                   marginTop: '4px',
                   fontStyle: 'italic'
                 }}>
-                  Smart mode is coming in a future update
+                  Smart mode enables intelligent plant placement and zone optimization. Manual options remain available for full control.
                 </div>
+              </div>
+
+              <div style={{ display: gardenSettings.mode === 'smart' ? 'block' : 'none' }}>
+                <label style={{
+                  color: '#f4f4f4',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  marginBottom: '8px',
+                  display: 'block'
+                }}>
+                  Timer Multiplier:
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0.1"
+                  max="10.0"
+                  value={gardenSettings.timer_multiplier}
+                  onChange={(e) => setGardenSettings({...gardenSettings, timer_multiplier: parseFloat(e.target.value) || 1.0})}
+                  style={{
+                    width: '100%',
+                    background: '#2d3748',
+                    color: '#f4f4f4',
+                    border: '1px solid #4a5568',
+                    borderRadius: '4px',
+                    padding: '10px 12px',
+                    fontSize: '14px'
+                  }}
+                  placeholder="1.0"
+                />
+                <div style={{
+                  color: '#888',
+                  fontSize: '12px',
+                  marginTop: '4px',
+                  fontStyle: 'italic'
+                }}>
+                  Adjusts smart duration calculations when flow rates differ from expected values
+                </div>
+              </div>
+            </div>
+
+            {/* Simulation Mode Toggle */}
+            <div style={{ marginTop: '24px' }}>
+              <label style={{
+                color: '#f4f4f4',
+                fontSize: '14px',
+                fontWeight: 600,
+                marginBottom: '8px',
+                display: 'block'
+              }}>
+                Simulation Mode:
+              </label>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <input
+                  type="checkbox"
+                  id="simulate"
+                  checked={gardenSettings.simulate || false}
+                  onChange={(e) => setGardenSettings({...gardenSettings, simulate: e.target.checked})}
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    accentColor: '#00bcd4'
+                  }}
+                />
+                <label htmlFor="simulate" style={{
+                  color: '#f4f4f4',
+                  fontSize: '14px',
+                  cursor: 'pointer'
+                }}>
+                  Enable mock GPIO (no real relays)
+                </label>
+              </div>
+              <div style={{
+                color: '#888',
+                fontSize: '12px',
+                marginTop: '4px',
+                fontStyle: 'italic'
+              }}>
+                Use mock relays for development and testing
               </div>
             </div>
           </ExpandableSection>
@@ -966,7 +1028,7 @@ export default function Settings() {
                   marginBottom: '8px',
                   display: 'block'
                 }}>
-                  Timezone:
+                  Timezone: {gardenSettings.timezone !== 'UTC' && `(${getTimezoneAbbreviation(gardenSettings.timezone)})`}
                 </label>
                 <select
                   value={gardenSettings.timezone}
@@ -981,20 +1043,20 @@ export default function Settings() {
                     fontSize: '14px'
                   }}
                 >
-                  <option value="UTC">UTC</option>
-                  <option value="America/Regina">Regina (CST)</option>
-                  <option value="America/Winnipeg">Winnipeg (CST)</option>
-                  <option value="America/Toronto">Toronto (EST)</option>
-                  <option value="America/Vancouver">Vancouver (PST)</option>
-                  <option value="America/New_York">New York (EST)</option>
-                  <option value="America/Chicago">Chicago (CST)</option>
-                  <option value="America/Denver">Denver (MST)</option>
-                  <option value="America/Los_Angeles">Los Angeles (PST)</option>
-                  <option value="Europe/London">London (GMT/BST)</option>
-                  <option value="Europe/Paris">Paris (CET/CEST)</option>
-                  <option value="Asia/Tokyo">Tokyo (JST)</option>
-                  <option value="Asia/Shanghai">Shanghai (CST)</option>
-                  <option value="Australia/Sydney">Sydney (AEST/AEDT)</option>
+                  <option value="UTC">UTC (UTC)</option>
+                  <option value="America/Regina">America/Regina ({getTimezoneAbbreviation('America/Regina')})</option>
+                  <option value="America/Winnipeg">America/Winnipeg ({getTimezoneAbbreviation('America/Winnipeg')})</option>
+                  <option value="America/Toronto">America/Toronto ({getTimezoneAbbreviation('America/Toronto')})</option>
+                  <option value="America/Vancouver">America/Vancouver ({getTimezoneAbbreviation('America/Vancouver')})</option>
+                  <option value="America/New_York">America/New_York ({getTimezoneAbbreviation('America/New_York')})</option>
+                  <option value="America/Chicago">America/Chicago ({getTimezoneAbbreviation('America/Chicago')})</option>
+                  <option value="America/Denver">America/Denver ({getTimezoneAbbreviation('America/Denver')})</option>
+                  <option value="America/Los_Angeles">America/Los_Angeles ({getTimezoneAbbreviation('America/Los_Angeles')})</option>
+                  <option value="Europe/London">Europe/London ({getTimezoneAbbreviation('Europe/London')})</option>
+                  <option value="Europe/Paris">Europe/Paris ({getTimezoneAbbreviation('Europe/Paris')})</option>
+                  <option value="Asia/Tokyo">Asia/Tokyo ({getTimezoneAbbreviation('Asia/Tokyo')})</option>
+                  <option value="Asia/Shanghai">Asia/Shanghai ({getTimezoneAbbreviation('Asia/Shanghai')})</option>
+                  <option value="Australia/Sydney">Australia/Sydney ({getTimezoneAbbreviation('Australia/Sydney')})</option>
                 </select>
               </div>
             </div>

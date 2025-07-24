@@ -1,32 +1,74 @@
 {
   "2": {
-    "name": "orchard",
+    "assignedPlants": [
+      {
+        "plant": {
+          "plant_id": 1,
+          "common_name": "Strawberry, Red"
+        },
+        "quantity": 1,
+        "emitterSize": 4,
+        "zoneId": 1,
+        "location_id": 2,
+        "instanceId": "2",
+        "comments": ""
+      },
+      {
+        "plant": {
+          "plant_id": 3,
+          "common_name": "Blackberry"
+        },
+        "quantity": 40,
+        "emitterSize": 20,
+        "zoneId": 5,
+        "location_id": 2,
+        "instanceId": "3",
+        "comments": ""
+      },
+      {
+        "plant": {
+          "plant_id": 3,
+          "common_name": "Blackberry"
+        },
+        "quantity": 2,
+        "emitterSize": 0.5,
+        "zoneId": 1,
+        "location_id": 2,
+        "instanceId": "4",
+        "comments": ""
+      },
+      {
+        "plant": {
+          "plant_id": 2,
+          "common_name": "Raspberry, Red"
+        },
+        "quantity": 1,
+        "emitterSize": 0.5,
+        "zoneId": 1,
+        "location_id": 2,
+        "instanceId": "5",
+        "comments": ""
+      },
+      {
+        "plant": {
+          "plant_id": 4,
+          "common_name": "Blueberry, Highbush"
+        },
+        "quantity": 3,
+        "emitterSize": 4,
+        "zoneId": 3,
+        "location_id": 2,
+        "instanceId": "7",
+        "comments": ""
+      }
+    ],
     "description": "berries",
+    "name": "orchard",
     "zones": [
       1,
       2,
       3,
       5
-    ]
-  },
-  "4": {
-    "name": "gotitall",
-    "description": "gotitall",
-    "zones": [
-      1,
-      2,
-      3,
-      4,
-      5
-    ]
-  },
-  "5": {
-    "name": "t2t",
-    "description": "2t23",
-    "zones": [
-      1,
-      2,
-      3
     ]
   }
 }

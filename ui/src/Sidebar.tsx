@@ -138,17 +138,15 @@ export default function Sidebar() {
         {currentDateTime}
       </div>
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <NavLink to="/" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Overview</NavLink>
-        <NavLink to="/plants" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Plants</NavLink>
-        <NavLink to="/zones" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Zones</NavLink>
-        <NavLink to="/locations" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Locations</NavLink>
-        <NavLink to="/library" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Library</NavLink>
+        <NavLink to="/" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Garden</NavLink>
         <NavLink to="/health" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
           Health
           {getHealthIcon()}
         </NavLink>
-        <NavLink to="/logs" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Logs</NavLink>
+        <NavLink to="/library" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Library</NavLink>
+        <NavLink to="/zones" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Zones</NavLink>
         <NavLink to="/settings" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Settings</NavLink>
+        <NavLink to="/logs" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Logs</NavLink>
       </nav>
       <style>{`
         .nav-link {

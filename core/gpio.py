@@ -4,10 +4,98 @@ import os
 import configparser
 import logging
 from datetime import datetime
-import RPi.GPIO as GPIO
 
 # Import unified logging system
 from .logging import log_event, setup_logger
+
+# Check if simulation mode is enabled
+def should_simulate():
+    """Check if simulation mode is enabled in settings"""
+    try:
+        config = configparser.ConfigParser()
+        config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'settings.cfg')
+        config.read(config_path)
+        if 'Garden' in config:
+            return config.getboolean('Garden', 'simulate', fallback=False)
+    except:
+        pass
+    return False
+
+# Conditional GPIO import
+SIMULATION_MODE = should_simulate()
+
+if SIMULATION_MODE:
+    print("Core GPIO: Simulation mode enabled - using mock GPIO")
+    # Create a mock GPIO module for simulation
+    class MockGPIO:
+        BCM = "BCM"
+        OUT = "OUT"
+        LOW = False
+        HIGH = True
+        
+        def __init__(self):
+            self.pin_states = {}  # Track pin states for simulation
+            
+        def setmode(self, mode):
+            print(f"Mock GPIO: Set mode to {mode}")
+            
+        def setwarnings(self, warnings):
+            print(f"Mock GPIO: Set warnings to {warnings}")
+            
+        def setup(self, pin, mode):
+            print(f"Mock GPIO: Setup pin {pin} as {mode}")
+            self.pin_states[pin] = False  # Initialize as OFF
+            
+        def output(self, pin, state):
+            self.pin_states[pin] = state
+            print(f"Mock GPIO: Pin {pin} set to {state}")
+            
+        def input(self, pin):
+            return self.pin_states.get(pin, False)
+            
+        def cleanup(self):
+            print("Mock GPIO: Cleanup called")
+            self.pin_states.clear()
+    
+    GPIO = MockGPIO()
+else:
+    try:
+        import RPi.GPIO as GPIO
+        print("Core GPIO: Using real GPIO hardware")
+    except ImportError:
+        print("Core GPIO: RPi.GPIO not available - falling back to mock GPIO")
+        # Create a mock GPIO module for simulation
+        class MockGPIO:
+            BCM = "BCM"
+            OUT = "OUT"
+            LOW = False
+            HIGH = True
+            
+            def __init__(self):
+                self.pin_states = {}  # Track pin states for simulation
+                
+            def setmode(self, mode):
+                print(f"Mock GPIO: Set mode to {mode}")
+                
+            def setwarnings(self, warnings):
+                print(f"Mock GPIO: Set warnings to {warnings}")
+                
+            def setup(self, pin, mode):
+                print(f"Mock GPIO: Setup pin {pin} as {mode}")
+                self.pin_states[pin] = False  # Initialize as OFF
+                
+            def output(self, pin, state):
+                self.pin_states[pin] = state
+                print(f"Mock GPIO: Pin {pin} set to {state}")
+                
+            def input(self, pin):
+                return self.pin_states.get(pin, False)
+                
+            def cleanup(self):
+                print("Mock GPIO: Cleanup called")
+                self.pin_states.clear()
+        
+        GPIO = MockGPIO()
 
 # Setup loggers using unified system
 gpio_logger = setup_logger('gpio', 'gpio.log')

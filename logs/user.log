@@ -122,3 +122,73 @@ ed
 [2025-07-21 01:56:47] [INFO] [USER] Scheduled watering system initialized
 [2025-07-21 01:56:48] [INFO] [USER] Scheduled watering system started
 [2025-07-21 01:56:48] [INFO] [USER] Scheduled watering system initialized
+[2025-07-23 20:03:12] [INFO] [USER] Manual timer started | zone_id=1 duration=60
+[2025-07-23 22:03:23] [INFO] [USER] Manual timer started | zone_id=2 duration=600
+[2025-07-23 22:07:50] [INFO] [USER] Manual timer started | zone_id=3 duration=600
+[2025-07-23 22:19:36] [INFO] [USER] Manual timer started | zone_id=2 duration=60
+[2025-07-23 22:19:58] [INFO] [USER] Manual timer stopped | zone_id=2
+[2025-07-23 22:24:15] [INFO] [USER] Manual timer started | zone_id=2 duration=3600
+[2025-07-23 22:24:17] [INFO] [USER] Manual timer stopped | zone_id=2
+[2025-07-23 22:48:09] [INFO] [USER] Manual timer started | zone_id=2 duration=60
+[2025-07-23 22:50:34] [INFO] [USER] Manual timer started | zone_id=2 duration=60
+[2025-07-23 23:01:02] [INFO] [USER] Manual timer started | zone_id=1 duration=60
+[2025-07-23 23:04:31] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-23 23:54:57] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-23 23:55:05] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-23 23:55:40] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 00:04:25] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid time code "00:30"']
+[2025-07-24 00:11:00] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid time code "00:30"', 'Zone 4: Invalid time code "08:00"', 'Zone 6: Invalid time code "06:00"', 'Zone 7: Invalid time code "06:00"', 'Zone 8: Invalid time code "06:00"']
+[2025-07-24 00:11:06] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid time code "00:30"', 'Zone 4: Invalid time code "08:00"', 'Zone 6: Invalid time code "06:00"', 'Zone 7: Invalid time code "06:00"', 'Zone 8: Invalid time code "06:00"']
+[2025-07-24 00:11:46] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid time code "00:30"', 'Zone 4: Invalid time code "08:00"', 'Zone 6: Invalid time code "06:00"', 'Zone 7: Invalid time code "06:00"', 'Zone 8: Invalid time code "06:00"']
+[2025-07-24 00:12:12] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid time code "00:30"', 'Zone 4: Invalid time code "08:00"', 'Zone 6: Invalid time code "06:00"', 'Zone 7: Invalid time code "06:00"', 'Zone 8: Invalid time code "06:00"']
+[2025-07-24 00:14:04] [INFO] [USER] Manual timer started | zone_id=1 duration=60
+[2025-07-24 00:15:34] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid time code "00:17"', 'Zone 4: Invalid time code "08:00"', 'Zone 6: Invalid time code "06:00"', 'Zone 7: Invalid time code "06:00"', 'Zone 8: Invalid time code "06:00"']
+[2025-07-24 00:17:02] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid time code "00:18"', 'Zone 4: Invalid time code "08:00"', 'Zone 6: Invalid time code "06:00"', 'Zone 7: Invalid time code "06:00"', 'Zone 8: Invalid time code "06:00"']
+[2025-07-24 00:17:24] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid time code "00:18"', 'Zone 4: Invalid time code "08:00"', 'Zone 6: Invalid time code "06:00"', 'Zone 7: Invalid time code "06:00"', 'Zone 8: Invalid time code "06:00"']
+[2025-07-24 00:18:12] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid time code "00:19"', 'Zone 4: Invalid time code "08:00"', 'Zone 6: Invalid time code "06:00"', 'Zone 7: Invalid time code "06:00"', 'Zone 8: Invalid time code "06:00"']
+[2025-07-24 00:18:19] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid time code "00:19"', 'Zone 4: Invalid time code "08:00"', 'Zone 6: Invalid time code "06:00"', 'Zone 7: Invalid time code "06:00"', 'Zone 8: Invalid time code "06:00"']
+[2025-07-24 00:20:09] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid time code "00:21"', 'Zone 4: Invalid time code "08:00"', 'Zone 6: Invalid time code "06:00"', 'Zone 7: Invalid time code "06:00"', 'Zone 8: Invalid time code "06:00"']
+[2025-07-24 00:20:59] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid time code "00:21"', 'Zone 4: Invalid time code "08:00"', 'Zone 6: Invalid time code "06:00"', 'Zone 7: Invalid time code "06:00"', 'Zone 8: Invalid time code "06:00"']
+[2025-07-24 00:21:16] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid time code "00:30"', 'Zone 4: Invalid time code "08:00"', 'Zone 6: Invalid time code "06:00"', 'Zone 7: Invalid time code "06:00"', 'Zone 8: Invalid time code "06:00"']
+[2025-07-24 00:22:28] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid time code "00:30"', 'Zone 4: Invalid time code "08:00"', 'Zone 6: Invalid time code "06:00"', 'Zone 7: Invalid time code "06:00"', 'Zone 8: Invalid time code "06:00"']
+[2025-07-24 00:23:09] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 00:23:52] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 00:23:59] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 00:24:09] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 00:24:22] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 00:24:38] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 00:26:32] [INFO] [USER] Manual timer started | zone_id=1 duration=1
+[2025-07-24 00:30:52] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 00:46:37] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 00:48:40] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 01:31:52] [INFO] [USER] Zone updated | zone_id=3 mode=active period=W times_count=1
+[2025-07-24 01:32:49] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 6: Invalid period (must be D, W, or M)', 'Zone 6: Must have at least one time in times array', 'Zone 7: Invalid period (must be D, W, or M)', 'Zone 7: Must have at least one time in times array', 'Zone 8: Invalid period (must be D, W, or M)', 'Zone 8: Must have at least one time in times array']
+[2025-07-24 01:33:53] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 6: Invalid period (must be D, W, or M)', 'Zone 6: Must have at least one time in times array', 'Zone 7: Invalid period (must be D, W, or M)', 'Zone 7: Must have at least one time in times array', 'Zone 8: Invalid period (must be D, W, or M)', 'Zone 8: Must have at least one time in times array']
+[2025-07-24 01:35:13] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 6: Invalid period (must be D, W, or M)', 'Zone 6: Must have at least one time in times array', 'Zone 7: Invalid period (must be D, W, or M)', 'Zone 7: Must have at least one time in times array', 'Zone 8: Invalid period (must be D, W, or M)', 'Zone 8: Must have at least one time in times array']
+[2025-07-24 01:35:28] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 6: Invalid period (must be D, W, or M)', 'Zone 6: Must have at least one time in times array', 'Zone 7: Invalid period (must be D, W, or M)', 'Zone 7: Must have at least one time in times array', 'Zone 8: Invalid period (must be D, W, or M)', 'Zone 8: Must have at least one time in times array']
+[2025-07-24 01:36:30] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 3: Invalid period (must be D, W, or M)', 'Zone 3: Must have at least one time in times array', 'Zone 6: Invalid period (must be D, W, or M)', 'Zone 6: Must have at least one time in times array', 'Zone 7: Invalid period (must be D, W, or M)', 'Zone 7: Must have at least one time in times array', 'Zone 8: Invalid period (must be D, W, or M)', 'Zone 8: Must have at least one time in times array']
+[2025-07-24 01:36:47] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 3: Invalid period (must be D, W, or M)', 'Zone 3: Must have at least one time in times array', 'Zone 6: Invalid period (must be D, W, or M)', 'Zone 6: Must have at least one time in times array', 'Zone 7: Invalid period (must be D, W, or M)', 'Zone 7: Must have at least one time in times array', 'Zone 8: Invalid period (must be D, W, or M)', 'Zone 8: Must have at least one time in times array']
+[2025-07-24 01:38:18] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 3: Invalid period (must be D, W, or M)', 'Zone 3: Must have at least one time in times array', 'Zone 6: Invalid period (must be D, W, or M)', 'Zone 6: Must have at least one time in times array', 'Zone 7: Invalid period (must be D, W, or M)', 'Zone 7: Must have at least one time in times array', 'Zone 8: Invalid period (must be D, W, or M)', 'Zone 8: Must have at least one time in times array']
+[2025-07-24 01:39:32] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 3: Invalid period (must be D, W, or M)', 'Zone 3: Must have at least one time in times array', 'Zone 6: Invalid period (must be D, W, or M)', 'Zone 6: Must have at least one time in times array', 'Zone 7: Invalid period (must be D, W, or M)', 'Zone 7: Must have at least one time in times array', 'Zone 8: Invalid period (must be D, W, or M)', 'Zone 8: Must have at least one time in times array']
+[2025-07-24 01:39:54] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 3: Invalid period (must be D, W, or M)', 'Zone 3: Must have at least one time in times array', 'Zone 6: Invalid period (must be D, W, or M)', 'Zone 6: Must have at least one time in times array', 'Zone 7: Invalid period (must be D, W, or M)', 'Zone 7: Must have at least one time in times array', 'Zone 8: Invalid period (must be D, W, or M)', 'Zone 8: Must have at least one time in times array']
+[2025-07-24 01:40:13] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 01:40:33] [INFO] [USER] Zone updated | zone_id=3 mode=active period=W times_count=1
+[2025-07-24 01:43:27] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 01:44:29] [INFO] [USER] Zone updated | zone_id=3 mode=active period=W times_count=1
+[2025-07-24 01:45:50] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 01:46:50] [INFO] [USER] Zone updated | zone_id=3 mode=active period=W times_count=1
+[2025-07-24 01:48:24] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 01:49:14] [INFO] [USER] Zone updated | zone_id=3 mode=active period=W times_count=1
+[2025-07-24 01:50:52] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 01:52:48] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 01:52:56] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 01:53:07] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 01:53:59] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 01:54:05] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 01:57:04] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 01:57:12] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 01:57:41] [INFO] [USER] Zone updated and caches reloaded | zone_id=3 mode=active period=W times_count=1
+[2025-07-24 01:58:34] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 01:58:42] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 01:58:54] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 01:59:34] [INFO] [USER] Schedule saved and reloaded | zone_count=8

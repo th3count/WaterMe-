@@ -1,1 +1,17 @@
 [2025-07-21 01:48:20] [INFO] [WATERING] Zone 2 activated | pin=6
+[2025-07-23 20:03:12] [INFO] [watering] Manual zone activation | zone_id=1 duration=60
+[2025-07-23 21:49:04] [INFO] [watering] Scheduled zone activation | zone_id=5 duration=900
+[2025-07-23 21:49:04] [INFO] [watering] Scheduled event started | zone_id=5 scheduled_time=20:49 duration=900
+[2025-07-23 22:03:23] [INFO] [watering] Manual zone activation | zone_id=2 duration=600
+[2025-07-23 22:07:50] [INFO] [watering] Manual zone activation | zone_id=3 duration=600
+[2025-07-23 22:19:36] [INFO] [watering] Manual zone activation | zone_id=2 duration=60
+[2025-07-23 22:19:58] [INFO] [watering] Zone deactivated - manual | zone_id=2
+[2025-07-23 22:24:15] [INFO] [watering] Manual zone activation | zone_id=2 duration=3600
+[2025-07-23 22:24:17] [INFO] [watering] Zone deactivated - manual | zone_id=2
+[2025-07-23 22:48:09] [INFO] [watering] Manual zone activation | zone_id=2 duration=60
+[2025-07-23 22:50:34] [INFO] [watering] Manual zone activation | zone_id=2 duration=60
+[2025-07-23 23:01:02] [INFO] [watering] Manual zone activation | zone_id=1 duration=60
+[2025-07-24 00:14:04] [INFO] [watering] Manual zone activation | zone_id=1 duration=60
+[2025-07-24 00:26:32] [INFO] [watering] Manual zone activation | zone_id=1 duration=1
+[2025-07-24 00:49:00] [INFO] [watering] Scheduled zone activation | zone_id=1 duration=60
+[2025-07-24 00:49:00] [INFO] [watering] Scheduled event started | zone_id=1 scheduled_time=00:49 duration=60

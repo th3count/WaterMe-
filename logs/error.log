@@ -1,2 +1,12 @@
 [2025-07-21 23:22:43] [ERROR] [ERROR] Zone status query failed | error=No module named 'RPi'
 [2025-07-21 23:23:52] [ERROR] [ERROR] Zone status query failed | error=No module named 'RPi'
+[2025-07-23 20:04:13] [ERROR] [error] Failed to stop expired zone | zone_id=1
+[2025-07-23 22:04:05] [ERROR] [error] Failed to stop expired zone | zone_id=5
+[2025-07-23 22:13:23] [ERROR] [error] Failed to stop expired zone | zone_id=2
+[2025-07-23 22:17:51] [ERROR] [error] Failed to stop expired zone | zone_id=3
+[2025-07-23 22:49:09] [ERROR] [error] Failed to stop expired zone | zone_id=2
+[2025-07-23 22:51:34] [ERROR] [error] Failed to stop expired zone | zone_id=2
+[2025-07-23 23:02:03] [ERROR] [error] Failed to stop expired zone | zone_id=1
+[2025-07-24 00:15:04] [ERROR] [error] Failed to stop expired zone | zone_id=1
+[2025-07-24 00:26:33] [ERROR] [error] Failed to stop expired zone | zone_id=1
+[2025-07-24 00:50:00] [ERROR] [error] Failed to stop expired zone | zone_id=1

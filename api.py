@@ -19,41 +19,58 @@ import io
 import time
 # GPIO imports removed - scheduler is now primary controller
 
-# Conditional GPIO import for development vs production
-try:
-    import RPi.GPIO as GPIO
-    GPIO_AVAILABLE = True
-except ImportError:
-    print("RPi.GPIO not available - running in development mode")
-    GPIO_AVAILABLE = False
-    # Create a mock GPIO module for development
-    class MockGPIO:
-        BCM = "BCM"
-        OUT = "OUT"
-        LOW = False
-        HIGH = True
-        
-        @staticmethod
-        def setmode(mode):
-            pass
-            
-        @staticmethod
-        def setwarnings(warnings):
-            pass
-            
-        @staticmethod
-        def setup(pin, mode):
-            pass
-            
-        @staticmethod
-        def output(pin, state):
-            print(f"Mock GPIO: Pin {pin} set to {state}")
-            
-        @staticmethod
-        def input(pin):
-            return False
+# Create a mock GPIO module for simulation
+class MockGPIO:
+    BCM = "BCM"
+    OUT = "OUT"
+    LOW = False
+    HIGH = True
     
+    def __init__(self):
+        self.pin_states = {}  # Track pin states for simulation
+        
+    def setmode(self, mode):
+        print(f"Mock GPIO: Set mode to {mode}")
+        
+    def setwarnings(self, warnings):
+        print(f"Mock GPIO: Set warnings to {warnings}")
+        
+    def setup(self, pin, mode):
+        print(f"Mock GPIO: Setup pin {pin} as {mode}")
+        self.pin_states[pin] = False  # Initialize as OFF
+        
+    def output(self, pin, state):
+        self.pin_states[pin] = state
+        print(f"Mock GPIO: Pin {pin} set to {state}")
+        
+    def input(self, pin):
+        return self.pin_states.get(pin, False)
+
+# Function to determine if we should use simulation mode
+def should_simulate():
+    """Check if simulation mode is enabled in settings"""
+    try:
+        settings = load_ini_settings()
+        return settings.get('simulate', False)
+    except:
+        return False
+
+# Conditional GPIO import based on simulation setting
+SIMULATION_MODE = should_simulate()
+
+if SIMULATION_MODE:
+    print("Simulation mode enabled - using mock GPIO")
     GPIO = MockGPIO()
+    GPIO_AVAILABLE = False
+else:
+    try:
+        import RPi.GPIO as GPIO
+        GPIO_AVAILABLE = True
+        print("Using real GPIO hardware")
+    except ImportError:
+        print("RPi.GPIO not available - falling back to mock GPIO")
+        GPIO_AVAILABLE = False
+        GPIO = MockGPIO()
 
 app = Flask(__name__)
 CORS(app, resources={
@@ -274,25 +291,30 @@ def validate_schedule_data(schedule):
         
         # Mode validation
         mode = zone.get('mode', '')
-        if mode not in ['manual', 'disabled']:
-            errors.append(f'Zone {i+1}: Invalid mode (must be manual or disabled)')
+        if mode not in ['manual', 'smart', 'disabled']:
+            errors.append(f'Zone {i+1}: Invalid mode (must be manual, smart, or disabled)')
         
-        # Period validation
+        # Skip other validations for disabled zones
+        if mode == 'disabled':
+            continue
+        
+        # Period validation (only for active zones)
         period = zone.get('period', '')
         if period not in ['D', 'W', 'M']:
             errors.append(f'Zone {i+1}: Invalid period (must be D, W, or M)')
         
-        # Time validation - only times array is used
+        # Time validation - only times array is used (only for active zones)
         times = zone.get('times', [])
         if not times or len(times) == 0:
             errors.append(f'Zone {i+1}: Must have at least one time in times array')
         
-        # Validate time codes
+        # Validate time codes (only for active zones)
         time_codes = []
         for t in times:
             if t.get('value'):
                 time_codes.append(t['value'])
         
+        print(f"DEBUG: Zone {i+1} time codes: {time_codes}")
         for code in time_codes:
             if not validate_time_code(code):
                 errors.append(f'Zone {i+1}: Invalid time code "{code}"')
@@ -300,11 +322,24 @@ def validate_schedule_data(schedule):
     return errors
 
 def validate_time_code(code):
-    """Validate a time code (HHMM, SUNRISE, SUNSET, etc.)"""
+    """Validate a time code (HH:MM, HHMM, SUNRISE, SUNSET, etc.)"""
+    print(f"DEBUG: Validating time code: '{code}' (type: {type(code)})")
     if not isinstance(code, str):
+        print(f"DEBUG: Not a string, returning False")
         return False
     
-    # Check for HHMM format
+    # Check for HH:MM format (new standard)
+    if ':' in code and len(code) == 5:
+        try:
+            hour, minute = map(int, code.split(':'))
+            result = 0 <= hour <= 23 and 0 <= minute <= 59
+            print(f"DEBUG: HH:MM format - hour={hour}, minute={minute}, result={result}")
+            return result
+        except ValueError as e:
+            print(f"DEBUG: HH:MM ValueError: {e}")
+            return False
+    
+    # Check for legacy HHMM format
     if code.isdigit() and len(code) == 4:
         hour = int(code[:2])
         minute = int(code[2:])
@@ -353,6 +388,7 @@ def get_channel_status(channel):
 
 # Import unified logging system
 from core.logging import setup_logger, log_event
+from core.plant_manager import plant_manager
 
 # Initialize loggers
 system_logger = setup_logger('SYSTEM', 'system.log')
@@ -536,7 +572,9 @@ def load_ini_settings():
                     'gps_lon': garden.getfloat('gps_lon', 0.0),
                     'mode': garden.get('mode', 'manual'),
                     'timezone': garden.get('timezone', 'UTC'),
-                    'timer_multiplier': garden.getfloat('timer_multiplier', 1.0)
+                    'timer_multiplier': garden.getfloat('timer_multiplier', 1.0),
+                    'smart_features_enabled': garden.getboolean('smart_features_enabled', False),
+                    'simulate': garden.getboolean('simulate', False)
                 })
             
             # Load Well_Water section
@@ -561,6 +599,8 @@ def load_ini_settings():
                 'mode': 'manual',
                 'timezone': 'America/Regina',
                 'timer_multiplier': 1.0,
+                'smart_features_enabled': False,
+                'simulate': False,
                 'max_flow_rate_gph': 0,
                 'reservoir_size_gallons': 0,
                 'recharge_time_minutes': 0
@@ -586,7 +626,9 @@ def save_ini_settings(settings_data):
                 'gps_lon': str(settings_data.get('gps_lon', 0.0)),
                 'mode': str(settings_data.get('mode', 'manual')),
                 'timezone': str(settings_data.get('timezone', 'UTC')),
-                'timer_multiplier': str(settings_data.get('timer_multiplier', 1.0))
+                'timer_multiplier': str(settings_data.get('timer_multiplier', 1.0)),
+                'smart_features_enabled': str(settings_data.get('smart_features_enabled', False)),
+                'simulate': str(settings_data.get('simulate', False))
             },
             'Well_Water': {
                 'max_flow_rate_gph': str(settings_data.get('max_flow_rate_gph', 0)),
@@ -633,6 +675,14 @@ def save_ini_settings(settings_data):
                 "# Timer multiplier for global watering adjustments\n",
                 "# 1.0 = normal watering, 2.0 = double water, 0.5 = half water\n",
                 "timer_multiplier = 1.0\n",
+                "\n",
+                "# Smart Features\n",
+                "# Enable intelligent plant placement and zone optimization\n",
+                "smart_features_enabled = false\n",
+                "\n",
+                "# Simulation Mode\n",
+                "# Enable mock GPIO for development/testing (no real relays)\n",
+                "simulate = false\n",
                 "\n",
                 "# Well Water Management Settings (Future Feature)\n",
                 "# These settings will help manage water flow for well systems\n",
@@ -683,6 +733,38 @@ def save_ini_settings(settings_data):
             else:
                 # Keep comments and other lines as-is
                 new_lines.append(line)
+        
+        # Add any missing keys that weren't in the original file
+        for section, keys in new_values.items():
+            if section not in [line.strip()[1:-1] for line in new_lines if line.strip().startswith('[') and line.strip().endswith(']')]:
+                # Add missing section
+                new_lines.append(f"\n[{section}]\n")
+            
+            # Find the section in the new lines
+            section_start = -1
+            for i, line in enumerate(new_lines):
+                if line.strip() == f'[{section}]':
+                    section_start = i
+                    break
+            
+            if section_start != -1:
+                # Check for missing keys in this section
+                existing_keys = set()
+                i = section_start + 1
+                while i < len(new_lines) and not new_lines[i].strip().startswith('['):
+                    if '=' in new_lines[i] and not new_lines[i].strip().startswith('#'):
+                        key = new_lines[i].split('=')[0].strip()
+                        existing_keys.add(key)
+                    i += 1
+                
+                # Add missing keys
+                for key, value in keys.items():
+                    if key not in existing_keys:
+                        # Insert after the section header
+                        insert_pos = section_start + 1
+                        while insert_pos < len(new_lines) and not new_lines[insert_pos].strip().startswith('[') and new_lines[insert_pos].strip():
+                            insert_pos += 1
+                        new_lines.insert(insert_pos, f"{key} = {value}\n")
         
         # Write the updated file
         with open(SETTINGS_PATH, 'w') as f:
@@ -1056,8 +1138,16 @@ def resolve_times():
             base = s['noon']
             offset = parse_offset(code, 'ZENITH')
         elif code.isdigit() and len(code) == 4:
+            # Legacy HHMM format
             h, m = int(code[:2]), int(code[2:])
             base = dt.replace(hour=h, minute=m, second=0, tzinfo=pytz.timezone(tz))
+        elif ':' in code and len(code) == 5:
+            # New HH:MM format
+            try:
+                h, m = map(int, code.split(':'))
+                base = dt.replace(hour=h, minute=m, second=0, tzinfo=pytz.timezone(tz))
+            except ValueError:
+                pass
         if base:
             resolved_time = (base + offset).strftime('%H:%M')
             resolved.append(resolved_time)
@@ -1241,34 +1331,19 @@ def save_map():
         log_event(plants_logger, 'WARN', f'Plant assignment failed - invalid data')
         return jsonify({"error": "Invalid plant data"}), 400
     
-    # Load existing map to find the next available instance ID
-    existing_map = load_json_file(MAP_JSON_PATH, {})
+    # Use PlantManager to add plant instance
+    success, message, instance_id = plant_manager.add_plant_instance(data)
     
-    # Find the next available instance ID (start at 1, increment until we find a gap or the next number)
-    next_instance_id = 1
-    while str(next_instance_id) in existing_map:
-        next_instance_id += 1
-    
-    instance_id = str(next_instance_id)
-    
-    # Use the new incremental save function
-    if append_to_json_object(MAP_JSON_PATH, instance_id, data):
-        log_event(plants_logger, 'INFO', f'Plant assigned', 
-                 instance_id=instance_id, 
-                 plant_id=data.get('plant_id'),
-                 location_id=data.get('location_id'),
-                 zone=data.get('zone'),
-                 quantity=data.get('quantity'))
+    if success:
         return jsonify({"status": "success", "instance_id": instance_id})
     else:
-        log_event(error_logger, 'ERROR', f'Plant assignment failed - save error', 
-                 instance_id=instance_id, 
-                 plant_id=data.get('plant_id'))
-        return jsonify({"error": "Failed to save plant assignment"}), 500
+        log_event(error_logger, 'ERROR', f'Plant assignment failed', 
+                 plant_id=data.get('plant_id'), error=message)
+        return jsonify({"error": message}), 500
 
 @app.route('/api/map', methods=['GET'])
 def get_map():
-    data = load_json_file(MAP_JSON_PATH, {})
+    data = plant_manager.get_plant_instances()
     return jsonify(data)
 
 @app.route('/api/map/<instance_id>/reassign', methods=['POST'])
@@ -1282,30 +1357,15 @@ def reassign_plant(instance_id):
             log_event(plants_logger, 'WARN', f'Plant reassignment failed - missing location_id', instance_id=instance_id)
             return jsonify({'error': 'location_id is required'}), 400
         
-        existing_map = load_json_file(MAP_JSON_PATH, {})
+        # Use PlantManager to reassign plant
+        success, message = plant_manager.reassign_plant(instance_id, location_id)
         
-        if instance_id not in existing_map:
-            log_event(plants_logger, 'WARN', f'Plant reassignment failed - instance not found', instance_id=instance_id)
-            return jsonify({'error': 'Plant instance not found'}), 404
-        
-        # Get old location for logging
-        old_location_id = existing_map[instance_id].get('location_id')
-        
-        # Update only the location_id
-        existing_map[instance_id]['location_id'] = location_id
-        
-        if save_json_file(MAP_JSON_PATH, existing_map):
-            log_event(plants_logger, 'INFO', f'Plant reassigned', 
-                     instance_id=instance_id, 
-                     old_location=old_location_id, 
-                     new_location=location_id)
-            return jsonify({'status': 'success', 'message': f'Plant instance {instance_id} reassigned to location {location_id}'})
+        if success:
+            return jsonify({'status': 'success', 'message': message})
         else:
-            log_event(error_logger, 'ERROR', f'Failed to save plant reassignment', 
-                     instance_id=instance_id, 
-                     old_location=old_location_id, 
-                     new_location=location_id)
-            return jsonify({'error': 'Failed to reassign plant'}), 500
+            log_event(error_logger, 'ERROR', f'Plant reassignment failed', 
+                     instance_id=instance_id, error=message)
+            return jsonify({'error': message}), 404 if 'not found' in message.lower() else 500
     except Exception as e:
         log_event(error_logger, 'ERROR', f'Plant reassignment exception', 
                  instance_id=instance_id, 
@@ -1315,23 +1375,116 @@ def reassign_plant(instance_id):
 @app.route('/api/map/<instance_id>', methods=['DELETE'])
 def delete_plant_instance(instance_id):
     try:
-        # Get plant info before deletion for logging
-        map_data = load_json_file(MAP_JSON_PATH, {})
-        plant_info = map_data.get(str(instance_id), {})
+        # Use PlantManager to delete plant instance
+        success, message = plant_manager.delete_plant_instance(instance_id)
         
-        if remove_from_json_object(MAP_JSON_PATH, instance_id):
-            log_event(plants_logger, 'INFO', f'Plant instance deleted', 
-                     instance_id=instance_id, 
-                     plant_id=plant_info.get('plant_id'),
-                     location_id=plant_info.get('location_id'),
-                     zone=plant_info.get('zone'),
-                     quantity=plant_info.get('quantity'))
-            return jsonify({'status': 'success', 'message': f'Instance {instance_id} deleted'})
+        if success:
+            return jsonify({'status': 'success', 'message': message})
         else:
-            log_event(plants_logger, 'WARN', f'Plant deletion failed - instance not found', instance_id=instance_id)
-            return jsonify({'error': 'Instance not found'}), 404
+            log_event(plants_logger, 'WARN', f'Plant deletion failed', instance_id=instance_id, error=message)
+            return jsonify({'error': message}), 404 if 'not found' in message.lower() else 500
     except Exception as e:
         log_event(error_logger, 'ERROR', f'Plant deletion exception', instance_id=instance_id, error=str(e))
+        return jsonify({'error': str(e)}), 500
+
+# Smart Placement API Endpoints
+
+@app.route('/api/smart/analyze-placement', methods=['POST'])
+def analyze_plant_placement():
+    """Analyze plant placement and provide smart recommendations"""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "Plant data required"}), 400
+        
+        # Debug logging
+        log_event(plants_logger, 'INFO', 'Plant placement analysis requested', 
+                 plant_id=data.get('plant_id'), 
+                 library_book=data.get('library_book'),
+                 common_name=data.get('common_name'))
+        
+        # Use PlantManager to analyze placement
+        analysis = plant_manager.analyze_plant_placement(data)
+        
+        # Debug logging for the result
+        if analysis.get('plant_data'):
+            log_event(plants_logger, 'INFO', 'Plant placement analysis completed', 
+                     plant_name=analysis.get('plant_data', {}).get('common_name'),
+                     has_compatible_zones=analysis.get('has_compatible_zones'),
+                     optimal_zone=analysis.get('optimal_zone'))
+        else:
+            log_event(plants_logger, 'WARN', 'Plant placement analysis failed - no plant data found', 
+                     plant_id=data.get('plant_id'), 
+                     library_book=data.get('library_book'))
+        
+        if analysis.get('success'):
+            return jsonify(analysis)
+        else:
+            return jsonify(analysis), 400
+            
+    except Exception as e:
+        log_event(error_logger, 'ERROR', 'Plant placement analysis failed', error=str(e))
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/smart/zone-recommendations', methods=['POST'])
+def get_zone_recommendations():
+    """Get zone recommendations for a plant"""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "Plant data required"}), 400
+        
+        # Use PlantManager to get recommendations
+        recommendations = plant_manager.get_zone_recommendations(data)
+        
+        return jsonify({
+            'success': True,
+            'recommendations': recommendations,
+            'count': len(recommendations)
+        })
+        
+    except Exception as e:
+        log_event(error_logger, 'ERROR', 'Zone recommendations failed', error=str(e))
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/smart/validate-compatibility', methods=['POST'])
+def validate_plant_zone_compatibility():
+    """Validate if a plant can be placed in a specific zone"""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "Plant data and zone_id required"}), 400
+        
+        plant_data = data.get('plant_data', {})
+        zone_id = data.get('zone_id')
+        
+        if not zone_id:
+            return jsonify({"error": "zone_id required"}), 400
+        
+        # Use PlantManager to validate compatibility
+        validation = plant_manager.validate_plant_zone_compatibility(plant_data, zone_id)
+        
+        return jsonify(validation)
+        
+    except Exception as e:
+        log_event(error_logger, 'ERROR', 'Compatibility validation failed', error=str(e))
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/smart/no-compatible-zone', methods=['POST'])
+def handle_no_compatible_zone():
+    """Handle the case where no compatible zone is found"""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "Plant data required"}), 400
+        
+        # Use PlantManager to handle no compatible zone
+        result = plant_manager.handle_no_compatible_zone(data)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        log_event(error_logger, 'ERROR', 'No compatible zone handling failed', error=str(e))
         return jsonify({'error': str(e)}), 500
 
 # GPIO Control Endpoints
@@ -1487,33 +1640,18 @@ def stop_manual_timer(zone_id):
 def get_zone_status():
     """Get hardware status of all zones directly from GPIO (lock-free)"""
     try:
-        from core.gpio import get_all_zone_states, ZONE_PINS
         from core.scheduler import scheduler
         
-        # Get actual hardware states (no lock needed)
-        hardware_states = get_all_zone_states()
+        # Get comprehensive status from scheduler (includes hardware state and remaining time)
+        scheduler_status = scheduler.get_all_zone_status()
         
-        # Try to get remaining time from scheduler (with timeout to prevent hanging)
-        remaining_times = {}
-        try:
-            # Quick check without blocking
-            for zone_id in ZONE_PINS.keys():
-                remaining = scheduler.get_remaining_time(zone_id)
-                remaining_times[zone_id] = remaining if remaining is not None else 0
-        except:
-            # If scheduler is busy, just return 0 for all
-            remaining_times = {zone_id: 0 for zone_id in ZONE_PINS.keys()}
-        
-        # Build response with hardware state as the source of truth
+        # Convert to the expected format
         status = {}
-        for zone_id in ZONE_PINS.keys():
-            hardware_active = hardware_states.get(zone_id, False)
-            remaining = remaining_times.get(zone_id, 0)
-            
+        for zone_id, zone_data in scheduler_status.items():
             status[str(zone_id)] = {
-                'active': hardware_active,
-                'remaining': remaining if hardware_active else 0,
-                'type': 'manual' if hardware_active and remaining > 0 else None
+                'active': zone_data.get('active', False),
+                'remaining': zone_data.get('remaining', 0),
+                'type': zone_data.get('type', None)
             }
         
         return jsonify(status)
@@ -1641,7 +1779,14 @@ def update_zone(zone_id):
     if key in existing:
         existing[key].update(data)
         if save_json_file(SCHEDULE_JSON_PATH, existing):
-            log_event(user_logger, 'INFO', f'Zone updated', 
+            # Reload the scheduler's cached schedule data
+            from core.scheduler import scheduler
+            scheduler.reload_schedule()
+            
+            # Reload the plant manager's schedule data
+            plant_manager._load_schedule()
+            
+            log_event(user_logger, 'INFO', f'Zone updated and caches reloaded', 
                      zone_id=zone_id, 
                      mode=data.get('mode', ''),
                      period=data.get('period', ''),

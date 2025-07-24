@@ -37,6 +37,7 @@ class WateringScheduler:
         # Caching for performance
         self.schedule = {}  # Cached schedule
         self.settings = {}  # Cached settings
+        self.solar_times_cache = {}  # Cache solar times by date
         self._load_schedule()
         self._load_settings()
         
@@ -484,39 +485,30 @@ class WateringScheduler:
             with self.lock:
                 # Use cached schedule and settings
                 if not self.schedule:
-                    print("Debug: No cached schedule, skipping catch-up")
                     return
-                print(f"Debug: Using cached schedule with {len(self.schedule)} zones")
                 
                 schedule = self.schedule
                 
                 now = self.get_current_time()
-                print(f"Debug: Current time: {now}")
                 
                 # Use cached settings
                 if not self.settings:
-                    print("Debug: No cached settings, using defaults for catch-up")
                     lat, lon, tz = 0.0, 0.0, 'UTC'
                 else:
                     lat = self.settings.get('gps_lat', 0.0)
                     lon = self.settings.get('gps_lon', 0.0)
                     tz = self.settings.get('timezone', 'UTC')
-                    print(f"Debug: Using cached settings - lat: {lat}, lon: {lon}, tz: {tz}")
                 
-                # Get solar times for today - add timeout protection
+                # Get solar times for today (cached)
                 try:
-                    city = LocationInfo(latitude=lat, longitude=lon, timezone=tz)
                     dt = now.astimezone(pytz.timezone(tz))
-                    s = sun(city.observer, date=dt.date(), tzinfo=city.timezone)
-                    print(f"Debug: Solar times for today: sunrise={s['sunrise']}, sunset={s['sunset']}, noon={s['noon']}")
+                    s = self._get_solar_times(dt)
                 except Exception as e:
-                    print(f"Debug: Failed to calculate solar times: {e}, skipping catch-up")
                     return
                 
                 # Determine outage window to check for missed events
                 # Check events from the last 24 hours that might have been missed
                 outage_start = dt - timedelta(hours=24)
-                print(f"Debug: Checking for missed events since {outage_start}")
                 
                 restored_count = 0
                 processed_zones = 0
@@ -527,49 +519,41 @@ class WateringScheduler:
                     
                     # Add timeout protection - limit processing time
                     if processed_zones > 20:  # Limit to 20 zones max
-                        print(f"Debug: Reached zone processing limit, stopping catch-up")
                         break
                     
                     # Skip disabled zones  
                     mode = zone_data.get('mode', 'manual')
                     if mode == 'disabled':
-                        print(f"Debug: Zone {zone_id} is disabled, skipping")
                         continue
                     
                     # Skip if zone is already active
                     if self.zone_states.get(zone_id, {}).get('active', False):
-                        print(f"Debug: Zone {zone_id} is already active, skipping catch-up")
                         continue
                     
                     # Skip if zone was manually canceled
                     if zone_id in self.canceled_timers:
-                        print(f"Debug: Zone {zone_id} was manually canceled, skipping catch-up")
                         continue
                     
                     period = zone_data.get('period', 'D')
                     start_day = zone_data.get('startDay', '')
                     times = zone_data.get('times', [])
-                    print(f"Debug: Checking zone {zone_id} - mode: {mode}, period: {period}, events: {len(times)}")
                     
                     # Check if this zone should run today based on period
                     should_run_today = self._should_run_today(period, start_day, dt)
                     
                     if not should_run_today:
-                        print(f"Debug:   Zone {zone_id} not scheduled for today, skipping")
                         continue
-                    
-                    print(f"Debug: Zone {zone_id} should run today")
                     
                     # Check each scheduled time - limit to 5 events per zone
                     for event_idx, event in enumerate(times[:5]):
-                        value = event.get('value')
+                        start_time_code = event.get('start_time') or event.get('value')  # Support both old and new format
                         duration_str = event.get('duration', '000100')
-                        print(f"Debug:   Event {event_idx+1} - code: {value}, duration: {duration_str}")
+                        print(f"Debug:   Event {event_idx+1} - code: {start_time_code}, duration: {duration_str}")
                         
                         # Resolve start_time
-                        start_time = self._resolve_event_time(value, s, dt)
+                        start_time = self._resolve_event_time(start_time_code, s, dt)
                         if not start_time:
-                            print(f"Debug:     Skipping unknown code: {value}")
+                            print(f"Debug:     Skipping unknown code: {start_time_code}")
                             continue
                         
                         # Parse duration
@@ -652,10 +636,8 @@ class WateringScheduler:
             try:
                 start_date = datetime.strptime(start_day, '%Y-%m-%d')
                 if dt.weekday() == start_date.weekday():
-                    print(f"Debug:   Weekly schedule matches today's weekday")
                     return True
                 else:
-                    print(f"Debug:   Weekly schedule doesn't match today (start: {start_date.strftime('%A')}, today: {dt.strftime('%A')})")
                     return False
             except:
                 print(f"Debug:   Failed to parse start_day: {start_day}")
@@ -664,10 +646,8 @@ class WateringScheduler:
             try:
                 start_date = datetime.strptime(start_day, '%Y-%m-%d')
                 if dt.day == start_date.day:
-                    print(f"Debug:   Monthly schedule matches today's day")
                     return True
                 else:
-                    print(f"Debug:   Monthly schedule doesn't match today (start: day {start_date.day}, today: day {dt.day})")
                     return False
             except:
                 print(f"Debug:   Failed to parse start_day: {start_day}")
@@ -679,13 +659,26 @@ class WateringScheduler:
         if not value:
             return None
             
-        if value.isdigit() and len(value) == 4:
+        # Handle HH:MM format (new standard)
+        if ':' in value and len(value) == 5:
+            try:
+                hour = int(value[:2])
+                minute = int(value[3:])
+                # Ensure timezone is preserved
+                start_time = dt.replace(hour=hour, minute=minute, second=0, microsecond=0)
+                print(f"DEBUG: HH:MM time {value} resolved to {start_time} (timezone: {start_time.tzinfo})")
+                return start_time
+            except ValueError:
+                print(f"DEBUG: Invalid HH:MM format: {value}")
+                return None
+        # Handle legacy HHMM format (for backward compatibility)
+        elif value.isdigit() and len(value) == 4:
             # Absolute time like "0800"
             hour = int(value[:2])
             minute = int(value[2:])
             # Ensure timezone is preserved
             start_time = dt.replace(hour=hour, minute=minute, second=0, microsecond=0)
-            print(f"DEBUG: Absolute time {value} resolved to {start_time} (timezone: {start_time.tzinfo})")
+            print(f"DEBUG: Legacy HHMM time {value} resolved to {start_time} (timezone: {start_time.tzinfo})")
             return start_time
         elif value.startswith('SUNRISE'):
             base = solar_times['sunrise']
@@ -717,6 +710,37 @@ class WateringScheduler:
             minutes = int(m.group(2))
             return timedelta(minutes=sign * minutes)
         return timedelta()
+    
+    def _get_solar_times(self, dt: datetime) -> dict:
+        """Get solar times for a date, using cache if available"""
+        date_key = dt.date().isoformat()
+        
+        # Check cache first
+        if date_key in self.solar_times_cache:
+            return self.solar_times_cache[date_key]
+        
+        # Calculate solar times if not cached
+        try:
+            lat = self.settings.get('gps_lat', 0.0)
+            lon = self.settings.get('gps_lon', 0.0)
+            tz = self.settings.get('timezone', 'UTC')
+            
+            city = LocationInfo(latitude=lat, longitude=lon, timezone=tz)
+            s = sun(city.observer, date=dt.date(), tzinfo=city.timezone)
+            
+            # Cache the result
+            self.solar_times_cache[date_key] = s
+            
+            # Clean up old cache entries (keep only last 7 days)
+            cache_dates = list(self.solar_times_cache.keys())
+            if len(cache_dates) > 7:
+                for old_date in cache_dates[:-7]:
+                    del self.solar_times_cache[old_date]
+            
+            return s
+        except Exception as e:
+            print(f"Error calculating solar times: {e}")
+            return {}
     
     def _parse_duration(self, duration_str: str) -> timedelta:
         """Parse duration string into timedelta"""
@@ -963,14 +987,10 @@ class WateringScheduler:
                 zone_states = self.zone_states.copy()
             
             # Process everything outside the lock
-            lat = settings.get('gps_lat', 0.0)
-            lon = settings.get('gps_lon', 0.0)
-            tz = settings.get('timezone', 'UTC')
-
-            # Get solar times for today
-            city = LocationInfo(latitude=lat, longitude=lon, timezone=tz)
             dt = self.get_current_time()
-            s = sun(city.observer, date=dt.date(), tzinfo=city.timezone)
+            
+            # Get solar times for today (cached)
+            s = self._get_solar_times(dt)
             
             for zone_id_str, zone_data in schedule.items():
                 zone_id = int(zone_id_str)
@@ -996,14 +1016,14 @@ class WateringScheduler:
                 
                 # Check each scheduled time
                 for event in times:
-                    value = event.get('value')
+                    start_time_code = event.get('start_time') or event.get('value')  # Support both old and new format
                     duration_str = event.get('duration', '000100')
                     
                     # Resolve start_time
-                    start_time = self._resolve_event_time(value, s, dt)
+                    start_time = self._resolve_event_time(start_time_code, s, dt)
                     if not start_time:
                         continue
-                    
+                
                     # Parse duration
                     try:
                         duration = self._parse_duration(duration_str)

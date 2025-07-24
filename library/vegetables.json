@@ -1,0 +1,1455 @@
+{
+  "Book Name": "Vegetables",
+  "plants": [
+    {
+      "plant_id": 1,
+      "common_name": "Tomato",
+      "alternative_name": "",
+      "latin_name": "Solanum lycopersicum",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 4,
+      "water_optimal_in_week": 1.75,
+      "tolerance_min_in_week": 1.2,
+      "tolerance_max_in_week": 2.5,
+      "usda_zones": "3-11",
+      "soil_preference": "Well-drained, fertile, pH 6.0-6.8",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "70-85 days from transplant",
+      "planting_time": "After last frost",
+      "spacing_inches": 24,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 2,
+      "common_name": "Lettuce",
+      "alternative_name": "",
+      "latin_name": "Lactuca sativa",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 2,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "2-11",
+      "soil_preference": "Well-drained, fertile, pH 6.0-6.5",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "45-75 days from seed",
+      "planting_time": "Cool season - spring/fall",
+      "spacing_inches": 8,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 3,
+      "common_name": "Carrot",
+      "alternative_name": "",
+      "latin_name": "Daucus carota",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 1,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "3-10",
+      "soil_preference": "Deep, loose, well-drained, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "70-80 days from seed",
+      "planting_time": "Cool season - spring/fall",
+      "spacing_inches": 2,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 4,
+      "common_name": "Bell Pepper",
+      "alternative_name": "Sweet Pepper",
+      "latin_name": "Capsicum annuum",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 3,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "4-11",
+      "soil_preference": "Well-drained, fertile, pH 6.0-6.8",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "70-80 days from transplant",
+      "planting_time": "After last frost",
+      "spacing_inches": 18,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 5,
+      "common_name": "Cucumber",
+      "alternative_name": "",
+      "latin_name": "Cucumis sativus",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 4,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "4-11",
+      "soil_preference": "Well-drained, fertile, pH 6.0-6.8",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "50-70 days from seed",
+      "planting_time": "After last frost",
+      "spacing_inches": 36,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 6,
+      "common_name": "Zucchini",
+      "alternative_name": "Summer Squash",
+      "latin_name": "Cucurbita pepo",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 6,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "3-10",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "50-60 days from seed",
+      "planting_time": "After last frost",
+      "spacing_inches": 36,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 7,
+      "common_name": "Green Bean",
+      "alternative_name": "Snap Bean",
+      "latin_name": "Phaseolus vulgaris",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 2,
+      "water_optimal_in_week": 1.25,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 1.5,
+      "usda_zones": "3-10",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "50-65 days from planting",
+      "planting_time": "Late spring after frost danger passes",
+      "spacing_inches": 6,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 8,
+      "common_name": "Broccoli",
+      "alternative_name": "",
+      "latin_name": "Brassica oleracea var. italica",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 4,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "2-11",
+      "soil_preference": "Rich, well-drained, pH 6.0-7.0",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "60-90 days from transplant",
+      "planting_time": "Cool season, spring or fall",
+      "spacing_inches": 18,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 9,
+      "common_name": "Spinach",
+      "alternative_name": "",
+      "latin_name": "Spinacia oleracea",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 2,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "3-9",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.5",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "40-50 days from seeding",
+      "planting_time": "Cool season, early spring or fall",
+      "spacing_inches": 6,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 10,
+      "common_name": "Onion",
+      "alternative_name": "",
+      "latin_name": "Allium cepa",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 2,
+      "water_optimal_in_week": 1.25,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 1.5,
+      "usda_zones": "3-9",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "90-120 days from transplant",
+      "planting_time": "Early spring or fall",
+      "spacing_inches": 4,
+      "growth_type": "Biennial grown as annual"
+    },
+    {
+      "plant_id": 11,
+      "common_name": "Potato",
+      "alternative_name": "",
+      "latin_name": "Solanum tuberosum",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 6,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "3-10",
+      "soil_preference": "Well-drained, fertile, pH 5.0-6.5",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "90-120 days from planting",
+      "planting_time": "Early spring after last frost",
+      "spacing_inches": 12,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 12,
+      "common_name": "Radish",
+      "alternative_name": "",
+      "latin_name": "Raphanus sativus",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 1,
+      "water_optimal_in_week": 0.75,
+      "tolerance_min_in_week": 0.5,
+      "tolerance_max_in_week": 1.0,
+      "usda_zones": "2-10",
+      "soil_preference": "Light, sandy loam, pH 6.5-7.0",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "20-35 days from seed",
+      "planting_time": "Spring and fall",
+      "spacing_inches": 2,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 13,
+      "common_name": "Beet",
+      "alternative_name": "Beetroot",
+      "latin_name": "Beta vulgaris",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 2,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "2-10",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.5",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "50-70 days from seed",
+      "planting_time": "Early spring and fall",
+      "spacing_inches": 3,
+      "growth_type": "Biennial grown as annual"
+    },
+    {
+      "plant_id": 14,
+      "common_name": "Cabbage",
+      "alternative_name": "",
+      "latin_name": "Brassica oleracea var. capitata",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 4,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "1-9",
+      "soil_preference": "Well-drained, fertile, pH 6.0-6.5",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "70-100 days from transplant",
+      "planting_time": "Early spring and fall",
+      "spacing_inches": 12,
+      "growth_type": "Biennial grown as annual"
+    },
+    {
+      "plant_id": 15,
+      "common_name": "Cauliflower",
+      "alternative_name": "",
+      "latin_name": "Brassica oleracea var. botrytis",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 4,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "2-9",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "55-100 days from transplant",
+      "planting_time": "Early spring and fall",
+      "spacing_inches": 15,
+      "growth_type": "Biennial grown as annual"
+    },
+    {
+      "plant_id": 16,
+      "common_name": "Corn",
+      "alternative_name": "Sweet Corn",
+      "latin_name": "Zea mays",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 4,
+      "water_optimal_in_week": 2.0,
+      "tolerance_min_in_week": 1.5,
+      "tolerance_max_in_week": 2.5,
+      "usda_zones": "3-11",
+      "soil_preference": "Well-drained, fertile, pH 6.0-6.8",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "60-100 days from seed",
+      "planting_time": "Late spring after soil warms",
+      "spacing_inches": 8,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 17,
+      "common_name": "Pea",
+      "alternative_name": "Garden Pea",
+      "latin_name": "Pisum sativum",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 2,
+      "water_optimal_in_week": 0.75,
+      "tolerance_min_in_week": 0.5,
+      "tolerance_max_in_week": 1.0,
+      "usda_zones": "2-11",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.5",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "50-70 days from seed",
+      "planting_time": "Early spring and fall",
+      "spacing_inches": 2,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 18,
+      "common_name": "Eggplant",
+      "alternative_name": "Aubergine",
+      "latin_name": "Solanum melongena",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 6,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "4-12",
+      "soil_preference": "Well-drained, fertile, pH 5.5-6.8",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "65-80 days from transplant",
+      "planting_time": "Late spring after soil warms",
+      "spacing_inches": 18,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 19,
+      "common_name": "Squash",
+      "alternative_name": "Summer Squash",
+      "latin_name": "Cucurbita pepo",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 9,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "3-11",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "50-65 days from seed",
+      "planting_time": "Late spring after soil warms",
+      "spacing_inches": 36,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 20,
+      "common_name": "Kale",
+      "alternative_name": "",
+      "latin_name": "Brassica oleracea var. acephala",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 3,
+      "water_optimal_in_week": 1.25,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 1.5,
+      "usda_zones": "2-11",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.5",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "55-75 days from seed",
+      "planting_time": "Early spring and fall",
+      "spacing_inches": 12,
+      "growth_type": "Biennial grown as annual"
+    },
+    {
+      "plant_id": 21,
+      "common_name": "Swiss Chard",
+      "alternative_name": "Chard",
+      "latin_name": "Beta vulgaris var. cicla",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 3,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "2-11",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.0",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "50-60 days from seed",
+      "planting_time": "Early spring and fall",
+      "spacing_inches": 6,
+      "growth_type": "Biennial grown as annual"
+    },
+    {
+      "plant_id": 22,
+      "common_name": "Arugula",
+      "alternative_name": "Rocket",
+      "latin_name": "Eruca vesicaria",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 1,
+      "water_optimal_in_week": 1.0,
+      "tolerance_min_in_week": 0.75,
+      "tolerance_max_in_week": 1.25,
+      "usda_zones": "2-11",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.0",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "40-50 days from seed",
+      "planting_time": "Early spring and fall",
+      "spacing_inches": 4,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 23,
+      "common_name": "Brussels Sprouts",
+      "alternative_name": "",
+      "latin_name": "Brassica oleracea var. gemmifera",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 4,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "2-9",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.5",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "80-100 days from transplant",
+      "planting_time": "Mid-summer for fall harvest",
+      "spacing_inches": 18,
+      "growth_type": "Biennial grown as annual"
+    },
+    {
+      "plant_id": 24,
+      "common_name": "Turnip",
+      "alternative_name": "",
+      "latin_name": "Brassica rapa",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 2,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "2-9",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.0",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "35-60 days from seed",
+      "planting_time": "Early spring and fall",
+      "spacing_inches": 4,
+      "growth_type": "Biennial grown as annual"
+    },
+    {
+      "plant_id": 25,
+      "common_name": "Parsnip",
+      "alternative_name": "",
+      "latin_name": "Pastinaca sativa",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 2,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "2-9",
+      "soil_preference": "Deep, well-drained, pH 6.0-7.0",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "100-120 days from seed",
+      "planting_time": "Early spring",
+      "spacing_inches": 3,
+      "growth_type": "Biennial grown as annual"
+    },
+    {
+      "plant_id": 26,
+      "common_name": "Leek",
+      "alternative_name": "",
+      "latin_name": "Allium porrum",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 2,
+      "water_optimal_in_week": 1.25,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 1.5,
+      "usda_zones": "3-9",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "100-120 days from transplant",
+      "planting_time": "Early spring",
+      "spacing_inches": 6,
+      "growth_type": "Biennial grown as annual"
+    },
+    {
+      "plant_id": 27,
+      "common_name": "Garlic",
+      "alternative_name": "",
+      "latin_name": "Allium sativum",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 1,
+      "water_optimal_in_week": 1.25,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 1.5,
+      "usda_zones": "3-9",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "240-270 days from planting",
+      "planting_time": "Fall for summer harvest",
+      "spacing_inches": 4,
+      "growth_type": "Perennial grown as annual"
+    },
+    {
+      "plant_id": 28,
+      "common_name": "Celery",
+      "alternative_name": "",
+      "latin_name": "Apium graveolens",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 3,
+      "water_optimal_in_week": 1.75,
+      "tolerance_min_in_week": 1.5,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "2-10",
+      "soil_preference": "Moist, fertile, pH 6.0-7.0",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "85-120 days from transplant",
+      "planting_time": "Early spring",
+      "spacing_inches": 6,
+      "growth_type": "Biennial grown as annual"
+    },
+    {
+      "plant_id": 29,
+      "common_name": "Asparagus",
+      "alternative_name": "",
+      "latin_name": "Asparagus officinalis",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 6,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "3-8",
+      "soil_preference": "Well-drained, fertile, pH 6.5-7.5",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "2-3 years to establish, then perennial",
+      "planting_time": "Early spring",
+      "spacing_inches": 18,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 30,
+      "common_name": "Okra",
+      "alternative_name": "Lady's Finger",
+      "latin_name": "Abelmoschus esculentus",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 4,
+      "water_optimal_in_week": 1.25,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 1.5,
+      "usda_zones": "5-12",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.5",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "50-65 days from seed",
+      "planting_time": "Late spring after soil warms",
+      "spacing_inches": 12,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 31,
+      "common_name": "Sweet Potato",
+      "alternative_name": "",
+      "latin_name": "Ipomoea batatas",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 8,
+      "water_optimal_in_week": 1.25,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 1.5,
+      "usda_zones": "4-11",
+      "soil_preference": "Well-drained, sandy, pH 5.8-6.2",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "90-120 days from planting",
+      "planting_time": "Late spring after soil warms",
+      "spacing_inches": 12,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 32,
+      "common_name": "Rutabaga",
+      "alternative_name": "Swede",
+      "latin_name": "Brassica napus",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 3,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "2-9",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "90-100 days from seed",
+      "planting_time": "Mid-summer for fall harvest",
+      "spacing_inches": 6,
+      "growth_type": "Biennial grown as annual"
+    },
+    {
+      "plant_id": 33,
+      "common_name": "Kohlrabi",
+      "alternative_name": "German Turnip",
+      "latin_name": "Brassica oleracea var. gongylodes",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 2,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "2-11",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.5",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "45-60 days from seed",
+      "planting_time": "Early spring and fall",
+      "spacing_inches": 6,
+      "growth_type": "Biennial grown as annual"
+    },
+    {
+      "plant_id": 34,
+      "common_name": "Collard Greens",
+      "alternative_name": "Collards",
+      "latin_name": "Brassica oleracea var. viridis",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 4,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "6-11",
+      "soil_preference": "Well-drained, fertile, pH 6.0-6.5",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "60-85 days from seed",
+      "planting_time": "Early spring and late summer",
+      "spacing_inches": 12,
+      "growth_type": "Biennial grown as annual"
+    },
+    {
+      "plant_id": 35,
+      "common_name": "Mustard Greens",
+      "alternative_name": "Mustard",
+      "latin_name": "Brassica juncea",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 2,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "2-11",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.5",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "40-50 days from seed",
+      "planting_time": "Early spring and fall",
+      "spacing_inches": 6,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 36,
+      "common_name": "Bok Choy",
+      "alternative_name": "Pak Choi",
+      "latin_name": "Brassica rapa var. chinensis",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 2,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "4-7",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.5",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "45-70 days from seed",
+      "planting_time": "Early spring and fall",
+      "spacing_inches": 6,
+      "growth_type": "Biennial grown as annual"
+    },
+    {
+      "plant_id": 37,
+      "common_name": "Fennel",
+      "alternative_name": "Florence Fennel",
+      "latin_name": "Foeniculum vulgare var. azoricum",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 3,
+      "water_optimal_in_week": 1.25,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 1.5,
+      "usda_zones": "6-10",
+      "soil_preference": "Well-drained, fertile, pH 6.0-8.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "90-115 days from seed",
+      "planting_time": "Early spring or late summer",
+      "spacing_inches": 6,
+      "growth_type": "Biennial grown as annual"
+    },
+    {
+      "plant_id": 38,
+      "common_name": "Endive",
+      "alternative_name": "Escarole",
+      "latin_name": "Cichorium endivia",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 2,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "2-11",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.0",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "85-100 days from seed",
+      "planting_time": "Late summer for fall harvest",
+      "spacing_inches": 8,
+      "growth_type": "Biennial grown as annual"
+    },
+    {
+      "plant_id": 39,
+      "common_name": "Radicchio",
+      "alternative_name": "Italian Chicory",
+      "latin_name": "Cichorium intybus var. foliosum",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 2,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "3-10",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.5",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "85-130 days from seed",
+      "planting_time": "Mid to late summer",
+      "spacing_inches": 8,
+      "growth_type": "Biennial grown as annual"
+    },
+    {
+      "plant_id": 40,
+      "common_name": "Watercress",
+      "alternative_name": "",
+      "latin_name": "Nasturtium officinale",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 2,
+      "water_optimal_in_week": 2.5,
+      "tolerance_min_in_week": 2.0,
+      "tolerance_max_in_week": 3.0,
+      "usda_zones": "3-11",
+      "soil_preference": "Constantly moist to aquatic, pH 6.5-7.5",
+      "sun_exposure": "Partial Shade",
+      "fruiting_period": "50-60 days from seed",
+      "planting_time": "Early spring through fall",
+      "spacing_inches": 4,
+      "growth_type": "Perennial grown as annual"
+    },
+    {
+      "plant_id": 41,
+      "common_name": "Artichoke",
+      "alternative_name": "Globe Artichoke",
+      "latin_name": "Cynara cardunculus var. scolymus",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 9,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 2.0,
+      "usda_zones": "7-11",
+      "soil_preference": "Well-drained, fertile, pH 6.5-7.5",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Second year, then perennial",
+      "planting_time": "Early spring",
+      "spacing_inches": 36,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 42,
+      "common_name": "Lima Bean",
+      "alternative_name": "Butter Bean",
+      "latin_name": "Phaseolus lunatus",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 3,
+      "water_optimal_in_week": 1.25,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 1.5,
+      "usda_zones": "4-11",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "75-90 days from seed",
+      "planting_time": "Late spring after soil warms",
+      "spacing_inches": 6,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 43,
+      "common_name": "Edamame",
+      "alternative_name": "Vegetable Soybean",
+      "latin_name": "Glycine max",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 2,
+      "water_optimal_in_week": 1.25,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 1.5,
+      "usda_zones": "3-8",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "75-95 days from seed",
+      "planting_time": "Late spring after soil warms",
+      "spacing_inches": 4,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 44,
+      "common_name": "Shallot",
+      "alternative_name": "",
+      "latin_name": "Allium cepa var. aggregatum",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 1,
+      "water_optimal_in_week": 1.25,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 1.5,
+      "usda_zones": "3-9",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "90-120 days from planting",
+      "planting_time": "Early spring or fall",
+      "spacing_inches": 4,
+      "growth_type": "Perennial grown as annual"
+    },
+    {
+      "plant_id": 45,
+      "common_name": "Scallion",
+      "alternative_name": "Green Onion",
+      "latin_name": "Allium fistulosum",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 1,
+      "water_optimal_in_week": 1.0,
+      "tolerance_min_in_week": 0.75,
+      "tolerance_max_in_week": 1.25,
+      "usda_zones": "2-11",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.0",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "60-80 days from seed",
+      "planting_time": "Early spring through fall",
+      "spacing_inches": 2,
+      "growth_type": "Perennial grown as annual"
+    },
+    {
+      "plant_id": 46,
+      "common_name": "Chive",
+      "alternative_name": "",
+      "latin_name": "Allium schoenoprasum",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 1,
+      "water_optimal_in_week": 1.25,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 1.5,
+      "usda_zones": "3-9",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.0",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "Perennial harvest",
+      "planting_time": "Early spring",
+      "spacing_inches": 4,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 47,
+      "common_name": "Parsley",
+      "alternative_name": "",
+      "latin_name": "Petroselinum crispum",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 1,
+      "water_optimal_in_week": 1.0,
+      "tolerance_min_in_week": 0.75,
+      "tolerance_max_in_week": 1.25,
+      "usda_zones": "2-11",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.0",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "70-90 days from seed",
+      "planting_time": "Early spring",
+      "spacing_inches": 6,
+      "growth_type": "Biennial grown as annual"
+    },
+    {
+      "plant_id": 48,
+      "common_name": "Cilantro",
+      "alternative_name": "Coriander",
+      "latin_name": "Coriandrum sativum",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 1,
+      "water_optimal_in_week": 1.0,
+      "tolerance_min_in_week": 0.75,
+      "tolerance_max_in_week": 1.25,
+      "usda_zones": "2-11",
+      "soil_preference": "Well-drained, fertile, pH 6.2-6.8",
+      "sun_exposure": "Full Sun to Partial Shade",
+      "fruiting_period": "50-55 days from seed",
+      "planting_time": "Early spring and fall",
+      "spacing_inches": 4,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 49,
+      "common_name": "Basil",
+      "alternative_name": "Sweet Basil",
+      "latin_name": "Ocimum basilicum",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 2,
+      "water_optimal_in_week": 1.25,
+      "tolerance_min_in_week": 1.0,
+      "tolerance_max_in_week": 1.5,
+      "usda_zones": "4-11",
+      "soil_preference": "Well-drained, fertile, pH 6.0-7.0",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "60-90 days from seed",
+      "planting_time": "Late spring after soil warms",
+      "spacing_inches": 6,
+      "growth_type": "Annual"
+    },
+    {
+      "plant_id": 50,
+      "common_name": "Dill",
+      "alternative_name": "",
+      "latin_name": "Anethum graveolens",
+      "watering_frequency": [
+        "W1"
+      ],
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "root_area_sqft": 2,
+      "water_optimal_in_week": 1.0,
+      "tolerance_min_in_week": 0.75,
+      "tolerance_max_in_week": 1.25,
+      "usda_zones": "2-11",
+      "soil_preference": "Well-drained, fertile, pH 5.8-6.5",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "40-60 days from seed",
+      "planting_time": "Early spring through summer",
+      "spacing_inches": 4,
+      "growth_type": "Annual"
+    }
+  ]
+} 

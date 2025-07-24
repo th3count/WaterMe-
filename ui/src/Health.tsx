@@ -71,6 +71,17 @@ export default function Health() {
   const [ignoredAlertsData, setIgnoredAlertsData] = useState<any[]>([]);
   const [showIgnoredAlerts, setShowIgnoredAlerts] = useState(false);
   const [plantNames, setPlantNames] = useState<Record<string, Record<number, string>>>({});
+  
+
+  
+  // Smart placement modal state (same as Garden page)
+  const [smartPlacementModal, setSmartPlacementModal] = useState<{ plant: any; bookFile: string; recommendations: any[] } | null>(null);
+  const [showLocationForm, setShowLocationForm] = useState(false);
+  const [locationName, setLocationName] = useState('');
+  const [locationDescription, setLocationDescription] = useState('');
+  const [selectedLocationZones, setSelectedLocationZones] = useState<number[]>([]);
+  const [savingLocation, setSavingLocation] = useState(false);
+  const [zoneSelectionMode, setZoneSelectionMode] = useState<'smart' | 'manual'>('smart');
 
   useEffect(() => {
     // Load locations and map data
@@ -210,6 +221,92 @@ export default function Health() {
   // Helper function to get common name
   const getCommonName = (libraryBook: string, plantId: number) => {
     return plantNames[libraryBook]?.[plantId] || `Plant ${plantId}`;
+  };
+
+  // Smart placement functions (same as Garden page)
+  const handleSmartPlacementConfirm = async (selectedZoneId: number, selectedLocationId: number) => {
+    if (!smartPlacementModal) return;
+    
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/api/map/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plant_id: smartPlacementModal.plant.plant_id,
+          library_book: smartPlacementModal.bookFile,
+          quantity: 1, // Default quantity for reassignment
+          emitter_size: 4, // Default emitter size for reassignment
+          zone_id: selectedZoneId,
+          location_id: selectedLocationId,
+          comments: `Reassigned from orphaned plant (Instance ${smartPlacementModal.plant.instanceId})`
+        })
+      });
+
+      if (response.ok) {
+        // Close modal and reload data
+        setSmartPlacementModal(null);
+        // Reload orphaned plants
+        const alertsResponse = await fetch(`${getApiBaseUrl()}/api/health/alerts`);
+        const alertsData = await alertsResponse.json();
+        setOrphanedPlants(alertsData.orphaned_plants || []);
+        setSystemStatus(alertsData.orphaned_plants?.length > 0 ? 'warning' : 'good');
+      } else {
+        console.error('Failed to reassign plant:', response.status);
+        alert('Failed to reassign plant. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error reassigning plant:', error);
+      alert('Error reassigning plant. Please try again.');
+    }
+  };
+
+  const handleSaveLocation = async () => {
+    if (!locationName.trim()) {
+      alert('Please enter a location name');
+      return;
+    }
+
+    setSavingLocation(true);
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/api/locations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: locationName,
+          description: locationDescription,
+          zones: selectedLocationZones
+        })
+      });
+
+      if (response.ok) {
+        const newLocation = await response.json();
+        setShowLocationForm(false);
+        setLocationName('');
+        setLocationDescription('');
+        setSelectedLocationZones([]);
+        
+        // Reload locations for the smart placement modal
+        const locationsResponse = await fetch(`${getApiBaseUrl()}/api/locations`);
+        const locationsData = await locationsResponse.json();
+        setLocations(locationsData);
+      } else {
+        console.error('Failed to create location:', response.status);
+        alert('Failed to create location. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error creating location:', error);
+      alert('Error creating location. Please try again.');
+    } finally {
+      setSavingLocation(false);
+    }
+  };
+
+  const handleZoneCheck = (zoneId: number) => {
+    setSelectedLocationZones(prev => 
+      prev.includes(zoneId) 
+        ? prev.filter(id => id !== zoneId)
+        : [...prev, zoneId]
+    );
   };
 
   return (
@@ -544,9 +641,42 @@ export default function Health() {
                       </div>
                       <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                         <button
-                          onClick={() => {
-                            // Navigate to locations page with this plant selected for reassignment
-                            window.location.href = `/locations?reassign=${plant.instanceId}`;
+                          onClick={async () => {
+                            // Get smart recommendations for this plant
+                            try {
+                              console.log('Getting recommendations for plant:', plant);
+                              const requestData = {
+                                plant_id: plant.plant_id,
+                                library_book: plant.library_book
+                              };
+                              console.log('Request data:', requestData);
+                              
+                              const response = await fetch(`${getApiBaseUrl()}/api/smart/zone-recommendations`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(requestData)
+                              });
+                              
+                              console.log('Response status:', response.status);
+                              
+                              if (response.ok) {
+                                const data = await response.json();
+                                console.log('Response data:', data);
+                                setSmartPlacementModal({
+                                  plant: plant,
+                                  bookFile: plant.library_book,
+                                  recommendations: data.recommendations || []
+                                });
+                              } else {
+                                const errorText = await response.text();
+                                console.error('Failed to get recommendations:', response.status, errorText);
+                                alert(`Failed to get placement recommendations: ${errorText}`);
+                              }
+                            } catch (error) {
+                              console.error('Error getting recommendations:', error);
+                              const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                              alert(`Error getting placement recommendations: ${errorMessage}`);
+                            }
                           }}
                           style={{
                             padding: '4px 8px',
@@ -694,6 +824,400 @@ export default function Health() {
                 )}
               </div>
             )}
+
+        {/* Smart Placement Modal */}
+        {smartPlacementModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              background: '#232b3b',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '600px',
+              width: '90%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              border: '1px solid #1a1f2a',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+            }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '20px'
+              }}>
+                <h2 style={{
+                  color: '#00bcd4',
+                  margin: 0,
+                  fontWeight: 600
+                }}>
+                  Reassign Plant: {getCommonName(smartPlacementModal.bookFile, smartPlacementModal.plant.plant_id)}
+                </h2>
+                <button
+                  onClick={() => setSmartPlacementModal(null)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#888',
+                    fontSize: '24px',
+                    cursor: 'pointer',
+                    padding: '0',
+                    width: '30px',
+                    height: '30px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Zone Recommendations */}
+              {smartPlacementModal.recommendations.length > 0 ? (
+                <div style={{ marginBottom: '24px' }}>
+                  <h3 style={{
+                    color: '#f4f4f4',
+                    margin: '0 0 16px 0',
+                    fontWeight: 600,
+                    fontSize: '16px'
+                  }}>
+                    Recommended Zones
+                  </h3>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px'
+                  }}>
+                    {smartPlacementModal.recommendations.map((rec, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          background: '#1a1f2a',
+                          borderRadius: '8px',
+                          padding: '16px',
+                          border: '2px solid #00bcd4',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onClick={() => handleSmartPlacementConfirm(rec.zone_id, rec.location_id)}
+                      >
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: '8px'
+                        }}>
+                          <div style={{
+                            color: '#00bcd4',
+                            fontWeight: 600,
+                            fontSize: '16px'
+                          }}>
+                            Zone {rec.zone_id}
+                          </div>
+                          <div style={{
+                            color: '#4CAF50',
+                            fontSize: '14px',
+                            fontWeight: 600
+                          }}>
+                            {rec.compatibility_score}% Match
+                          </div>
+                        </div>
+                        <div style={{
+                          color: '#bdbdbd',
+                          fontSize: '14px',
+                          marginBottom: '8px'
+                        }}>
+                          Location: {locations.find(loc => loc.location_id === rec.location_id)?.name || `Location ${rec.location_id}`}
+                        </div>
+                        <div style={{
+                          color: '#888',
+                          fontSize: '12px'
+                        }}>
+                          {rec.reasoning}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div style={{
+                  background: '#1a1f2a',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  marginBottom: '24px',
+                  border: '1px solid #FF9800'
+                }}>
+                  <div style={{
+                    color: '#FF9800',
+                    fontWeight: 600,
+                    marginBottom: '8px'
+                  }}>
+                    No Compatible Zones Found
+                  </div>
+                  <div style={{
+                    color: '#bdbdbd',
+                    fontSize: '14px'
+                  }}>
+                    This plant doesn't have any compatible zones. You may need to create a new location or manually assign it to an existing zone.
+                  </div>
+                </div>
+              )}
+
+              {/* Manual Options */}
+              <div style={{
+                borderTop: '1px solid #1a1f2a',
+                paddingTop: '20px'
+              }}>
+                <h3 style={{
+                  color: '#f4f4f4',
+                  margin: '0 0 16px 0',
+                  fontWeight: 600,
+                  fontSize: '16px'
+                }}>
+                  Manual Options
+                </h3>
+                <div style={{
+                  display: 'flex',
+                  gap: '12px'
+                }}>
+                  <button
+                    onClick={() => setShowLocationForm(true)}
+                    style={{
+                      padding: '12px 20px',
+                      borderRadius: '8px',
+                      border: '1px solid #00bcd4',
+                      background: 'transparent',
+                      color: '#00bcd4',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      fontWeight: 600
+                    }}
+                  >
+                    Create New Location
+                  </button>
+                  <button
+                    onClick={() => setSmartPlacementModal(null)}
+                    style={{
+                      padding: '12px 20px',
+                      borderRadius: '8px',
+                      border: '1px solid #666',
+                      background: 'transparent',
+                      color: '#666',
+                      fontSize: '14px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Location Creation Form */}
+        {showLocationForm && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1001
+          }}>
+            <div style={{
+              background: '#232b3b',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '500px',
+              width: '90%',
+              border: '1px solid #1a1f2a',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+            }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '20px'
+              }}>
+                <h2 style={{
+                  color: '#00bcd4',
+                  margin: 0,
+                  fontWeight: 600
+                }}>
+                  Create New Location
+                </h2>
+                <button
+                  onClick={() => setShowLocationForm(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#888',
+                    fontSize: '24px',
+                    cursor: 'pointer',
+                    padding: '0',
+                    width: '30px',
+                    height: '30px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{
+                  display: 'block',
+                  color: '#f4f4f4',
+                  marginBottom: '8px',
+                  fontWeight: 600
+                }}>
+                  Location Name *
+                </label>
+                <input
+                  type="text"
+                  value={locationName}
+                  onChange={(e) => setLocationName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid #1a1f2a',
+                    background: '#1a1f2a',
+                    color: '#f4f4f4',
+                    fontSize: '14px',
+                    boxSizing: 'border-box'
+                  }}
+                  placeholder="Enter location name"
+                />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{
+                  display: 'block',
+                  color: '#f4f4f4',
+                  marginBottom: '8px',
+                  fontWeight: 600
+                }}>
+                  Description
+                </label>
+                <textarea
+                  value={locationDescription}
+                  onChange={(e) => setLocationDescription(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid #1a1f2a',
+                    background: '#1a1f2a',
+                    color: '#f4f4f4',
+                    fontSize: '14px',
+                    boxSizing: 'border-box',
+                    minHeight: '80px',
+                    resize: 'vertical'
+                  }}
+                  placeholder="Enter location description"
+                />
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{
+                  display: 'block',
+                  color: '#f4f4f4',
+                  marginBottom: '12px',
+                  fontWeight: 600
+                }}>
+                  Select Zones
+                </label>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
+                  gap: '8px'
+                }}>
+                  {Array.from({ length: 8 }, (_, i) => i + 1).map(zoneId => (
+                    <label
+                      key={zoneId}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px',
+                        borderRadius: '6px',
+                        background: selectedLocationZones.includes(zoneId) ? '#00bcd4' : '#1a1f2a',
+                        color: selectedLocationZones.includes(zoneId) ? '#000' : '#f4f4f4',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: selectedLocationZones.includes(zoneId) ? 600 : 400
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedLocationZones.includes(zoneId)}
+                        onChange={() => handleZoneCheck(zoneId)}
+                        style={{ display: 'none' }}
+                      />
+                      Zone {zoneId}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                gap: '12px',
+                justifyContent: 'flex-end'
+              }}>
+                <button
+                  onClick={() => setShowLocationForm(false)}
+                  style={{
+                    padding: '12px 20px',
+                    borderRadius: '8px',
+                    border: '1px solid #666',
+                    background: 'transparent',
+                    color: '#666',
+                    fontSize: '14px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveLocation}
+                  disabled={savingLocation}
+                  style={{
+                    padding: '12px 20px',
+                    borderRadius: '8px',
+                    border: '1px solid #00bcd4',
+                    background: savingLocation ? '#666' : '#00bcd4',
+                    color: savingLocation ? '#888' : '#000',
+                    fontSize: '14px',
+                    cursor: savingLocation ? 'not-allowed' : 'pointer',
+                    fontWeight: 600
+                  }}
+                >
+                  {savingLocation ? 'Creating...' : 'Create Location'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
           </div>
         </div>
       </div>
