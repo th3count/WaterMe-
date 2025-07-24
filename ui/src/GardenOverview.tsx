@@ -5,15 +5,36 @@ import { getApiBaseUrl } from './utils';
 
 // Helper to format HHMMSS as human readable
 function formatDuration(d: string): string {
-  if (!d || d.length !== 6) return 'N/A';
-  const h = parseInt(d.slice(0, 2), 10);
-  const m = parseInt(d.slice(2, 4), 10);
-  const s = parseInt(d.slice(4, 6), 10);
-  let out = '';
-  if (h) out += `${h}h `;
-  if (m) out += `${m}m `;
-  if (s) out += `${s}s`;
-  return out.trim() || '0s';
+  if (!d) return 'N/A';
+  
+  // Handle new HH:mm:ss format
+  if (d.includes(':') && d.length === 8) {
+    const parts = d.split(':');
+    if (parts.length === 3) {
+      const h = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10);
+      const s = parseInt(parts[2], 10);
+      let out = '';
+      if (h) out += `${h}h `;
+      if (m) out += `${m}m `;
+      if (s) out += `${s}s`;
+      return out.trim() || '0s';
+    }
+  }
+  
+  // Handle legacy HHmmss format (6 digits)
+  if (d.length === 6 && !d.includes(':')) {
+    const h = parseInt(d.slice(0, 2), 10);
+    const m = parseInt(d.slice(2, 4), 10);
+    const s = parseInt(d.slice(4, 6), 10);
+    let out = '';
+    if (h) out += `${h}h `;
+    if (m) out += `${m}m `;
+    if (s) out += `${s}s`;
+    return out.trim() || '0s';
+  }
+  
+  return 'N/A';
 }
 
 /**
@@ -230,36 +251,62 @@ function getNextDailyTime(zone: any, zoneResolvedTimes: Record<number, Record<st
   }
 
   function parseManualTimeInput(input: string): { hours: number; minutes: number; seconds: number; isValid: boolean; error: string } {
-    // Remove any non-numeric characters
-    const cleanInput = input.replace(/[^0-9]/g, '');
-    
-    if (!cleanInput) {
+    if (!input) {
       return { hours: 0, minutes: 0, seconds: 0, isValid: false, error: 'Enter a duration' };
     }
     
-    // Pad with leading zeros to 6 digits (HHMMSS format)
-    const paddedInput = cleanInput.padStart(6, '0');
+    // Handle HH:mm:ss format
+    if (input.includes(':')) {
+      const parts = input.split(':');
+      if (parts.length === 3) {
+        const hours = parseInt(parts[0], 10) || 0;
+        const minutes = parseInt(parts[1], 10) || 0;
+        const seconds = parseInt(parts[2], 10) || 0;
+        
+        // Validate ranges
+        if (hours > 23) {
+          return { hours, minutes, seconds, isValid: false, error: 'Hours cannot exceed 23' };
+        }
+        if (minutes > 59) {
+          return { hours, minutes, seconds, isValid: false, error: 'Minutes cannot exceed 59' };
+        }
+        if (seconds > 59) {
+          return { hours, minutes, seconds, isValid: false, error: 'Seconds cannot exceed 59' };
+        }
+        
+        return { hours, minutes, seconds, isValid: true, error: '' };
+      }
+    }
     
-    // Extract hours, minutes, and seconds
-    const hours = parseInt(paddedInput.slice(0, 2), 10);
-    const minutes = parseInt(paddedInput.slice(2, 4), 10);
-    const seconds = parseInt(paddedInput.slice(4, 6), 10);
+    // Handle legacy numeric input (backward compatibility)
+    const cleanInput = input.replace(/[^0-9]/g, '');
+    if (cleanInput) {
+      // Pad with leading zeros to 6 digits (HHmmss format)
+      const paddedInput = cleanInput.padStart(6, '0');
+      
+      // Extract hours, minutes, and seconds
+      const hours = parseInt(paddedInput.slice(0, 2), 10);
+      const minutes = parseInt(paddedInput.slice(2, 4), 10);
+      const seconds = parseInt(paddedInput.slice(4, 6), 10);
+      
+      // Validate ranges
+      if (hours > 23) {
+        return { hours: 0, minutes: 0, seconds: 0, isValid: false, error: 'Hours must be 0-23' };
+      }
+      if (minutes > 59) {
+        return { hours: 0, minutes: 0, seconds: 0, isValid: false, error: 'Minutes must be 0-59' };
+      }
+      if (seconds > 59) {
+        return { hours: 0, minutes: 0, seconds: 0, isValid: false, error: 'Seconds must be 0-59' };
+      }
+      if (hours === 0 && minutes === 0 && seconds === 0) {
+        return { hours: 0, minutes: 0, seconds: 0, isValid: false, error: 'Enter a positive duration' };
+      }
+      
+      return { hours, minutes, seconds, isValid: true, error: '' };
+    }
     
-    // Validate ranges
-    if (hours > 23) {
-      return { hours: 0, minutes: 0, seconds: 0, isValid: false, error: 'Hours must be 0-23' };
-    }
-    if (minutes > 59) {
-      return { hours: 0, minutes: 0, seconds: 0, isValid: false, error: 'Minutes must be 0-59' };
-    }
-    if (seconds > 59) {
-      return { hours: 0, minutes: 0, seconds: 0, isValid: false, error: 'Seconds must be 0-59' };
-    }
-    if (hours === 0 && minutes === 0 && seconds === 0) {
-      return { hours: 0, minutes: 0, seconds: 0, isValid: false, error: 'Enter a positive duration' };
-    }
-    
-    return { hours, minutes, seconds, isValid: true, error: '' };
+    return { hours: 0, minutes: 0, seconds: 0, isValid: false, error: 'Invalid format. Use HH:mm:ss' };
   }
 
 
@@ -308,7 +355,13 @@ export default function GardenOverview() {
   const [viewMode, setViewMode] = useState<'location' | 'zone'>('zone');
   const [smartRecommendations, setSmartRecommendations] = useState<{ plantName: string; recommendations: any[]; hasCompatibleZones: boolean } | null>(null);
   const [globalSmartMode, setGlobalSmartMode] = useState(false);
-  const [smartPlacementModal, setSmartPlacementModal] = useState<{ plant: PlantEntry; bookFile: string; recommendations: any[] } | null>(null);
+  const [smartPlacementModal, setSmartPlacementModal] = useState<{ 
+    plant: PlantEntry; 
+    bookFile: string; 
+    recommendations: any[];
+    optimal_emitter_analysis?: any;
+    emitterSizingMode: 'smart' | 'manual';
+  } | null>(null);
 
   const [showLocationForm, setShowLocationForm] = useState(false);
   const [locationName, setLocationName] = useState('');
@@ -977,24 +1030,28 @@ export default function GardenOverview() {
             setSmartPlacementModal({
               plant: plant,
               bookFile: file,
-              recommendations: analysis.recommendations || []
+              recommendations: analysis.recommendations || [],
+              optimal_emitter_analysis: analysis.optimal_emitter_analysis,
+              emitterSizingMode: 'smart'
             });
             
             // Auto-select the best match zone (first recommendation)
             if (analysis.recommendations && analysis.recommendations.length > 0) {
               const bestZone = analysis.recommendations[0];
+              const smartEmitterSize = analysis.optimal_emitter_analysis?.recommended_emitter?.toString() || '4';
               setModalData(prev => ({
                 ...prev,
                 quantity: '1',
-                emitterSize: '4',
+                emitterSize: smartEmitterSize,
                 zoneId: bestZone.zone_id.toString()
               }));
-    } else {
+            } else {
               // Set default values for smart placement (no zone auto-selection)
+              const smartEmitterSize = analysis.optimal_emitter_analysis?.recommended_emitter?.toString() || '4';
               setModalData(prev => ({
                 ...prev,
                 quantity: '1',
-                emitterSize: '4'
+                emitterSize: smartEmitterSize
               }));
             }
           } else if (!analysis.has_compatible_zones) {
@@ -1003,7 +1060,9 @@ export default function GardenOverview() {
             setSmartPlacementModal({
               plant: plant,
               bookFile: file,
-              recommendations: [] // Empty recommendations since no compatible zones
+              recommendations: [], // Empty recommendations since no compatible zones
+              optimal_emitter_analysis: undefined,
+              emitterSizingMode: 'smart'
             });
             
             // Set default values for smart placement
@@ -1299,10 +1358,10 @@ export default function GardenOverview() {
     
     console.log('Preferred time:', preferredTime);
     
-    // Create zone configuration
+    // Create zone configuration with same structure as original zones
     const zoneConfig = {
       zone_id: zoneId,
-      mode: 'active',
+      mode: 'manual', // Use 'manual' for consistency with original zones
       period: period,
       cycles: cycles,
       comment: '', // Leave blank for user to add zone comments
@@ -2293,7 +2352,7 @@ export default function GardenOverview() {
                     fontSize: '14px',
                     color: '#bdbdbd'
                   }}>
-                                            Enter time in HHMMSS format (e.g., 023000 for 2 hours 30 minutes)
+                                            Enter time in HH:mm:ss format (e.g., 02:30:00 for 2 hours 30 minutes)
                   </div>
                   <div style={{
                     display: 'flex',
@@ -2308,7 +2367,7 @@ export default function GardenOverview() {
                         setManualInput(inp => ({ ...inp, [manualTimerModal.zoneId]: val }));
                         setManualInputError(errs => ({ ...errs, [manualTimerModal.zoneId]: '' }));
                                 }}
-                                                    placeholder="HHMMSS"
+                                                    placeholder="HH:mm:ss"
                                 style={{
                         width: '100%',
                         padding: '12px 16px',
@@ -3259,6 +3318,16 @@ export default function GardenOverview() {
                   }}>
                     <p style={{ margin: 0, color: '#00bcd4', fontWeight: 600 }}>
                       💧 Emitter Size (GPH):
+                      {smartPlacementModal.optimal_emitter_analysis && (
+                        <span style={{
+                          color: '#00ff88',
+                          fontSize: '14px',
+                          fontWeight: 500,
+                          marginLeft: '8px'
+                        }}>
+                          (Smart: {smartPlacementModal.optimal_emitter_analysis.recommended_emitter} GPH)
+                        </span>
+                      )}
                     </p>
                     <div style={{
                       display: 'flex',
@@ -3266,35 +3335,40 @@ export default function GardenOverview() {
                       gap: '8px'
                     }}>
                       <span style={{
-                        color: '#666',
+                        color: smartPlacementModal.emitterSizingMode === 'smart' ? '#00bcd4' : '#666',
                         fontSize: '12px',
-                        fontWeight: 500
+                        fontWeight: smartPlacementModal.emitterSizingMode === 'smart' ? 600 : 500
                       }}>Smart</span>
-                      <div style={{
-                        width: '40px',
-                        height: '20px',
-                        background: '#2a3441',
-                        borderRadius: '10px',
-                        border: '1px solid #444',
-                        position: 'relative',
-                        cursor: 'not-allowed',
-                        opacity: 0.6
-                      }}>
+                      <div 
+                        style={{
+                          width: '40px',
+                          height: '20px',
+                          background: '#2a3441',
+                          borderRadius: '10px',
+                          border: '1px solid #444',
+                          position: 'relative',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => setSmartPlacementModal(prev => prev ? {
+                          ...prev,
+                          emitterSizingMode: prev.emitterSizingMode === 'smart' ? 'manual' : 'smart'
+                        } : null)}
+                      >
                         <div style={{
                           width: '16px',
                           height: '16px',
-                          background: '#666',
+                          background: smartPlacementModal.emitterSizingMode === 'smart' ? '#00bcd4' : '#666',
                           borderRadius: '50%',
                           position: 'absolute',
                           top: '1px',
-                          right: '1px',
+                          left: smartPlacementModal.emitterSizingMode === 'smart' ? '1px' : '23px',
                           transition: 'all 0.2s'
                         }} />
                       </div>
                       <span style={{
-                        color: '#00bcd4',
+                        color: smartPlacementModal.emitterSizingMode === 'manual' ? '#00bcd4' : '#666',
                         fontSize: '12px',
-                        fontWeight: 600
+                        fontWeight: smartPlacementModal.emitterSizingMode === 'manual' ? 600 : 500
                       }}>Manual</span>
                     </div>
                   </div>
@@ -3304,31 +3378,58 @@ export default function GardenOverview() {
                     gap: '8px',
                     marginBottom: '12px'
                   }}>
-                    {[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0].map(size => (
-                          <div
-                            key={size}
-                            onClick={() => setModalData(prev => ({ ...prev, emitterSize: size.toString() }))}
-                            style={{
-                              background: modalData.emitterSize === size.toString() ? '#00bcd4' : '#2a3441',
-                              color: modalData.emitterSize === size.toString() ? '#181f2a' : '#fff',
-                              borderRadius: '6px',
-                              padding: '12px',
-                              cursor: 'pointer',
-                              border: modalData.emitterSize === size.toString() ? '2px solid #00bcd4' : '1px solid #444',
-                              transition: 'all 0.2s',
-                              fontSize: '14px',
-                              fontWeight: modalData.emitterSize === size.toString() ? 'bold' : 'normal',
-                              width: '90px',
-                              height: '50px',
-                              textAlign: 'center',
+                    {[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0].map(size => {
+                      const isSelected = modalData.emitterSize === size.toString();
+                      const isSmartRecommended = smartPlacementModal.optimal_emitter_analysis && 
+                        smartPlacementModal.optimal_emitter_analysis.recommended_emitter === size;
+                      const isSmartMode = smartPlacementModal.emitterSizingMode === 'smart';
+                      
+                      return (
+                        <div
+                          key={size}
+                          onClick={() => setModalData(prev => ({ ...prev, emitterSize: size.toString() }))}
+                          style={{
+                            background: isSelected ? '#00bcd4' : (isSmartRecommended && isSmartMode ? '#00ff88' : '#2a3441'),
+                            color: isSelected ? '#181f2a' : (isSmartRecommended && isSmartMode ? '#181f2a' : '#fff'),
+                            borderRadius: '6px',
+                            padding: '12px',
+                            cursor: 'pointer',
+                            border: isSelected ? '2px solid #00bcd4' : (isSmartRecommended && isSmartMode ? '2px solid #00ff88' : '1px solid #444'),
+                            transition: 'all 0.2s',
+                            fontSize: '14px',
+                            fontWeight: (isSelected || (isSmartRecommended && isSmartMode)) ? 'bold' : 'normal',
+                            width: '90px',
+                            height: '50px',
+                            textAlign: 'center',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            position: 'relative'
+                          }}
+                        >
+                          {size} GPH
+                          {isSmartRecommended && isSmartMode && !isSelected && (
+                            <div style={{
+                              position: 'absolute',
+                              top: '-4px',
+                              right: '-4px',
+                              background: '#00ff88',
+                              color: '#181f2a',
+                              borderRadius: '50%',
+                              width: '16px',
+                              height: '16px',
+                              fontSize: '10px',
                               display: 'flex',
                               alignItems: 'center',
-                              justifyContent: 'center'
-                            }}
-                          >
-                            {size} GPH
-                          </div>
-                        ))}
+                              justifyContent: 'center',
+                              fontWeight: 'bold'
+                            }}>
+                              ✓
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                   <div style={{
                     display: 'flex',

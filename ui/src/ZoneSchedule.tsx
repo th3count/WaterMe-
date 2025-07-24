@@ -11,13 +11,33 @@ const PERIODS = [
 ];
 
 function defaultTime() {
-  return { value: '0600', start_time: '0600', duration: '010000' };
+  return { start_time: '06:00', duration: '00:20:00' };
 }
 
 function getTomorrow() {
   const d = new Date();
   d.setDate(d.getDate() + 1);
   return d.toISOString().slice(0, 10);
+}
+
+function formatDuration(duration: string): string {
+  if (!duration) return '00:20:00';
+  
+  // If already in HH:mm:ss format, return as is
+  if (duration.includes(':') && duration.length === 8) {
+    return duration;
+  }
+  
+  // Handle legacy HHmmss format (6 digits)
+  if (duration.length === 6 && !duration.includes(':')) {
+    const hours = duration.substring(0, 2);
+    const minutes = duration.substring(2, 4);
+    const seconds = duration.substring(4, 6);
+    return `${hours}:${minutes}:${seconds}`;
+  }
+  
+  // Default fallback
+  return '00:20:00';
 }
 
 export default function ZoneSchedule() {
@@ -106,6 +126,24 @@ export default function ZoneSchedule() {
     loadZoneData();
   }, []);
 
+  // Filter times array based on period type when selectedZone changes
+  useEffect(() => {
+    if (selectedZone && selectedZone.times) {
+      const shouldFilter = selectedZone.period !== 'D' && selectedZone.times.length > 1;
+      if (shouldFilter) {
+        console.log('Filtering times array for non-Daily period:', {
+          period: selectedZone.period,
+          originalLength: selectedZone.times.length,
+          keepingFirst: selectedZone.times[0]
+        });
+        setSelectedZone((prev: any) => ({
+          ...prev,
+          times: [prev.times[0] || defaultTime()]
+        }));
+      }
+    }
+  }, [selectedZone?.period, selectedZone?.times?.length]);
+
   const handleZoneChange = (idx: number, field: string, value: any) => {
     setZones(prev => prev.map((zone, i) => {
       if (i === idx) {
@@ -118,19 +156,29 @@ export default function ZoneSchedule() {
             updatedZone.cycles = newPeriod.maxCycles;
           }
           
-          // Ensure times array matches the new cycle count
+          // Adjust times array based on the new period type
           const currentTimes = updatedZone.times || [defaultTime()];
           let newTimes = [...currentTimes];
           
-          if (updatedZone.cycles > currentTimes.length) {
-            // Add more time slots
-            const additionalSlots = updatedZone.cycles - currentTimes.length;
-            for (let j = 0; j < additionalSlots; j++) {
-              newTimes.push(defaultTime());
+          if (value === 'D') {
+            // Daily periods: times array should match cycles
+            if (updatedZone.cycles > currentTimes.length) {
+              // Add more time slots
+              const additionalSlots = updatedZone.cycles - currentTimes.length;
+              for (let j = 0; j < additionalSlots; j++) {
+                newTimes.push(defaultTime());
+              }
+            } else if (updatedZone.cycles < currentTimes.length) {
+              // Remove excess time slots
+              newTimes = currentTimes.slice(0, updatedZone.cycles);
             }
-          } else if (updatedZone.cycles < currentTimes.length) {
-            // Remove excess time slots
-            newTimes = currentTimes.slice(0, updatedZone.cycles);
+          } else {
+            // Weekly/Monthly periods: always exactly 1 time slot
+            if (currentTimes.length === 0) {
+              newTimes = [defaultTime()];
+            } else {
+              newTimes = [currentTimes[0]]; // Keep only the first time
+            }
           }
           
           updatedZone.times = newTimes;
@@ -150,22 +198,30 @@ export default function ZoneSchedule() {
         const maxCycles = currentPeriod ? currentPeriod.maxCycles : 10;
         const enforcedValue = Math.min(value, maxCycles);
         
-        // Ensure times array matches the number of cycles
-        const currentTimes = zone.times || [defaultTime()];
-        let newTimes = [...currentTimes];
-        
-        if (enforcedValue > currentTimes.length) {
-          // Add more time slots
-          const additionalSlots = enforcedValue - currentTimes.length;
-          for (let j = 0; j < additionalSlots; j++) {
-            newTimes.push(defaultTime());
+        // Only adjust time slots for Daily periods
+        // Weekly and Monthly periods always have 1 time slot regardless of cycles
+        if (zone.period === 'D') {
+          // Ensure times array matches the number of cycles for Daily periods
+          const currentTimes = zone.times || [defaultTime()];
+          let newTimes = [...currentTimes];
+          
+          if (enforcedValue > currentTimes.length) {
+            // Add more time slots
+            const additionalSlots = enforcedValue - currentTimes.length;
+            for (let j = 0; j < additionalSlots; j++) {
+              newTimes.push(defaultTime());
+            }
+          } else if (enforcedValue < currentTimes.length) {
+            // Remove excess time slots
+            newTimes = currentTimes.slice(0, enforcedValue);
           }
-        } else if (enforcedValue < currentTimes.length) {
-          // Remove excess time slots
-          newTimes = currentTimes.slice(0, enforcedValue);
+          
+          return { ...zone, cycles: enforcedValue, times: newTimes };
+        } else {
+          // For Weekly and Monthly periods, just update cycles, keep 1 time slot
+          const currentTimes = zone.times || [defaultTime()];
+          return { ...zone, cycles: enforcedValue, times: [currentTimes[0] || defaultTime()] };
         }
-        
-        return { ...zone, cycles: enforcedValue, times: newTimes };
       }
       return zone;
     }));
@@ -179,7 +235,7 @@ export default function ZoneSchedule() {
           if (duration !== undefined) {
             newTimes[timeIdx] = { ...newTimes[timeIdx], duration };
           } else if (value !== undefined) {
-            newTimes[timeIdx] = { ...newTimes[timeIdx], start_time: value, value };
+            newTimes[timeIdx] = { ...newTimes[timeIdx], start_time: value };
           }
         }
         return { ...zone, times: newTimes };
@@ -194,7 +250,7 @@ export default function ZoneSchedule() {
         if (duration !== undefined) {
           return { ...zone, time: { ...zone.time, duration } };
         } else if (value !== undefined) {
-          return { ...zone, time: { ...zone.time, start_time: value, value } };
+          return { ...zone, time: { ...zone.time, start_time: value } };
         }
       }
       return zone;
@@ -258,6 +314,18 @@ export default function ZoneSchedule() {
           throw new Error(`Failed to save schedule: ${response.status} - ${errorText}`);
         }
         
+        // Reload zones data to reflect the changes
+        try {
+          const zonesResponse = await fetch(`${getApiBaseUrl()}/api/schedule`);
+          if (zonesResponse.ok) {
+            const zonesData = await zonesResponse.json();
+            setZones(zonesData);
+            console.log('Reloaded zones data after save:', zonesData);
+          }
+        } catch (error) {
+          console.error('Failed to reload zones after save:', error);
+        }
+
         // Show success message and close modal
         setError(''); // Clear any previous errors
         setSuccess('Zone configuration saved successfully!');
@@ -458,70 +526,98 @@ export default function ZoneSchedule() {
                       newScheduleMode = zone.mode;
                     }
                     
+                    // For disabled zones that have been purged, reconstruct all default values
+                    let updatedZone = { ...zone };
+                    if (zone.mode === 'disabled') {
+                      // Reconstruct a complete zone with all default values
+                      updatedZone = {
+                        zone_id: zone.zone_id,
+                        mode: 'disabled', // Will be changed to 'active' below
+                        period: PERIODS[0].code, // Default to Daily
+                        cycles: 1,
+                        times: [defaultTime()],
+                        startDay: getTomorrow(),
+                        comment: '',
+                        ...zone // Keep any existing properties
+                      };
+                      console.log('Reconstructing purged disabled zone with defaults:', updatedZone);
+                    } else {
+                      // For non-disabled zones, ensure cycles property exists with default value of 1
+                      if (!updatedZone.cycles) {
+                        updatedZone.cycles = 1;
+                      }
+                    }
+                    
                     // Ensure times array exists and is properly sized
-                    let newTimes = [...(zone.times || [])];
+                    let newTimes = [...(updatedZone.times || [])];
                     
                     // If zone has old 'time' object structure, convert it to 'times' array
-                    if (zone.time && (!zone.times || zone.times.length === 0)) {
-                      newTimes = [zone.time];
-                      console.log('Converting old time structure to times array:', zone.time);
+                    if (updatedZone.time && (!updatedZone.times || updatedZone.times.length === 0)) {
+                      newTimes = [updatedZone.time];
+                      console.log('Converting old time structure to times array:', updatedZone.time);
+                    }
+                    
+                    // If times array is empty, initialize it with default time
+                    if (newTimes.length === 0) {
+                      newTimes = [defaultTime()];
+                      console.log('Initializing empty times array with default time');
                     }
                     
                     console.log('Zone data:', {
-                      zone_id: zone.zone_id,
-                      period: zone.period,
-                      cycles: zone.cycles,
-                      mode: zone.mode,
-                      hasTime: !!zone.time,
-                      hasTimes: !!zone.times,
-                      timesLength: zone.times?.length || 0,
+                      zone_id: updatedZone.zone_id,
+                      period: updatedZone.period,
+                      cycles: updatedZone.cycles,
+                      mode: updatedZone.mode,
+                      hasTime: !!updatedZone.time,
+                      hasTimes: !!updatedZone.times,
+                      timesLength: updatedZone.times?.length || 0,
                       newTimesLength: newTimes.length
                     });
                     
+                    // Ensure times array is properly initialized based on period type
+                    let finalTimes = newTimes;
                     if (newMode === 'active' && newScheduleMode === 'manual') {
-                      if (zone.period === 'daily') {
-                        const targetTimesLength = zone.cycles;
-                        if (newTimes.length !== targetTimesLength) {
-                          if (targetTimesLength > newTimes.length) {
-                            // Add more times
-                            for (let i = newTimes.length; i < targetTimesLength; i++) {
-                              newTimes.push({ start_time: '', duration: '' });
+                      if (updatedZone.period === 'D') {
+                        // Daily periods: times array should match cycles
+                        const expectedTimes = updatedZone.cycles;
+                        if (finalTimes.length !== expectedTimes) {
+                          if (expectedTimes > finalTimes.length) {
+                            // Add more time slots while preserving existing ones
+                            for (let i = finalTimes.length; i < expectedTimes; i++) {
+                              finalTimes.push(defaultTime());
                             }
                           } else {
-                            // Remove excess times
-                            newTimes = newTimes.slice(0, targetTimesLength);
+                            // Remove excess time slots
+                            finalTimes = finalTimes.slice(0, expectedTimes);
                           }
                         }
                       } else {
-                        // Weekly/Monthly periods: must have exactly 1 slot
-                        if (newTimes.length !== 1) {
-                          if (newTimes.length === 0) {
-                            newTimes = [{ start_time: '', duration: '' }];
+                        // Weekly/Monthly periods: always exactly 1 time slot
+                        if (finalTimes.length !== 1) {
+                          if (finalTimes.length === 0) {
+                            finalTimes = [defaultTime()];
                           } else {
-                            newTimes = [newTimes[0]]; // Keep only the first time
+                            finalTimes = [finalTimes[0]]; // Keep only the first time
                           }
                         }
                       }
                     }
                     
-                    // Ensure times array is properly initialized for daily zones
-                    let finalTimes = newTimes;
-                    if (newMode === 'active' && newScheduleMode === 'manual' && zone.period === 'daily') {
-                      const expectedTimes = zone.cycles;
-                      if (finalTimes.length !== expectedTimes) {
-                        if (expectedTimes > finalTimes.length) {
-                          // Add more time slots while preserving existing ones
-                          for (let i = finalTimes.length; i < expectedTimes; i++) {
-                            finalTimes.push({ start_time: '', duration: '' });
-                          }
-                        } else {
-                          // Remove excess time slots
-                          finalTimes = finalTimes.slice(0, expectedTimes);
-                        }
-                      }
-                    }
+                    console.log('Final zone data being set:', {
+                      mode: newMode,
+                      times: finalTimes,
+                      timesLength: finalTimes.length,
+                      cycles: updatedZone.cycles
+                    });
                     
-                    setSelectedZone({ ...zone, mode: newMode, times: finalTimes, originalIndex: idx });
+                    setSelectedZone({ 
+                      ...updatedZone, 
+                      mode: newMode, 
+                      times: finalTimes, 
+                      originalIndex: idx,
+                      showTimePicker: null,
+                      showDurationPicker: null
+                    });
                     setScheduleMode(newScheduleMode);
                     setShowZoneModal(true);
                   }}
@@ -578,7 +674,7 @@ export default function ZoneSchedule() {
                                        zone.mode === 'disabled' ? '#666' : 
                                        zone.mode === 'active' ? '#4caf50' : '#666'}`
                     }}>
-                      {pumpIndex === zone.zone_id - 1 ? 'PUMP' : (zone.mode === 'active' ? 'Active' : 'Disabled')}
+                      {pumpIndex === zone.zone_id - 1 ? 'PUMP' : (zone.mode === 'disabled' ? 'Disabled' : 'Enabled')}
                     </span>
                   </div>
 
@@ -590,7 +686,7 @@ export default function ZoneSchedule() {
                     GPIO: {gpioPins[zone.zone_id - 1] || 'N/A'}
                   </div>
 
-                  {pumpIndex !== zone.zone_id - 1 && (
+                  {pumpIndex !== zone.zone_id - 1 && zone.mode !== 'disabled' && (
                     <div style={{
                       color: '#bdbdbd',
                       fontSize: '14px',
@@ -798,7 +894,7 @@ export default function ZoneSchedule() {
                             if (newCycles > newTimes.length) {
                               // Add more time slots
                               for (let j = newTimes.length; j < newCycles; j++) {
-                                newTimes.push({ start_time: '', duration: '' });
+                                newTimes.push(defaultTime());
                               }
                             } else {
                               // Remove excess time slots
@@ -810,7 +906,7 @@ export default function ZoneSchedule() {
                           if (newPeriodObj && newCycles > newPeriodObj.maxCycles) {
                             newCycles = newPeriodObj.maxCycles;
                           }
-                          newTimes = [currentTimes[0] || { start_time: '', duration: '' }];
+                          newTimes = [currentTimes[0] || defaultTime()];
                         }
                         
                         setSelectedZone({ 
@@ -880,7 +976,7 @@ export default function ZoneSchedule() {
                           // Add more time slots
                           const additionalSlots = newCycles - currentTimes.length;
                           for (let j = 0; j < additionalSlots; j++) {
-                            newTimes.push({ start_time: '', duration: '' });
+                            newTimes.push(defaultTime());
                           }
                         } else if (newCycles < currentTimes.length) {
                           // Remove excess time slots
@@ -925,7 +1021,7 @@ export default function ZoneSchedule() {
                         gap: '8px'
                       }}>
                         <span>⏰</span>
-                        Schedule Times:
+                        Schedule and Times:
                       </div>
                       
                       {/* Schedule Mode Slider */}
@@ -979,8 +1075,24 @@ export default function ZoneSchedule() {
                         flexDirection: 'column',
                         gap: '8px'
                       }}>
-                        {/* Always use times array for consistency */}
-                        {(selectedZone.times || []).map((time: any, timeIdx: number) => (
+                        {/* Debug info */}
+                        {console.log('Schedule Times Debug:', {
+                          mode: selectedZone.mode,
+                          scheduleMode,
+                          times: selectedZone.times,
+                          timesLength: selectedZone.times?.length || 0
+                        })}
+                        {/* Filter times array based on period type */}
+                        {(selectedZone.times || [])
+                          .filter((_: any, timeIdx: number) => {
+                            // For Daily periods, show all time slots
+                            if (selectedZone.period === 'D') {
+                              return timeIdx < selectedZone.cycles;
+                            }
+                            // For Weekly/Monthly periods, only show the first time slot
+                            return timeIdx === 0;
+                          })
+                          .map((time: any, timeIdx: number) => (
                           <div key={timeIdx} style={{
                             display: 'flex',
                             gap: '8px',
@@ -991,20 +1103,19 @@ export default function ZoneSchedule() {
                               fontSize: '12px',
                               minWidth: '60px'
                             }}>
-                              {selectedZone.period === 'daily' ? `Time ${timeIdx + 1}:` : 'Time:'}
+                              {selectedZone.period === 'D' ? `Time ${timeIdx + 1}:` : 'Time:'}
                             </div>
                                                                                         <div style={{ position: 'relative' }}>
                                 <input
                                   type="text"
                                   placeholder="Time (HH:MM or SUNRISE/SUNSET)"
-                                  value={time.start_time || time.value || ''}
+                                  value={time.start_time || ''}
                                   onChange={(e) => {
                                     const newTimes = [...(selectedZone.times || [])];
-                                    newTimes[timeIdx] = { 
-                                      ...newTimes[timeIdx], 
-                                      start_time: e.target.value, 
-                                      value: e.target.value 
-                                    };
+                                                                          newTimes[timeIdx] = { 
+                                        ...newTimes[timeIdx], 
+                                        start_time: e.target.value
+                                      };
                                     setSelectedZone({ ...selectedZone, times: newTimes });
                                   }}
                                   onFocus={() => {
@@ -1397,31 +1508,229 @@ export default function ZoneSchedule() {
                                   {(time.start_time || time.value).toUpperCase() === 'SUNRISE' || 
                                    (time.start_time || time.value).toUpperCase() === 'SUNSET' ||
                                    (time.start_time || time.value).toUpperCase() === 'ZENITH' ? 
-                                   '🌅 Solar time' : '⏰ Clock time'}
+                                   '🌅 Solar time' : '⏰ Duration'}
                                 </div>
                               )}
-                            <input
-                              type="number"
-                              placeholder="HHMM"
-                              value={time.duration || ''}
-                              onChange={(e) => {
-                                const newTimes = [...(selectedZone.times || [])];
-                                newTimes[timeIdx] = { 
-                                  ...newTimes[timeIdx], 
-                                  duration: e.target.value 
-                                };
-                                setSelectedZone({ ...selectedZone, times: newTimes });
-                              }}
-                              style={{
-                                padding: '8px 12px',
-                                borderRadius: '6px',
-                                border: '1px solid #1a1f2a',
-                                background: '#232b3b',
-                                color: '#f4f4f4',
-                                fontSize: '14px',
-                                width: '120px'
-                              }}
-                            />
+                            <div style={{ position: 'relative' }}>
+                              <input
+                                type="text"
+                                placeholder="Duration"
+                                value={formatDuration(time.duration || '00:20:00')}
+                                onClick={() => {
+                                  setSelectedZone((prev: any) => ({
+                                    ...prev,
+                                    showDurationPicker: timeIdx
+                                  }));
+                                }}
+                                readOnly
+                                style={{
+                                  padding: '8px 12px',
+                                  borderRadius: '6px',
+                                  border: '1px solid #1a1f2a',
+                                  background: '#232b3b',
+                                  color: '#f4f4f4',
+                                  fontSize: '14px',
+                                  width: '120px',
+                                  cursor: 'pointer'
+                                }}
+                              />
+                              
+                              {/* Duration Picker Modal */}
+                              {selectedZone.showDurationPicker === timeIdx && (
+                                <div style={{
+                                  position: 'absolute',
+                                  top: '100%',
+                                  right: 0,
+                                  zIndex: 1000,
+                                  background: '#2a3441',
+                                  borderRadius: '8px',
+                                  border: '1px solid #444',
+                                  padding: '16px',
+                                  minWidth: '280px',
+                                  boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+                                }}>
+                                  <div style={{
+                                    fontSize: '14px',
+                                    color: '#00bcd4',
+                                    fontWeight: 600,
+                                    marginBottom: '12px',
+                                    textAlign: 'center'
+                                  }}>
+                                    Set Duration
+                                  </div>
+                                  
+                                  <div style={{
+                                    display: 'flex',
+                                    gap: '12px',
+                                    justifyContent: 'center'
+                                  }}>
+                                    {/* Hours */}
+                                    <div style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}>
+                                      <div style={{
+                                        fontSize: '12px',
+                                        color: '#bdbdbd',
+                                        fontWeight: 600
+                                      }}>
+                                        Hours
+                                      </div>
+                                      <select
+                                        value={parseInt(formatDuration(time.duration || '00:20:00').substring(0, 2))}
+                                        onChange={(e) => {
+                                          const hours = e.target.value.padStart(2, '0');
+                                          const currentDuration = formatDuration(time.duration || '00:20:00');
+                                          const minutes = currentDuration.substring(3, 5);
+                                          const seconds = currentDuration.substring(6, 8);
+                                          const newDuration = `${hours}:${minutes}:${seconds}`;
+                                          
+                                          const newTimes = [...(selectedZone.times || [])];
+                                          newTimes[timeIdx] = { 
+                                            ...newTimes[timeIdx], 
+                                            duration: newDuration
+                                          };
+                                          setSelectedZone({ ...selectedZone, times: newTimes });
+                                        }}
+                                        style={{
+                                          padding: '8px 12px',
+                                          borderRadius: '6px',
+                                          border: '1px solid #1a1f2a',
+                                          background: '#232b3b',
+                                          color: '#f4f4f4',
+                                          fontSize: '14px',
+                                          width: '80px'
+                                        }}
+                                      >
+                                        {Array.from({ length: 24 }, (_, i) => (
+                                          <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                    
+                                    {/* Minutes */}
+                                    <div style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}>
+                                      <div style={{
+                                        fontSize: '12px',
+                                        color: '#bdbdbd',
+                                        fontWeight: 600
+                                      }}>
+                                        Minutes
+                                      </div>
+                                      <select
+                                        value={parseInt(formatDuration(time.duration || '00:20:00').substring(3, 5))}
+                                        onChange={(e) => {
+                                          const currentDuration = formatDuration(time.duration || '00:20:00');
+                                          const hours = currentDuration.substring(0, 2);
+                                          const minutes = e.target.value.padStart(2, '0');
+                                          const seconds = currentDuration.substring(6, 8);
+                                          const newDuration = `${hours}:${minutes}:${seconds}`;
+                                          
+                                          const newTimes = [...(selectedZone.times || [])];
+                                          newTimes[timeIdx] = { 
+                                            ...newTimes[timeIdx], 
+                                            duration: newDuration
+                                          };
+                                          setSelectedZone({ ...selectedZone, times: newTimes });
+                                        }}
+                                        style={{
+                                          padding: '8px 12px',
+                                          borderRadius: '6px',
+                                          border: '1px solid #1a1f2a',
+                                          background: '#232b3b',
+                                          color: '#f4f4f4',
+                                          fontSize: '14px',
+                                          width: '80px'
+                                        }}
+                                      >
+                                        {Array.from({ length: 60 }, (_, i) => (
+                                          <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                    
+                                    {/* Seconds */}
+                                    <div style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}>
+                                      <div style={{
+                                        fontSize: '12px',
+                                        color: '#bdbdbd',
+                                        fontWeight: 600
+                                      }}>
+                                        Seconds
+                                      </div>
+                                      <select
+                                        value={parseInt(formatDuration(time.duration || '00:20:00').substring(6, 8))}
+                                        onChange={(e) => {
+                                          const currentDuration = formatDuration(time.duration || '00:20:00');
+                                          const hours = currentDuration.substring(0, 2);
+                                          const minutes = currentDuration.substring(3, 5);
+                                          const seconds = e.target.value.padStart(2, '0');
+                                          const newDuration = `${hours}:${minutes}:${seconds}`;
+                                          
+                                          const newTimes = [...(selectedZone.times || [])];
+                                          newTimes[timeIdx] = { 
+                                            ...newTimes[timeIdx], 
+                                            duration: newDuration
+                                          };
+                                          setSelectedZone({ ...selectedZone, times: newTimes });
+                                        }}
+                                        style={{
+                                          padding: '8px 12px',
+                                          borderRadius: '6px',
+                                          border: '1px solid #1a1f2a',
+                                          background: '#232b3b',
+                                          color: '#f4f4f4',
+                                          fontSize: '14px',
+                                          width: '80px'
+                                        }}
+                                      >
+                                        {Array.from({ length: 60 }, (_, i) => (
+                                          <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                  </div>
+                                  
+                                  <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    marginTop: '12px'
+                                  }}>
+                                    <button
+                                      onClick={() => {
+                                        setSelectedZone((prev: any) => ({
+                                          ...prev,
+                                          showDurationPicker: null
+                                        }));
+                                      }}
+                                      style={{
+                                        padding: '8px 16px',
+                                        borderRadius: '6px',
+                                        border: '1px solid #00bcd4',
+                                        background: 'transparent',
+                                        color: '#00bcd4',
+                                        fontSize: '14px',
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      Done
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>

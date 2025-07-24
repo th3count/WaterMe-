@@ -1085,7 +1085,11 @@ def save_schedule():
         # Reload the scheduler's cached schedule data
         from core.scheduler import scheduler
         scheduler.reload_schedule()
-        log_event(user_logger, 'INFO', f'Schedule saved and reloaded', zone_count=len(schedule_dict))
+        
+        # Reload the plant manager's schedule data
+        plant_manager._load_schedule()
+        
+        log_event(user_logger, 'INFO', f'Schedule saved and caches reloaded', zone_count=len(schedule_dict))
         return jsonify({'status': 'success'})
     else:
         log_event(error_logger, 'ERROR', f'Schedule save failed - save error', zone_count=len(schedule_dict))
@@ -1348,17 +1352,18 @@ def get_map():
 
 @app.route('/api/map/<instance_id>/reassign', methods=['POST'])
 def reassign_plant(instance_id):
-    """Reassign a plant instance to a new location"""
+    """Reassign a plant instance to a new location and optionally a new zone"""
     try:
         data = request.json
         location_id = data.get('location_id')
+        zone_id = data.get('zone_id')  # Optional zone_id parameter
         
         if location_id is None:
             log_event(plants_logger, 'WARN', f'Plant reassignment failed - missing location_id', instance_id=instance_id)
             return jsonify({'error': 'location_id is required'}), 400
         
-        # Use PlantManager to reassign plant
-        success, message = plant_manager.reassign_plant(instance_id, location_id)
+        # Use PlantManager to reassign plant (now supports zone_id too)
+        success, message = plant_manager.reassign_plant(instance_id, location_id, zone_id)
         
         if success:
             return jsonify({'status': 'success', 'message': message})

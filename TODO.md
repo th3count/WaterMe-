@@ -82,6 +82,7 @@
 - [ ] Health check: Zone scheduling conflicts detection
 - [ ] Dynamic zone start times
 - [ ] Dynamic zone run times (duration)
+- [ ] Refactor map.json to move common_name into comments field (cleanup human-readable data)
 
 > **Note:** All other smart features (analytics, notifications, plant health, etc.) are deferred to later versions.
 

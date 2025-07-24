@@ -70,8 +70,15 @@ export default function Sidebar() {
 
         // Check for orphaned plants
         const orphanedPlants = Object.entries(map).filter(([instanceId, plant]: [string, any]) => {
-          if (!plant || !plant.location_id) return false;
-          return !locations.some((loc: any) => loc.location_id === plant.location_id);
+          if (!plant) return false;
+          
+          // Check for missing or invalid location_id
+          const hasInvalidLocation = !plant.location_id || !locations.some((loc: any) => loc.location_id === plant.location_id);
+          
+          // Check for missing zone_id (critical state)
+          const hasMissingZone = !plant.zone_id;
+          
+          return hasInvalidLocation || hasMissingZone;
         });
 
         // Check if any orphaned plants are not ignored

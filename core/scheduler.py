@@ -546,7 +546,7 @@ class WateringScheduler:
                     
                     # Check each scheduled time - limit to 5 events per zone
                     for event_idx, event in enumerate(times[:5]):
-                        start_time_code = event.get('start_time') or event.get('value')  # Support both old and new format
+                        start_time_code = event.get('start_time')
                         duration_str = event.get('duration', '000100')
                         print(f"Debug:   Event {event_idx+1} - code: {start_time_code}, duration: {duration_str}")
                         
@@ -743,18 +743,36 @@ class WateringScheduler:
             return {}
     
     def _parse_duration(self, duration_str: str) -> timedelta:
-        """Parse duration string into timedelta"""
-        if len(duration_str) == 6:
-            h = int(duration_str[:2])
-            m = int(duration_str[2:4])
-            s = int(duration_str[4:])
-            return timedelta(hours=h, minutes=m, seconds=s)
-        elif len(duration_str) == 4:
-            m = int(duration_str[:2])
-            s = int(duration_str[2:])
-            return timedelta(minutes=m, seconds=s)
-        else:
-            return timedelta(minutes=1)
+        """Parse HH:mm:ss or legacy HHmmss duration string into timedelta"""
+        if not duration_str:
+            return timedelta(minutes=20)  # Default 20 minutes
+        
+        try:
+            # Handle new HH:mm:ss format
+            if ':' in duration_str and len(duration_str) == 8:
+                parts = duration_str.split(':')
+                if len(parts) == 3:
+                    h = int(parts[0])
+                    m = int(parts[1])
+                    s = int(parts[2])
+                    return timedelta(hours=h, minutes=m, seconds=s)
+            
+            # Handle legacy HHmmss format (6 digits)
+            elif len(duration_str) == 6 and duration_str.isdigit():
+                h = int(duration_str[:2])
+                m = int(duration_str[2:4])
+                s = int(duration_str[4:])
+                return timedelta(hours=h, minutes=m, seconds=s)
+            
+            # Handle legacy HHmm format (4 digits)
+            elif len(duration_str) == 4 and duration_str.isdigit():
+                m = int(duration_str[:2])
+                s = int(duration_str[2:])
+                return timedelta(minutes=m, seconds=s)
+            
+            return timedelta(minutes=20)  # Default 20 minutes
+        except ValueError:
+            return timedelta(minutes=20)  # Default 20 minutes
     
     # =============================================================================
     # EXISTING TIMER MANAGEMENT METHODS (Updated)
@@ -1016,7 +1034,7 @@ class WateringScheduler:
                 
                 # Check each scheduled time
                 for event in times:
-                    start_time_code = event.get('start_time') or event.get('value')  # Support both old and new format
+                    start_time_code = event.get('start_time')
                     duration_str = event.get('duration', '000100')
                     
                     # Resolve start_time

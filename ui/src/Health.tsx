@@ -74,20 +74,32 @@ export default function Health() {
   
 
   
-  // Smart placement modal state (same as Garden page)
-  const [smartPlacementModal, setSmartPlacementModal] = useState<{ plant: any; bookFile: string; recommendations: any[] } | null>(null);
+  // Smart placement modal state (adapted from Garden page for reassignment)
+  const [reassignmentModal, setReassignmentModal] = useState<{ plant: any; bookFile: string; recommendations: any[] } | null>(null);
+  const [modalData, setModalData] = useState({
+    quantity: '',
+    emitterSize: '',
+    zoneId: '',
+    locationId: '',
+    comments: ''
+  });
   const [showLocationForm, setShowLocationForm] = useState(false);
   const [locationName, setLocationName] = useState('');
   const [locationDescription, setLocationDescription] = useState('');
   const [selectedLocationZones, setSelectedLocationZones] = useState<number[]>([]);
   const [savingLocation, setSavingLocation] = useState(false);
   const [zoneSelectionMode, setZoneSelectionMode] = useState<'smart' | 'manual'>('smart');
+  const [zones, setZones] = useState<any[]>([]);
 
   useEffect(() => {
-    // Load locations and map data
-    fetch(`${getApiBaseUrl()}/api/locations`)
-      .then(res => res.json())
-      .then(data => setLocations(data))
+    // Load locations, map data, and zones
+    Promise.all([
+      fetch(`${getApiBaseUrl()}/api/locations`).then(res => res.json()),
+      fetch(`${getApiBaseUrl()}/api/schedule`).then(res => res.json())
+    ]).then(([locationsData, zonesData]) => {
+      setLocations(locationsData);
+      setZones(zonesData);
+    })
       .catch(() => setLocations([]));
 
     fetch(`${getApiBaseUrl()}/api/map`)
@@ -143,18 +155,26 @@ export default function Health() {
   useEffect(() => {
     if (locations.length === 0 || Object.keys(map).length === 0) return;
     
-    // Check for orphaned plants
+    // Check for orphaned plants (both location and zone issues)
     const orphaned = Object.entries(map).filter(([instanceId, plant]: [string, any]) => {
-      if (!plant || !plant.location_id) return false;
-      // Check if the location_id exists in locations
-      return !locations.some(loc => loc.location_id === plant.location_id);
+      if (!plant) return false;
+      
+      // Check for missing or invalid location_id
+      const hasInvalidLocation = !plant.location_id || !locations.some(loc => loc.location_id === plant.location_id);
+      
+      // Check for missing zone_id (critical state)
+      const hasMissingZone = !plant.zone_id;
+      
+      return hasInvalidLocation || hasMissingZone;
     }).map(([instanceId, plant]: [string, any]) => ({ 
       instanceId, 
       plant_id: plant.plant_id, 
       library_book: plant.library_book,
       location_id: plant.location_id, 
       zone_id: plant.zone_id, 
-      quantity: plant.quantity 
+      quantity: plant.quantity,
+      common_name: plant.common_name, // Include common_name for display
+      issue_type: !plant.zone_id ? 'missing_zone' : 'invalid_location' // Track the type of issue
     }));
     setOrphanedPlants(orphaned);
   }, [locations, map]);
@@ -220,45 +240,14 @@ export default function Health() {
 
   // Helper function to get common name
   const getCommonName = (libraryBook: string, plantId: number) => {
-    return plantNames[libraryBook]?.[plantId] || `Plant ${plantId}`;
-  };
-
-  // Smart placement functions (same as Garden page)
-  const handleSmartPlacementConfirm = async (selectedZoneId: number, selectedLocationId: number) => {
-    if (!smartPlacementModal) return;
-    
-    try {
-      const response = await fetch(`${getApiBaseUrl()}/api/map/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          plant_id: smartPlacementModal.plant.plant_id,
-          library_book: smartPlacementModal.bookFile,
-          quantity: 1, // Default quantity for reassignment
-          emitter_size: 4, // Default emitter size for reassignment
-          zone_id: selectedZoneId,
-          location_id: selectedLocationId,
-          comments: `Reassigned from orphaned plant (Instance ${smartPlacementModal.plant.instanceId})`
-        })
-      });
-
-      if (response.ok) {
-        // Close modal and reload data
-        setSmartPlacementModal(null);
-        // Reload orphaned plants
-        const alertsResponse = await fetch(`${getApiBaseUrl()}/api/health/alerts`);
-        const alertsData = await alertsResponse.json();
-        setOrphanedPlants(alertsData.orphaned_plants || []);
-        setSystemStatus(alertsData.orphaned_plants?.length > 0 ? 'warning' : 'good');
-      } else {
-        console.error('Failed to reassign plant:', response.status);
-        alert('Failed to reassign plant. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error reassigning plant:', error);
-      alert('Error reassigning plant. Please try again.');
+    const result = plantNames[libraryBook]?.[plantId];
+    if (!result) {
+      console.log(`Plant lookup failed: ${libraryBook}[${plantId}] - Available:`, Object.keys(plantNames));
     }
+    return result || `Plant ${plantId}`;
   };
+
+
 
   const handleSaveLocation = async () => {
     if (!locationName.trim()) {
@@ -307,6 +296,53 @@ export default function Health() {
         ? prev.filter(id => id !== zoneId)
         : [...prev, zoneId]
     );
+  };
+
+  // Plant reassignment functions (adapted from Garden page)
+  const handleReassignmentConfirm = async () => {
+    if (!reassignmentModal || !modalData.zoneId || !modalData.locationId) return;
+    
+    try {
+      // Use the reassignment API to update the existing plant
+      const response = await fetch(`${getApiBaseUrl()}/api/map/${reassignmentModal.plant.instanceId}/reassign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          location_id: parseInt(modalData.locationId),
+          zone_id: parseInt(modalData.zoneId)
+        })
+      });
+
+      if (response.ok) {
+        // Close modal and reload data
+        setReassignmentModal(null);
+        setModalData({ quantity: '', emitterSize: '', zoneId: '', locationId: '', comments: '' });
+        
+        // Reload map data to refresh orphaned plants list
+        const mapResponse = await fetch(`${getApiBaseUrl()}/api/map`);
+        const mapData = await mapResponse.json();
+        setMap(mapData);
+        
+        // Reload locations in case they changed
+        const locationsResponse = await fetch(`${getApiBaseUrl()}/api/locations`);
+        const locationsData = await locationsResponse.json();
+        setLocations(locationsData);
+        
+        alert('Plant reassigned successfully!');
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to reassign plant:', response.status, errorText);
+        alert(`Failed to reassign plant: ${errorText}`);
+      }
+    } catch (error) {
+      console.error('Error reassigning plant:', error);
+      alert('Error reassigning plant. Please try again.');
+    }
+  };
+
+  const handleModalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setModalData(prev => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -626,56 +662,126 @@ export default function Health() {
                     .filter(plant => !ignoredAlerts.has(`orphaned_plant-${plant.instanceId}`))
                     .map((plant, index) => (
                     <div key={plant.instanceId} style={{
-                      padding: '8px 12px',
-                      background: '#232b3b',
-                      borderRadius: '6px',
-                      fontSize: '13px',
-                      color: '#f4f4f4',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
+                      background: plant.issue_type === 'missing_zone' ? '#2d1b1b' : '#2a2b1b', // Different colors for different issues
+                      borderRadius: '8px',
+                      padding: '16px',
+                      border: plant.issue_type === 'missing_zone' ? '2px solid #f44336' : '2px solid #FF9800', // Red for critical, orange for warning
+                      marginBottom: '12px'
                     }}>
-                      <div>
-                        <strong>{getCommonName(plant.library_book, plant.plant_id)}</strong> - 
-                        Zone: {plant.zone_id}, Qty: {plant.quantity}
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        marginBottom: '12px'
+                      }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{
+                            color: plant.issue_type === 'missing_zone' ? '#f44336' : '#FF9800',
+                            fontWeight: 600,
+                            fontSize: '16px',
+                            marginBottom: '4px'
+                          }}>
+                            {getCommonName(plant.library_book, plant.plant_id) || `Plant ${plant.plant_id}`}
+                          </div>
+                          <div style={{
+                            color: '#bdbdbd',
+                            fontSize: '14px',
+                            marginBottom: '8px'
+                          }}>
+                            {plant.issue_type === 'missing_zone' ? (
+                              <>
+                                <span style={{ color: '#f44336', fontWeight: 'bold' }}>⚠ CRITICAL:</span> No zone assigned - plant cannot be watered
+                              </>
+                            ) : (
+                              <>Zone: {plant.zone_id || 'None'}, Qty: {plant.quantity}</>
+                            )}
+                          </div>
+                          {plant.issue_type === 'invalid_location' && (
+                            <div style={{
+                              color: '#FF9800',
+                              fontSize: '13px',
+                              fontStyle: 'italic'
+                            }}>
+                              Location {plant.location_id} no longer exists
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                         <button
                           onClick={async () => {
-                            // Get smart recommendations for this plant
+                            // Handle plants with missing zones differently
+                            if (plant.issue_type === 'missing_zone') {
+                              alert('This plant has no zone assigned and needs to be manually reassigned from the Garden Overview page where you can select both location and zone.');
+                              return;
+                            }
+                            
+                            // Refresh zones and get smart recommendations for this plant
                             try {
-                              console.log('Getting recommendations for plant:', plant);
-                              const requestData = {
-                                plant_id: plant.plant_id,
-                                library_book: plant.library_book
-                              };
-                              console.log('Request data:', requestData);
+                              console.log('Getting recommendations for orphaned plant:', plant);
                               
-                              const response = await fetch(`${getApiBaseUrl()}/api/smart/zone-recommendations`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(requestData)
+                              // Refresh zones data first to ensure we have the latest state
+                              const zonesResponse = await fetch(`${getApiBaseUrl()}/api/schedule`);
+                              if (zonesResponse.ok) {
+                                const zonesData = await zonesResponse.json();
+                                setZones(zonesData);
+                                console.log('Refreshed zones data for analysis:', zonesData);
+                              }
+                              
+                              const plantData = {
+                                library_book: plant.library_book.replace('.json', ''), // Remove .json extension
+                                plant_id: plant.plant_id,
+                                common_name: plant.common_name,
+                                quantity: plant.quantity || 1,
+                                emitter_size: plant.emitter_size || 1.0,
+                                zone_id: 1, // Default for analysis
+                                location_id: 1, // Default for analysis
+                                comments: '',
+                                planted_date: new Date().toISOString().split('T')[0]
+                              };
+                              
+                              console.log('Analyzing placement with data:', plantData);
+                              console.log('Plant details:', {
+                                library_book: plantData.library_book,
+                                plant_id: plantData.plant_id,
+                                common_name: plantData.common_name
                               });
                               
-                              console.log('Response status:', response.status);
+                              const response = await fetch(`${getApiBaseUrl()}/api/smart/analyze-placement`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(plantData)
+                              });
+                              
+                              console.log('Analysis response status:', response.status);
                               
                               if (response.ok) {
-                                const data = await response.json();
-                                console.log('Response data:', data);
-                                setSmartPlacementModal({
+                                const analysis = await response.json();
+                                console.log('Analysis result:', analysis);
+                                
+                                // Pre-fill the modal with current plant data
+                                setModalData({
+                                  quantity: plant.quantity?.toString() || '1',
+                                  emitterSize: plant.emitter_size?.toString() || '4',
+                                  zoneId: plant.zone_id?.toString() || '',
+                                  locationId: plant.location_id?.toString() || '',
+                                  comments: plant.comments || ''
+                                });
+                                
+                                setReassignmentModal({
                                   plant: plant,
-                                  bookFile: plant.library_book,
-                                  recommendations: data.recommendations || []
+                                  bookFile: plant.library_book.endsWith('.json') ? plant.library_book : `${plant.library_book}.json`,
+                                  recommendations: analysis.recommendations || []
                                 });
                               } else {
                                 const errorText = await response.text();
-                                console.error('Failed to get recommendations:', response.status, errorText);
-                                alert(`Failed to get placement recommendations: ${errorText}`);
+                                console.error('Failed to analyze placement:', response.status, errorText);
+                                alert(`Failed to analyze plant placement: ${errorText}`);
                               }
                             } catch (error) {
-                              console.error('Error getting recommendations:', error);
+                              console.error('Error analyzing placement:', error);
                               const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                              alert(`Error getting placement recommendations: ${errorMessage}`);
+                              alert(`Error analyzing plant placement: ${errorMessage}`);
                             }
                           }}
                           style={{
@@ -690,7 +796,7 @@ export default function Health() {
                           }}
                           title="Reassign to new location"
                         >
-                          Reassign
+                          {plant.issue_type === 'missing_zone' ? 'Manual Fix Required' : 'Reassign'}
                         </button>
                         <button
                           onClick={() => ignoreAlert('orphaned_plant', plant.instanceId)}
@@ -825,15 +931,15 @@ export default function Health() {
               </div>
             )}
 
-        {/* Smart Placement Modal */}
-        {smartPlacementModal && (
+        {/* Plant Reassignment Modal */}
+        {reassignmentModal && (
           <div style={{
             position: 'fixed',
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(0, 0, 0, 0.8)',
+            background: 'rgba(0,0,0,0.8)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -842,186 +948,299 @@ export default function Health() {
             <div style={{
               background: '#232b3b',
               borderRadius: '16px',
-              padding: '24px',
-              maxWidth: '600px',
-              width: '90%',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              border: '1px solid #1a1f2a',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+              padding: '32px',
+              minWidth: '500px',
+              maxWidth: '700px',
+              maxHeight: '95vh',
+              color: '#f4f4f4',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+              overflow: 'auto'
             }}>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '20px'
+              <h3 style={{
+                color: '#00bcd4',
+                fontWeight: 700,
+                margin: '0 0 16px 0',
+                textAlign: 'left',
+                flexShrink: 0
               }}>
-                <h2 style={{
-                  color: '#00bcd4',
-                  margin: 0,
-                  fontWeight: 600
+                Reassign Plant: {reassignmentModal.plant.common_name || getCommonName(reassignmentModal.bookFile, reassignmentModal.plant.plant_id) || `Plant ${reassignmentModal.plant.plant_id}`}
+              </h3>
+              
+              {reassignmentModal.recommendations.length === 0 && (
+                <div style={{
+                  background: '#2d1b1b',
+                  border: '1px solid #ff512f',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}>
-                  Reassign Plant: {getCommonName(smartPlacementModal.bookFile, smartPlacementModal.plant.plant_id)}
-                </h2>
-                <button
-                  onClick={() => setSmartPlacementModal(null)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#888',
-                    fontSize: '24px',
-                    cursor: 'pointer',
-                    padding: '0',
-                    width: '30px',
-                    height: '30px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  ×
-                </button>
-              </div>
+                  <span style={{ color: '#ff512f', fontSize: '16px' }}>⚠️</span>
+                  <span style={{ color: '#ff512f', fontWeight: 600, fontSize: '14px' }}>
+                    No compatible zones found for this plant. Use manual selection below.
+                  </span>
+                </div>
+              )}
 
-              {/* Zone Recommendations */}
-              {smartPlacementModal.recommendations.length > 0 ? (
-                <div style={{ marginBottom: '24px' }}>
-                  <h3 style={{
-                    color: '#f4f4f4',
-                    margin: '0 0 16px 0',
-                    fontWeight: 600,
-                    fontSize: '16px'
-                  }}>
-                    Recommended Zones
-                  </h3>
+              <div style={{
+                background: '#1a1f2a',
+                borderRadius: '8px',
+                padding: '16px',
+                marginBottom: '20px',
+                border: '1px solid #00bcd4'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '12px'
+                }}>
+                  <p style={{ margin: 0, color: '#00bcd4', fontWeight: 600 }}>
+                    🎯 {reassignmentModal.recommendations.length > 0 ? 'Compatible zones found! Select your preferred zone:' : 'Available zones:'}
+                  </p>
                   <div style={{
                     display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px'
+                    alignItems: 'center',
+                    gap: '8px'
                   }}>
-                    {smartPlacementModal.recommendations.map((rec, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          background: '#1a1f2a',
-                          borderRadius: '8px',
-                          padding: '16px',
-                          border: '2px solid #00bcd4',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onClick={() => handleSmartPlacementConfirm(rec.zone_id, rec.location_id)}
-                      >
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          marginBottom: '8px'
-                        }}>
-                          <div style={{
-                            color: '#00bcd4',
-                            fontWeight: 600,
-                            fontSize: '16px'
-                          }}>
-                            Zone {rec.zone_id}
-                          </div>
-                          <div style={{
-                            color: '#4CAF50',
-                            fontSize: '14px',
-                            fontWeight: 600
-                          }}>
-                            {rec.compatibility_score}% Match
-                          </div>
-                        </div>
-                        <div style={{
-                          color: '#bdbdbd',
-                          fontSize: '14px',
-                          marginBottom: '8px'
-                        }}>
-                          Location: {locations.find(loc => loc.location_id === rec.location_id)?.name || `Location ${rec.location_id}`}
-                        </div>
-                        <div style={{
-                          color: '#888',
-                          fontSize: '12px'
-                        }}>
-                          {rec.reasoning}
-                        </div>
-                      </div>
-                    ))}
+                    <span style={{
+                      color: zoneSelectionMode === 'smart' ? '#00bcd4' : '#666',
+                      fontSize: '12px',
+                      fontWeight: zoneSelectionMode === 'smart' ? 600 : 500
+                    }}>Smart</span>
+                    <div 
+                      style={{
+                        width: '40px',
+                        height: '20px',
+                        background: '#2a3441',
+                        borderRadius: '10px',
+                        border: '1px solid #444',
+                        position: 'relative',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => setZoneSelectionMode(prev => prev === 'smart' ? 'manual' : 'smart')}
+                    >
+                      <div style={{
+                        width: '16px',
+                        height: '16px',
+                        background: zoneSelectionMode === 'smart' ? '#00bcd4' : '#666',
+                        borderRadius: '50%',
+                        position: 'absolute',
+                        top: '1px',
+                        left: zoneSelectionMode === 'smart' ? '1px' : '23px',
+                        transition: 'all 0.2s'
+                      }} />
+                    </div>
+                    <span style={{
+                      color: zoneSelectionMode === 'manual' ? '#00bcd4' : '#666',
+                      fontSize: '12px',
+                      fontWeight: zoneSelectionMode === 'manual' ? 600 : 500
+                    }}>Manual</span>
                   </div>
                 </div>
-              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {(zoneSelectionMode === 'smart' ? reassignmentModal.recommendations.slice(0, 3) : zones.filter(z => z.mode !== 'disabled')).map((rec: any, index: number) => {
+                    const isSmartMode = zoneSelectionMode === 'smart';
+                    const zoneId = isSmartMode ? rec.zone_id : rec.zone_id;
+                    const isSelected = modalData.zoneId === zoneId.toString();
+                    
+                    return (
+                      <div key={zoneId} style={{
+                        background: isSelected ? '#00bcd4' : '#2a3441',
+                        borderRadius: '6px',
+                        padding: '12px',
+                        border: isSelected ? '2px solid #00bcd4' : '1px solid #444',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }} onClick={() => {
+                        // Find locations that have this zone
+                        const locationsWithZone = locations.filter(loc => loc.zones.includes(zoneId));
+                        if (locationsWithZone.length > 0) {
+                          setModalData(prev => ({
+                            ...prev,
+                            zoneId: zoneId.toString(),
+                            locationId: locationsWithZone[0].location_id.toString() // Auto-select first location
+                          }));
+                        } else {
+                          // Just set the zone if no locations support it
+                          setModalData(prev => ({
+                            ...prev,
+                            zoneId: zoneId.toString(),
+                            locationId: '' // Clear location since none support this zone
+                          }));
+                        }
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <strong>Zone {zoneId}</strong> ({isSmartMode ? rec.period : rec.period})
+                            <div style={{ fontSize: '12px', opacity: 0.8 }}>
+                              {isSmartMode ? rec.comment : rec.comment}
+                            </div>
+                          </div>
+                          {isSmartMode && (
+                            <div style={{ 
+                              background: isSelected ? '#fff' : '#00bcd4', 
+                              color: isSelected ? '#00bcd4' : '#fff',
+                              padding: '4px 8px',
+                              borderRadius: '4px',
+                              fontSize: '12px',
+                              fontWeight: 'bold'
+                            }}>
+                              {Math.round(rec.score * 100)}% match
+                            </div>
+                          )}
+                          {!isSmartMode && (
+                            <div style={{ 
+                              background: isSelected ? '#fff' : '#666', 
+                              color: isSelected ? '#00bcd4' : '#fff',
+                              padding: '4px 8px',
+                              borderRadius: '4px',
+                              fontSize: '12px',
+                              fontWeight: 'bold'
+                            }}>
+                              Manual
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <form style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px'
+              }} onSubmit={e => { 
+                e.preventDefault(); 
+                handleReassignmentConfirm();
+              }}>
                 <div style={{
                   background: '#1a1f2a',
                   borderRadius: '8px',
                   padding: '16px',
-                  marginBottom: '24px',
-                  border: '1px solid #FF9800'
+                  marginBottom: '20px',
+                  border: '1px solid #00bcd4'
                 }}>
+                  <p style={{ margin: '0 0 12px 0', color: '#00bcd4', fontWeight: 600 }}>
+                    📍 Select location:
+                  </p>
                   <div style={{
-                    color: '#FF9800',
-                    fontWeight: 600,
-                    marginBottom: '8px'
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '8px',
+                    marginBottom: '12px'
                   }}>
-                    No Compatible Zones Found
+                    {locations
+                      .filter(loc => loc.zones.includes(parseInt(modalData.zoneId)))
+                      .map(loc => (
+                        <div
+                          key={loc.location_id}
+                          onClick={() => setModalData(prev => ({ ...prev, locationId: loc.location_id.toString() }))}
+                          style={{
+                            background: modalData.locationId === loc.location_id.toString() ? '#00bcd4' : '#2a3441',
+                            color: modalData.locationId === loc.location_id.toString() ? '#181f2a' : '#fff',
+                            borderRadius: '6px',
+                            padding: '12px',
+                            cursor: 'pointer',
+                            border: modalData.locationId === loc.location_id.toString() ? '2px solid #00bcd4' : '1px solid #444',
+                            transition: 'all 0.2s',
+                            fontSize: '14px',
+                            fontWeight: modalData.locationId === loc.location_id.toString() ? 'bold' : 'normal',
+                            minWidth: '100px',
+                            height: '50px',
+                            textAlign: 'center',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          {loc.name}
+                        </div>
+                      ))}
+                    {locations.filter(loc => loc.zones.includes(parseInt(modalData.zoneId))).length === 0 && (
+                      <div style={{
+                        color: '#666',
+                        fontSize: '14px',
+                        fontStyle: 'italic'
+                      }}>
+                        No locations support this zone
+                      </div>
+                    )}
                   </div>
                   <div style={{
-                    color: '#bdbdbd',
-                    fontSize: '14px'
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                    marginTop: '8px'
                   }}>
-                    This plant doesn't have any compatible zones. You may need to create a new location or manually assign it to an existing zone.
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowLocationForm(true);
+                      }}
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid #00bcd4',
+                        color: '#00bcd4',
+                        borderRadius: '6px',
+                        padding: '8px 16px',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      + Add New Location
+                    </button>
                   </div>
                 </div>
-              )}
-
-              {/* Manual Options */}
-              <div style={{
-                borderTop: '1px solid #1a1f2a',
-                paddingTop: '20px'
-              }}>
-                <h3 style={{
-                  color: '#f4f4f4',
-                  margin: '0 0 16px 0',
-                  fontWeight: 600,
-                  fontSize: '16px'
-                }}>
-                  Manual Options
-                </h3>
+                
                 <div style={{
                   display: 'flex',
-                  gap: '12px'
+                  gap: '12px',
+                  marginTop: '16px'
                 }}>
                   <button
-                    onClick={() => setShowLocationForm(true)}
+                    type="button"
+                    onClick={() => { 
+                      setReassignmentModal(null);
+                      setModalData({ quantity: '', emitterSize: '', zoneId: '', locationId: '', comments: '' });
+                    }}
                     style={{
-                      padding: '12px 20px',
+                      padding: '10px 20px',
                       borderRadius: '8px',
-                      border: '1px solid #00bcd4',
+                      border: '2px solid #ff512f',
                       background: 'transparent',
-                      color: '#00bcd4',
+                      color: '#ff512f',
+                      fontWeight: 600,
                       fontSize: '14px',
                       cursor: 'pointer',
-                      fontWeight: 600
+                      transition: 'all 0.2s',
+                      flex: 1
                     }}
-                  >
-                    Create New Location
-                  </button>
+                  >Cancel</button>
                   <button
-                    onClick={() => setSmartPlacementModal(null)}
+                    type="submit"
+                    disabled={!modalData.zoneId || !modalData.locationId}
                     style={{
-                      padding: '12px 20px',
+                      padding: '10px 20px',
                       borderRadius: '8px',
-                      border: '1px solid #666',
-                      background: 'transparent',
-                      color: '#666',
+                      border: 'none',
+                      background: modalData.zoneId && modalData.locationId ? '#00bcd4' : '#666',
+                      color: modalData.zoneId && modalData.locationId ? '#181f2a' : '#999',
+                      fontWeight: 700,
                       fontSize: '14px',
-                      cursor: 'pointer'
+                      cursor: modalData.zoneId && modalData.locationId ? 'pointer' : 'not-allowed',
+                      transition: 'all 0.2s',
+                      flex: 1
                     }}
                   >
-                    Cancel
+                    Reassign Plant
                   </button>
                 </div>
-              </div>
+              </form>
             </div>
           </div>
         )}

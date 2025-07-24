@@ -4,61 +4,38 @@
       {
         "plant": {
           "plant_id": 1,
-          "common_name": "Strawberry, Red"
+          "common_name": "Strawberry, Red",
+          "watering_frequency": [
+            "W2"
+          ],
+          "preferred_time": [
+            "SUNRISE+30"
+          ],
+          "alternative_name": "",
+          "latin_name": "Fragaria × ananassa",
+          "compatible_watering_frequencies": [
+            "D1"
+          ],
+          "compatible_watering_times": [
+            "SUNSET-60"
+          ],
+          "root_area_sqft": 0.45,
+          "water_optimal_in_week": 1.5,
+          "tolerance_min_in_week": 1.05,
+          "tolerance_max_in_week": 1.95,
+          "usda_zones": "3-9",
+          "soil_preference": "Sandy loam, pH 5.5-6.5",
+          "sun_exposure": "Full Sun",
+          "fruiting_period": "June",
+          "planting_time": "Early Spring",
+          "spacing_inches": 12,
+          "growth_type": "Perennial"
         },
         "quantity": 1,
         "emitterSize": 4,
         "zoneId": 1,
         "location_id": 2,
-        "instanceId": "2",
-        "comments": ""
-      },
-      {
-        "plant": {
-          "plant_id": 3,
-          "common_name": "Blackberry"
-        },
-        "quantity": 40,
-        "emitterSize": 20,
-        "zoneId": 5,
-        "location_id": 2,
-        "instanceId": "3",
-        "comments": ""
-      },
-      {
-        "plant": {
-          "plant_id": 3,
-          "common_name": "Blackberry"
-        },
-        "quantity": 2,
-        "emitterSize": 0.5,
-        "zoneId": 1,
-        "location_id": 2,
-        "instanceId": "4",
-        "comments": ""
-      },
-      {
-        "plant": {
-          "plant_id": 2,
-          "common_name": "Raspberry, Red"
-        },
-        "quantity": 1,
-        "emitterSize": 0.5,
-        "zoneId": 1,
-        "location_id": 2,
-        "instanceId": "5",
-        "comments": ""
-      },
-      {
-        "plant": {
-          "plant_id": 4,
-          "common_name": "Blueberry, Highbush"
-        },
-        "quantity": 3,
-        "emitterSize": 4,
-        "zoneId": 3,
-        "location_id": 2,
-        "instanceId": "7",
+        "instanceId": "1",
         "comments": ""
       }
     ],

@@ -39,15 +39,36 @@ interface ScheduleZone {
 
 // Helper to format HHMMSS as human readable
 function formatDuration(d: string): string {
-  if (!d || d.length !== 6) return 'N/A';
-  const h = parseInt(d.slice(0, 2), 10);
-  const m = parseInt(d.slice(2, 4), 10);
-  const s = parseInt(d.slice(4, 6), 10);
-  let out = '';
-  if (h) out += `${h}h `;
-  if (m) out += `${m}m `;
-  if (s) out += `${s}s`;
-  return out.trim() || '0s';
+  if (!d) return 'N/A';
+  
+  // Handle new HH:mm:ss format
+  if (d.includes(':') && d.length === 8) {
+    const parts = d.split(':');
+    if (parts.length === 3) {
+      const h = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10);
+      const s = parseInt(parts[2], 10);
+      let out = '';
+      if (h) out += `${h}h `;
+      if (m) out += `${m}m `;
+      if (s) out += `${s}s`;
+      return out.trim() || '0s';
+    }
+  }
+  
+  // Handle legacy HHmmss format (6 digits)
+  if (d.length === 6 && !d.includes(':')) {
+    const h = parseInt(d.slice(0, 2), 10);
+    const m = parseInt(d.slice(2, 4), 10);
+    const s = parseInt(d.slice(4, 6), 10);
+    let out = '';
+    if (h) out += `${h}h `;
+    if (m) out += `${m}m `;
+    if (s) out += `${s}s`;
+    return out.trim() || '0s';
+  }
+  
+  return 'N/A';
 }
 
 // Helper functions for next scheduled time calculation

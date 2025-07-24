@@ -15,3 +15,7 @@
 [2025-07-24 00:26:32] [INFO] [watering] Manual zone activation | zone_id=1 duration=1
 [2025-07-24 00:49:00] [INFO] [watering] Scheduled zone activation | zone_id=1 duration=60
 [2025-07-24 00:49:00] [INFO] [watering] Scheduled event started | zone_id=1 scheduled_time=00:49 duration=60
+[2025-07-24 02:53:04] [INFO] [watering] Manual zone activation | zone_id=1 duration=1
+[2025-07-24 02:53:15] [INFO] [watering] Manual zone activation | zone_id=1 duration=60
+[2025-07-24 16:41:01] [INFO] [watering] Scheduled zone activation | zone_id=1 duration=60
+[2025-07-24 16:41:01] [INFO] [watering] Scheduled event started | zone_id=1 scheduled_time=16:41 duration=60

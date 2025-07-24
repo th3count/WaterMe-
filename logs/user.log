@@ -192,3 +192,33 @@ ed
 [2025-07-24 01:58:42] [INFO] [USER] Schedule saved and reloaded | zone_count=8
 [2025-07-24 01:58:54] [INFO] [USER] Schedule saved and reloaded | zone_count=8
 [2025-07-24 01:59:34] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 02:01:33] [INFO] [USER] Zone updated and caches reloaded | zone_id=3 mode=active period=W times_count=1
+[2025-07-24 02:02:30] [INFO] [USER] Schedule saved and reloaded | zone_count=8
+[2025-07-24 02:03:53] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 02:05:48] [INFO] [USER] Zone updated and caches reloaded | zone_id=3 mode=active period=W times_count=1
+[2025-07-24 02:06:21] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 02:08:07] [INFO] [USER] Zone updated and caches reloaded | zone_id=3 mode=active period=W times_count=1
+[2025-07-24 02:08:50] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 3: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 02:08:56] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 3: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 02:09:26] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 02:09:30] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 02:10:10] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 02:11:00] [INFO] [USER] Zone updated and caches reloaded | zone_id=3 mode=manual period=W times_count=1
+[2025-07-24 02:11:12] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 02:11:14] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 02:11:20] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 02:15:10] [INFO] [USER] Zone updated and caches reloaded | zone_id=3 mode=manual period=W times_count=1
+[2025-07-24 02:17:44] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 02:18:12] [INFO] [USER] Zone updated and caches reloaded | zone_id=3 mode=manual period=W times_count=1
+[2025-07-24 02:20:06] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 02:20:25] [INFO] [USER] Zone updated and caches reloaded | zone_id=3 mode=manual period=W times_count=1
+[2025-07-24 02:53:04] [INFO] [USER] Manual timer started | zone_id=1 duration=1
+[2025-07-24 02:53:15] [INFO] [USER] Manual timer started | zone_id=1 duration=60
+[2025-07-24 16:30:35] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 16:32:21] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 16:39:11] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 16:39:16] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 16:40:05] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 16:40:24] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 16:41:13] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 16:54:25] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8

@@ -19,6 +19,9 @@ LIBRARY_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "library"
 # Library file names
 LIBRARY_FILES = ['fruitbushes.json', 'fruittrees.json', 'vegetables.json', 'custom.json']
 
+# Available emitter sizes (GPH)
+EMITTER_SIZES = [0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+
 class PlantManager:
     """Manages plant instances, library data, and smart placement logic"""
     
@@ -115,7 +118,194 @@ class PlantManager:
     def reload_data(self):
         """Reload all data files"""
         self._load_data()
+
+    # Smart Emitter Sizing Methods
     
+    def calculate_cycles_per_week(self, zone_frequency: str) -> float:
+        """Calculate cycles per week for a zone frequency code"""
+        if not zone_frequency:
+            return 0.0
+        
+        code = zone_frequency.upper()
+        if code.startswith('D'):
+            try:
+                cycles_per_day = int(code[1:])
+                return cycles_per_day * 7.0  # 7 days per week
+            except ValueError:
+                return 0.0
+        elif code.startswith('W'):
+            try:
+                cycles_per_week = int(code[1:])
+                return float(cycles_per_week)
+            except ValueError:
+                return 0.0
+        elif code.startswith('M'):
+            try:
+                cycles_per_month = int(code[1:])
+                return (cycles_per_month * 4.0) / 12.0  # Average weeks per month
+            except ValueError:
+                return 0.0
+        return 0.0
+    
+    def get_zone_duration_hours(self, zone_id: int) -> float:
+        """Get zone duration in hours"""
+        for zone in self.schedule_data.get('zones', []):
+            if zone.get('zone_id') == zone_id:
+                # Check for times array (multiple watering events)
+                if 'times' in zone and isinstance(zone['times'], list) and len(zone['times']) > 0:
+                    # Use the first time's duration as representative
+                    duration_str = zone['times'][0].get('duration', '000000')
+                    return self._parse_duration_to_hours(duration_str)
+                # Check for single time
+                elif 'time' in zone and isinstance(zone['time'], dict):
+                    duration_str = zone['time'].get('duration', '000000')
+                    return self._parse_duration_to_hours(duration_str)
+        return 0.5  # Default to 30 minutes if not found
+    
+    def _parse_duration_to_hours(self, duration_str: str) -> float:
+        """Parse HH:mm:ss or legacy HHmmss duration string to hours"""
+        if not duration_str:
+            return 0.333  # Default 20 minutes
+        
+        try:
+            # Handle new HH:mm:ss format
+            if ':' in duration_str and len(duration_str) == 8:
+                parts = duration_str.split(':')
+                if len(parts) == 3:
+                    hours = int(parts[0])
+                    minutes = int(parts[1])
+                    seconds = int(parts[2])
+                    return hours + (minutes / 60.0) + (seconds / 3600.0)
+            
+            # Handle legacy HHmmss format (6 digits)
+            elif len(duration_str) == 6 and duration_str.isdigit():
+                hours = int(duration_str[0:2])
+                minutes = int(duration_str[2:4])
+                seconds = int(duration_str[4:6])
+                return hours + (minutes / 60.0) + (seconds / 3600.0)
+            
+            return 0.333  # Default 20 minutes
+        except ValueError:
+            return 0.333  # Default 20 minutes
+    
+    def calculate_optimal_emitter_size(self, plant_data: Dict[str, Any], zone_id: int) -> Dict[str, Any]:
+        """
+        Calculate optimal emitter size for a plant in a specific zone
+        
+        Returns:
+            Dict with calculation results and health validation
+        """
+        plant_library_data = self.get_plant_data(
+            plant_data.get('plant_id'), 
+            plant_data.get('library_book')
+        )
+        if not plant_library_data:
+            return {
+                'success': False,
+                'error': 'Plant not found in library'
+            }
+        
+        zone_frequency = self.get_zone_frequency(zone_id)
+        if not zone_frequency:
+            return {
+                'success': False,
+                'error': 'Zone not found or no frequency set'
+            }
+        
+        # Get plant water requirements
+        water_optimal_in_week = plant_library_data.get('water_optimal_in_week', 0)
+        root_area_sqft = plant_library_data.get('root_area_sqft', 0)
+        tolerance_min_in_week = plant_library_data.get('tolerance_min_in_week', 0)
+        tolerance_max_in_week = plant_library_data.get('tolerance_max_in_week', 0)
+        
+        if water_optimal_in_week <= 0 or root_area_sqft <= 0:
+            return {
+                'success': False,
+                'error': 'Invalid plant water requirements'
+            }
+        
+        # Calculate cycles per week and zone duration
+        cycles_per_week = self.calculate_cycles_per_week(zone_frequency)
+        zone_duration_hours = self.get_zone_duration_hours(zone_id)
+        
+        if cycles_per_week <= 0 or zone_duration_hours <= 0:
+            return {
+                'success': False,
+                'error': 'Invalid zone schedule configuration'
+            }
+        
+        # Calculate optimal emitter size
+        # Formula: (water_optimal_in_week × root_area_sqft × 0.623) ÷ (cycles_per_week × zone_duration_hours)
+        weekly_water_volume = water_optimal_in_week * root_area_sqft * 0.623  # gallons
+        per_cycle_volume = weekly_water_volume / cycles_per_week  # gallons per cycle
+        calculated_gph = per_cycle_volume / zone_duration_hours  # gallons per hour
+        
+        # Find nearest available emitter size
+        nearest_emitter = min(EMITTER_SIZES, key=lambda x: abs(x - calculated_gph))
+        
+        # Calculate actual water delivery with nearest emitter
+        actual_weekly_water = (nearest_emitter * zone_duration_hours * cycles_per_week) / (root_area_sqft * 0.623)
+        
+        # Health validation
+        is_within_tolerance = tolerance_min_in_week <= actual_weekly_water <= tolerance_max_in_week
+        health_status = "healthy" if is_within_tolerance else "unhealthy"
+        
+        # Calculate tolerance delta
+        if actual_weekly_water < tolerance_min_in_week:
+            tolerance_delta = tolerance_min_in_week - actual_weekly_water
+            tolerance_status = f"Under by {tolerance_delta:.2f} inches/week"
+        elif actual_weekly_water > tolerance_max_in_week:
+            tolerance_delta = actual_weekly_water - tolerance_max_in_week
+            tolerance_status = f"Over by {tolerance_delta:.2f} inches/week"
+        else:
+            tolerance_delta = 0
+            tolerance_status = "Within tolerance"
+        
+        return {
+            'success': True,
+            'calculated_gph': calculated_gph,
+            'recommended_emitter': nearest_emitter,
+            'actual_weekly_water': actual_weekly_water,
+            'is_within_tolerance': is_within_tolerance,
+            'health_status': health_status,
+            'tolerance_delta': tolerance_delta,
+            'tolerance_status': tolerance_status,
+            'calculation_details': {
+                'water_optimal_in_week': water_optimal_in_week,
+                'root_area_sqft': root_area_sqft,
+                'cycles_per_week': cycles_per_week,
+                'zone_duration_hours': zone_duration_hours,
+                'weekly_water_volume': weekly_water_volume,
+                'per_cycle_volume': per_cycle_volume,
+                'tolerance_min_in_week': tolerance_min_in_week,
+                'tolerance_max_in_week': tolerance_max_in_week
+            }
+        }
+    
+    def validate_emitter_compatibility(self, plant_data: Dict[str, Any], zone_id: int) -> Dict[str, Any]:
+        """
+        Validate if a plant can be placed in a zone with smart emitter sizing
+        
+        Returns:
+            Dict with validation results
+        """
+        emitter_calculation = self.calculate_optimal_emitter_size(plant_data, zone_id)
+        
+        if not emitter_calculation.get('success'):
+            return {
+                'compatible': False,
+                'reason': emitter_calculation.get('error', 'Unknown error'),
+                'emitter_calculation': emitter_calculation
+            }
+        
+        is_within_tolerance = emitter_calculation.get('is_within_tolerance', False)
+        
+        return {
+            'compatible': is_within_tolerance,
+            'reason': 'Emitter sizing within tolerance' if is_within_tolerance else 'Emitter sizing outside tolerance',
+            'emitter_calculation': emitter_calculation
+        }
+
     # Basic plant management functions (moved from API)
     
     def add_plant_instance(self, plant_data: Dict[str, Any]) -> Tuple[bool, str, Optional[str]]:
@@ -169,9 +359,14 @@ class PlantManager:
         """Get all plant instances"""
         return self.plant_map
     
-    def reassign_plant(self, instance_id: str, new_location_id: int) -> Tuple[bool, str]:
+    def reassign_plant(self, instance_id: str, new_location_id: int, new_zone_id: Optional[int] = None) -> Tuple[bool, str]:
         """
-        Reassign a plant instance to a new location
+        Reassign a plant instance to a new location and optionally a new zone
+        
+        Args:
+            instance_id: The plant instance ID to reassign
+            new_location_id: New location ID
+            new_zone_id: New zone ID (optional, keeps existing if not provided)
         
         Returns:
             Tuple[bool, str]: (success, message)
@@ -180,19 +375,32 @@ class PlantManager:
             return False, "Plant instance not found"
         
         old_location_id = self.plant_map[instance_id].get('location_id')
+        old_zone_id = self.plant_map[instance_id].get('zone_id')
+        
+        # Update location_id
         self.plant_map[instance_id]['location_id'] = new_location_id
+        
+        # Update zone_id if provided
+        if new_zone_id is not None:
+            self.plant_map[instance_id]['zone_id'] = new_zone_id
         
         try:
             # Save to file
             with open(MAP_JSON_PATH, 'w', encoding='utf-8') as f:
                 json.dump(self.plant_map, f, indent=2)
             
+            changes = f"location {old_location_id} → {new_location_id}"
+            if new_zone_id is not None and new_zone_id != old_zone_id:
+                changes += f", zone {old_zone_id} → {new_zone_id}"
+            
             log_event(plants_logger, 'INFO', 'Plant instance reassigned', 
                      instance_id=instance_id,
                      old_location=old_location_id,
-                     new_location=new_location_id)
+                     new_location=new_location_id,
+                     old_zone=old_zone_id,
+                     new_zone=new_zone_id)
             
-            return True, f"Plant instance {instance_id} reassigned to location {new_location_id}"
+            return True, f"Plant instance {instance_id} reassigned ({changes})"
             
         except Exception as e:
             log_event(plants_logger, 'ERROR', 'Failed to reassign plant instance', 
@@ -513,16 +721,45 @@ class PlantManager:
         # Check if there are any compatible zones
         has_compatible_zones = len(recommendations) > 0
         
+        # Add emitter sizing analysis for each recommendation
+        enhanced_recommendations = []
+        for rec in recommendations:
+            zone_id = rec['zone_id']
+            emitter_analysis = self.calculate_optimal_emitter_size(plant_data, zone_id)
+            rec['emitter_analysis'] = emitter_analysis
+            
+            # Filter out zones that fail emitter sizing health check
+            if emitter_analysis.get('success') and not emitter_analysis.get('is_within_tolerance'):
+                continue  # Skip this zone due to emitter sizing incompatibility
+            
+            enhanced_recommendations.append(rec)
+        
+        # Update optimal zone if it fails emitter sizing
+        optimal_emitter_analysis = None
+        if optimal_zone:
+            optimal_emitter_analysis = self.calculate_optimal_emitter_size(plant_data, optimal_zone)
+            if optimal_emitter_analysis.get('success') and not optimal_emitter_analysis.get('is_within_tolerance'):
+                # Find new optimal zone from filtered recommendations
+                if enhanced_recommendations:
+                    optimal_zone = enhanced_recommendations[0]['zone_id']
+                    optimal_score = enhanced_recommendations[0]['score']
+                    optimal_reason = "Best frequency match with compatible emitter sizing"
+                else:
+                    optimal_zone = None
+                    optimal_score = 0.0
+                    optimal_reason = "No zones with compatible emitter sizing"
+        
         return {
             'success': True,
             'plant_data': plant_library_data,
-            'has_compatible_zones': has_compatible_zones,
+            'has_compatible_zones': len(enhanced_recommendations) > 0,
             'optimal_zone': optimal_zone,
             'optimal_score': optimal_score,
             'optimal_reason': optimal_reason,
-            'recommendations': recommendations,
+            'recommendations': enhanced_recommendations,
             'total_zones_checked': len(self.schedule_data.get('zones', [])),
-            'compatible_zones_count': len(recommendations)
+            'compatible_zones_count': len(enhanced_recommendations),
+            'optimal_emitter_analysis': optimal_emitter_analysis
         }
     
     def validate_plant_zone_compatibility(self, plant_data: Dict[str, Any], zone_id: int) -> Dict[str, Any]:
@@ -569,14 +806,18 @@ class PlantManager:
         best_level = max((result['level'] for result in compatibility_results if result['is_compatible']), 
                         default='none')
         
+        # Add emitter sizing validation
+        emitter_validation = self.validate_emitter_compatibility(plant_data, zone_id)
+        
         return {
-            'valid': overall_compatible,
+            'valid': overall_compatible and emitter_validation['compatible'],
             'zone_id': zone_id,
             'zone_frequency': zone_frequency,
             'plant_frequencies': plant_frequencies,
             'compatibility_results': compatibility_results,
             'best_compatibility_level': best_level,
-            'score': self.calculate_zone_compatibility_score(plant_data, zone_id)
+            'score': self.calculate_zone_compatibility_score(plant_data, zone_id),
+            'emitter_validation': emitter_validation
         }
     
     def handle_no_compatible_zone(self, plant_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -601,24 +842,69 @@ class PlantManager:
         for zone in self.schedule_data.get('zones', []):
             zone_id = zone.get('zone_id')
             if zone_id and zone.get('mode') != 'disabled':
+                # Check both frequency and emitter compatibility
+                frequency_compatible = False
+                emitter_compatible = False
+                
+                # Check frequency compatibility
+                zone_frequency = self.get_zone_frequency(zone_id)
+                if zone_frequency:
+                    plant_frequencies = plant_library_data.get('watering_frequency', [])
+                    if not isinstance(plant_frequencies, list):
+                        plant_frequencies = [plant_frequencies]
+                    
+                    for plant_frequency in plant_frequencies:
+                        is_compatible, _ = self.is_frequency_compatible(plant_frequency, zone_frequency, plant_library_data)
+                        if is_compatible:
+                            frequency_compatible = True
+                            break
+                
+                # Check emitter compatibility
+                emitter_validation = self.validate_emitter_compatibility(plant_data, zone_id)
+                emitter_compatible = emitter_validation['compatible']
+                
                 available_zones.append({
                     'zone_id': zone_id,
                     'period': zone.get('period'),
                     'comment': zone.get('comment', ''),
-                    'mode': zone.get('mode', 'manual')
+                    'mode': zone.get('mode', 'manual'),
+                    'frequency_compatible': frequency_compatible,
+                    'emitter_compatible': emitter_compatible,
+                    'emitter_analysis': emitter_validation.get('emitter_calculation', {})
                 })
+        
+        # Determine why no compatible zones found
+        frequency_only_zones = [z for z in available_zones if z['frequency_compatible'] and not z['emitter_compatible']]
+        emitter_only_zones = [z for z in available_zones if not z['frequency_compatible'] and z['emitter_compatible']]
+        neither_zones = [z for z in available_zones if not z['frequency_compatible'] and not z['emitter_compatible']]
+        
+        suggestions = []
+        if frequency_only_zones:
+            suggestions.append(f"Found {len(frequency_only_zones)} zones with compatible frequency but incompatible emitter sizing")
+        if emitter_only_zones:
+            suggestions.append(f"Found {len(emitter_only_zones)} zones with compatible emitter sizing but incompatible frequency")
+        if neither_zones:
+            suggestions.append(f"Found {len(neither_zones)} zones with neither frequency nor emitter compatibility")
+        
+        if not available_zones:
+            suggestions.append("No zones available for analysis")
+        
+        suggestions.extend([
+            'Create a new zone with compatible frequency and duration',
+            'Use manual emitter sizing override',
+            'Modify plant watering requirements',
+            'Adjust zone frequency or duration settings'
+        ])
         
         return {
             'success': True,
             'message': 'No compatible zones found for this plant',
             'plant_data': plant_library_data,
             'available_zones': available_zones,
-            'suggestions': [
-                'Create a new zone with compatible frequency',
-                'Force assign to an existing zone (manual override)',
-                'Modify plant watering requirements',
-                'Adjust zone frequency settings'
-            ]
+            'frequency_only_zones': frequency_only_zones,
+            'emitter_only_zones': emitter_only_zones,
+            'neither_zones': neither_zones,
+            'suggestions': suggestions
         }
 
 # Create global instance
