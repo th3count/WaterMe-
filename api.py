@@ -1339,6 +1339,27 @@ def save_map():
     success, message, instance_id = plant_manager.add_plant_instance(data)
     
     if success:
+        # Trigger smart duration refresh for the zone if it's in smart mode
+        zone_id = data.get('zone_id')
+        if zone_id:
+            try:
+                from core.scheduler import scheduler
+                # Check if zone is in smart mode
+                schedule_file = os.path.join(os.path.dirname(__file__), 'data', 'schedule.json')
+                if os.path.exists(schedule_file):
+                    with open(schedule_file, 'r') as f:
+                        schedule_data = json.load(f)
+                    
+                    zone_key = str(zone_id)
+                    if zone_key in schedule_data:
+                        zone_mode = schedule_data[zone_key].get('mode', 'disabled')
+                        if zone_mode == 'smart':
+                            print(f"API: Triggering smart refresh for zone {zone_id} after plant addition")
+                            scheduler.calculate_and_update_zone_duration(zone_id)
+            except Exception as e:
+                print(f"API: Failed to trigger smart refresh after plant addition: {e}")
+                # Don't fail the plant addition if smart refresh fails
+        
         return jsonify({"status": "success", "instance_id": instance_id})
     else:
         log_event(error_logger, 'ERROR', f'Plant assignment failed', 
@@ -1366,6 +1387,37 @@ def reassign_plant(instance_id):
         success, message = plant_manager.reassign_plant(instance_id, location_id, zone_id)
         
         if success:
+            # Trigger smart duration refresh for affected zones if they're in smart mode
+            try:
+                from core.scheduler import scheduler
+                # Get the old zone from the plant data
+                plant_data = plant_manager.get_plant_instances().get(instance_id, {})
+                old_zone_id = plant_data.get('zone_id')
+                
+                # Check both old and new zones for smart mode
+                schedule_file = os.path.join(os.path.dirname(__file__), 'data', 'schedule.json')
+                if os.path.exists(schedule_file):
+                    with open(schedule_file, 'r') as f:
+                        schedule_data = json.load(f)
+                    
+                    zones_to_refresh = []
+                    if old_zone_id and str(old_zone_id) in schedule_data:
+                        if schedule_data[str(old_zone_id)].get('mode') == 'smart':
+                            zones_to_refresh.append(old_zone_id)
+                    
+                    if zone_id and str(zone_id) in schedule_data:
+                        if schedule_data[str(zone_id)].get('mode') == 'smart':
+                            zones_to_refresh.append(zone_id)
+                    
+                    # Trigger refresh for each smart zone
+                    for refresh_zone_id in zones_to_refresh:
+                        print(f"API: Triggering smart refresh for zone {refresh_zone_id} after plant reassignment")
+                        scheduler.calculate_and_update_zone_duration(refresh_zone_id)
+                        
+            except Exception as e:
+                print(f"API: Failed to trigger smart refresh after plant reassignment: {e}")
+                # Don't fail the reassignment if smart refresh fails
+            
             return jsonify({'status': 'success', 'message': message})
         else:
             log_event(error_logger, 'ERROR', f'Plant reassignment failed', 
@@ -1380,12 +1432,56 @@ def reassign_plant(instance_id):
 @app.route('/api/map/<instance_id>', methods=['DELETE'])
 def delete_plant_instance(instance_id):
     try:
+        # Get the zone from the plant data BEFORE deletion
+        plant_data = plant_manager.get_plant_instances().get(instance_id, {})
+        zone_id = plant_data.get('zone_id')
+        
+        print(f"API: Plant {instance_id} is in zone {zone_id}, proceeding with deletion")
+        
         # Use PlantManager to delete plant instance
         success, message = plant_manager.delete_plant_instance(instance_id)
         
         if success:
+            print(f"API: Plant {instance_id} deleted successfully")
+            # Trigger smart duration refresh for the zone if it's in smart mode
+            try:
+                from core.scheduler import scheduler
+                
+                print(f"API: Checking zone {zone_id} for smart refresh after plant deletion")
+                
+                if zone_id:
+                    # Check if zone is in smart mode
+                    schedule_file = os.path.join(os.path.dirname(__file__), 'data', 'schedule.json')
+                    if os.path.exists(schedule_file):
+                        with open(schedule_file, 'r') as f:
+                            schedule_data = json.load(f)
+                        
+                        zone_key = str(zone_id)
+                        if zone_key in schedule_data:
+                            zone_mode = schedule_data[zone_key].get('mode', 'disabled')
+                            print(f"API: Zone {zone_id} mode is {zone_mode}")
+                            if zone_mode == 'smart':
+                                print(f"API: Triggering smart refresh for zone {zone_id} after plant deletion")
+                                result = scheduler.calculate_and_update_zone_duration(zone_id)
+                                print(f"API: Smart refresh result: {result}")
+                            else:
+                                print(f"API: Zone {zone_id} is not in smart mode, skipping refresh")
+                        else:
+                            print(f"API: Zone {zone_id} not found in schedule data")
+                    else:
+                        print(f"API: Schedule file not found")
+                else:
+                    print(f"API: No zone_id found for deleted plant")
+                                
+            except Exception as e:
+                import traceback
+                print(f"API: Failed to trigger smart refresh after plant deletion: {e}")
+                print(f"API: Traceback: {traceback.format_exc()}")
+                # Don't fail the deletion if smart refresh fails
+            
             return jsonify({'status': 'success', 'message': message})
         else:
+            print(f"API: Plant deletion failed: {message}")
             log_event(plants_logger, 'WARN', f'Plant deletion failed', instance_id=instance_id, error=message)
             return jsonify({'error': message}), 404 if 'not found' in message.lower() else 500
     except Exception as e:
@@ -1645,10 +1741,13 @@ def stop_manual_timer(zone_id):
 def get_zone_status():
     """Get hardware status of all zones directly from GPIO (lock-free)"""
     try:
+        print("API: Starting zone status request")
         from core.scheduler import scheduler
+        print("API: Scheduler imported successfully")
         
         # Get comprehensive status from scheduler (includes hardware state and remaining time)
         scheduler_status = scheduler.get_all_zone_status()
+        print(f"API: Got scheduler status: {scheduler_status}")
         
         # Convert to the expected format
         status = {}
@@ -1659,8 +1758,15 @@ def get_zone_status():
                 'type': zone_data.get('type', None)
             }
         
+        print(f"API: Returning zone status: {status}")
         return jsonify(status)
+    except ImportError as e:
+        print(f"API: Import error in get_zone_status: {e}")
+        return jsonify({'error': f'Import error: {str(e)}'}), 500
     except Exception as e:
+        import traceback
+        print(f"API: Error in get_zone_status: {e}")
+        print(f"API: Traceback: {traceback.format_exc()}")
         log_event(error_logger, 'ERROR', f'Zone status query failed', error=str(e))
         return jsonify({'error': str(e)}), 500
 
@@ -2082,23 +2188,48 @@ def stop_scheduler():
 def get_active_timers():
     """Get status of active timers"""
     try:
+        print("API: Starting active timers request")
         from core.scheduler import scheduler
+        print("API: Scheduler imported successfully for timers")
+        
+        # Check if scheduler is running
+        print(f"API: Scheduler running: {scheduler.running}")
+        print(f"API: Scheduler thread alive: {scheduler.thread.is_alive() if scheduler.thread else False}")
+        
         active_zones = scheduler.get_active_zones()
+        print(f"API: Got active zones: {active_zones}")
         
         timers = {}
         for zone_id, end_time in active_zones.items():
-            remaining = scheduler.get_remaining_time(zone_id)
-            timers[zone_id] = {
-                'end_time': end_time.isoformat(),
-                'remaining_seconds': remaining,
-                'active': True
-            }
+            try:
+                remaining = scheduler.get_remaining_time(zone_id)
+                timers[zone_id] = {
+                    'end_time': end_time.isoformat(),
+                    'remaining_seconds': remaining,
+                    'active': True
+                }
+            except Exception as zone_error:
+                print(f"API: Error processing zone {zone_id}: {zone_error}")
+                # Continue with other zones even if one fails
+                timers[zone_id] = {
+                    'end_time': str(end_time),
+                    'remaining_seconds': 0,
+                    'active': True,
+                    'error': str(zone_error)
+                }
         
+        print(f"API: Returning timers: {timers}")
         return jsonify({
             'status': 'success',
             'timers': timers
         })
+    except ImportError as e:
+        print(f"API: Import error in get_active_timers: {e}")
+        return jsonify({'error': f'Import error: {str(e)}'}), 500
     except Exception as e:
+        import traceback
+        print(f"API: Error in get_active_timers: {e}")
+        print(f"API: Traceback: {traceback.format_exc()}")
         error_logger.error(f"Error getting active timers: {e}")
         return jsonify({'error': 'Failed to get active timers'}), 500
 
@@ -2363,6 +2494,22 @@ def start_watering_scheduler():
         from core.scheduler import scheduler
         scheduler.start()
         system_logger.info("Scheduled watering system started")
+        
+        # Trigger initial smart refresh after scheduler is fully loaded
+        def trigger_initial_smart_refresh():
+            import time
+            time.sleep(3)  # Wait 3 seconds for everything to initialize
+            try:
+                print("API: Triggering initial smart refresh after scheduler start")
+                scheduler.trigger_initial_smart_refresh()
+            except Exception as e:
+                print(f"API: Failed to trigger initial smart refresh: {e}")
+        
+        # Start the initial smart refresh in a background thread
+        import threading
+        initial_refresh_thread = threading.Thread(target=trigger_initial_smart_refresh, daemon=True)
+        initial_refresh_thread.start()
+        
     except Exception as e:
         system_logger.error(f"Failed to start scheduled watering system: {e}")
 
@@ -2405,7 +2552,13 @@ def get_gpio_status_detailed():
 def test_scheduler():
     """Test if scheduler is running and show debug info"""
     try:
+        print("API: Testing scheduler basic functionality")
         from core.scheduler import scheduler
+        print(f"API: Scheduler running: {scheduler.running}")
+        print(f"API: Scheduler thread alive: {scheduler.thread.is_alive() if scheduler.thread else False}")
+        print(f"API: Active zones: {scheduler.active_zones}")
+        print(f"API: Zone states: {scheduler.zone_states}")
+        
         return jsonify({
             'scheduler_running': scheduler.running,
             'active_zones': scheduler.active_zones,
@@ -2414,9 +2567,13 @@ def test_scheduler():
             'current_time': datetime.now(tz).isoformat()
         })
     except Exception as e:
+        import traceback
+        print(f"API: Scheduler test failed: {e}")
+        print(f"API: Traceback: {traceback.format_exc()}")
         return jsonify({
             'error': str(e),
-            'scheduler_running': False
+            'scheduler_running': False,
+            'traceback': traceback.format_exc()
         }), 500
 
 @app.route('/api/gpio/manual-timer/<int:zone_id>', methods=['POST'])
@@ -2450,6 +2607,221 @@ def start_direct_manual_timer(zone_id):
     except Exception as e:
         log_event(error_logger, 'ERROR', f'Direct manual timer exception', zone_id=zone_id, error=str(e))
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/scheduler/calculate-duration/<int:zone_id>', methods=['POST'])
+def calculate_zone_duration(zone_id):
+    """Calculate and update optimal watering duration for a zone using scheduler"""
+    try:
+        print(f"Starting duration calculation for zone {zone_id}")
+        
+        # Import the scheduler
+        from core.scheduler import scheduler
+        print("Scheduler imported successfully")
+        
+        # Calculate and update the zone duration
+        result = scheduler.calculate_and_update_zone_duration(zone_id)
+        print(f"Duration calculation result: {result}")
+        
+        return jsonify(result)
+        
+    except ImportError as e:
+        print(f"Import error in calculate_zone_duration: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Import error: {str(e)}',
+            'calculated_duration': '00:20:00'  # Default 20 minutes
+        }), 500
+    except Exception as e:
+        import traceback
+        print(f"Error calculating zone duration: {e}")
+        print(f"Traceback: {traceback.format_exc()}")
+        return jsonify({
+            'success': False,
+            'error': f'Failed to calculate duration: {str(e)}',
+            'calculated_duration': '00:20:00'  # Default 20 minutes
+        }), 500
+
+@app.route('/api/scheduler/refresh-smart-durations', methods=['POST'])
+def refresh_all_smart_durations():
+    """Refresh durations for all zones in smart mode"""
+    try:
+        # Import the scheduler
+        from core.scheduler import scheduler
+        
+        # Refresh all smart durations
+        result = scheduler.refresh_all_smart_durations()
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"Error refreshing smart durations: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Failed to refresh smart durations: {str(e)}',
+            'zones_updated': 0,
+            'total_zones_checked': 0,
+            'results': {}
+        }), 500
+
+@app.route('/api/scheduler/refresh-zone-duration/<int:zone_id>', methods=['POST'])
+def refresh_zone_duration(zone_id):
+    """Refresh smart duration for a specific zone (triggered by plant changes)"""
+    try:
+        # Import the scheduler
+        from core.scheduler import scheduler
+        
+        # Refresh duration for the specific zone
+        result = scheduler.calculate_and_update_zone_duration(zone_id)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"Error refreshing zone duration: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Failed to refresh zone duration: {str(e)}',
+            'calculated_duration': '00:20:00'  # Default 20 minutes
+        }), 500
+
+@app.route('/api/debug/plant-map', methods=['GET'])
+def debug_plant_map():
+    """Debug endpoint to check plant map structure"""
+    try:
+        from core.plant_manager import plant_manager
+        debug_info = plant_manager.debug_plant_map()
+        return jsonify(debug_info)
+    except Exception as e:
+        return jsonify({
+            'error': f'Failed to debug plant map: {str(e)}'
+        }), 500
+
+@app.route('/api/debug/zone-plants/<int:zone_id>', methods=['GET'])
+def debug_zone_plants(zone_id):
+    """Debug endpoint to check plants in a specific zone"""
+    try:
+        from core.plant_manager import plant_manager
+        zone_plants = plant_manager.get_zone_plants(zone_id)
+        zone_mode = plant_manager._get_zone_mode(zone_id)
+        return jsonify({
+            'zone_id': zone_id,
+            'zone_mode': zone_mode,
+            'plant_count': len(zone_plants),
+            'plants': zone_plants
+        })
+    except Exception as e:
+        return jsonify({
+            'error': f'Failed to debug zone plants: {str(e)}'
+        }), 500
+
+@app.route('/api/debug/test-plant-manager', methods=['GET'])
+def test_plant_manager():
+    """Test endpoint to check if plant manager is working"""
+    try:
+        from core.plant_manager import plant_manager
+        debug_info = plant_manager.debug_plant_map()
+        return jsonify({
+            'success': True,
+            'plant_manager_loaded': True,
+            'debug_info': debug_info
+        })
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'success': False,
+            'error': f'Plant manager test failed: {str(e)}',
+            'traceback': traceback.format_exc()
+        }), 500
+
+@app.route('/api/debug/test-scheduler', methods=['GET'])
+def debug_test_scheduler():
+    """Test endpoint to check if scheduler is working"""
+    try:
+        print("API: Testing scheduler import")
+        from core.scheduler import scheduler
+        print("API: Scheduler imported successfully")
+        
+        # Test basic scheduler methods
+        print("API: Testing scheduler methods")
+        status = scheduler.get_all_zone_status()
+        active_zones = scheduler.get_active_zones()
+        
+        return jsonify({
+            'success': True,
+            'scheduler_loaded': True,
+            'zone_status_count': len(status),
+            'active_zones_count': len(active_zones),
+            'sample_status': dict(list(status.items())[:2]) if status else {},
+            'active_zones': active_zones
+        })
+    except Exception as e:
+        import traceback
+        print(f"API: Scheduler test failed: {e}")
+        print(f"API: Traceback: {traceback.format_exc()}")
+        return jsonify({
+            'success': False,
+            'error': f'Scheduler test failed: {str(e)}',
+            'traceback': traceback.format_exc()
+        }), 500
+
+@app.route('/api/scheduler/trigger-initial-refresh', methods=['POST'])
+def trigger_initial_smart_refresh():
+    """Trigger initial smart duration refresh after scheduler is fully loaded"""
+    try:
+        print("API: Triggering initial smart refresh")
+        from core.scheduler import scheduler
+        scheduler.trigger_initial_smart_refresh()
+        return jsonify({
+            'success': True,
+            'message': 'Initial smart refresh triggered'
+        })
+    except Exception as e:
+        import traceback
+        print(f"API: Failed to trigger initial smart refresh: {e}")
+        print(f"API: Traceback: {traceback.format_exc()}")
+        return jsonify({
+            'success': False,
+            'error': f'Failed to trigger initial smart refresh: {str(e)}'
+        }), 500
+
+@app.route('/api/scheduler/update-zone-mode', methods=['POST'])
+def update_zone_mode():
+    """Update zone mode and trigger smart duration calculation if converting to smart mode"""
+    try:
+        data = request.get_json()
+        zone_id = data.get('zone_id')
+        new_mode = data.get('new_mode') or data.get('mode')  # Support both field names
+        old_mode = data.get('old_mode')
+        purge_config = data.get('purge_config', False)
+        
+        if not zone_id or not new_mode:
+            return jsonify({
+                'success': False,
+                'error': 'Missing zone_id or new_mode'
+            }), 400
+        
+        # Import the scheduler
+        from core.scheduler import scheduler
+        
+        # Update zone mode and trigger smart calculation if needed
+        success = scheduler.update_zone_mode(zone_id, new_mode, old_mode, purge_config)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': f'Zone {zone_id} mode updated to {new_mode}'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'Failed to update zone {zone_id} mode'
+            }), 500
+        
+    except Exception as e:
+        print(f"Error updating zone mode: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Failed to update zone mode: {str(e)}'
+        }), 500
 
 @app.route('/api/logs/event', methods=['POST'])
 def log_event_from_frontend():

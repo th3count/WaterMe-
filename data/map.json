@@ -1,34 +1,32 @@
 {
   "1": {
     "library_book": "fruitbushes",
-    "plant_id": 1,
-    "common_name": "Strawberry, Red",
+    "plant_id": 2,
+    "common_name": "Raspberry, Red",
     "quantity": 1,
     "emitter_size": 4,
-    "zone_id": 1,
+    "zone_id": 2,
     "location_id": 2,
     "comments": "",
-    "planted_date": "2025-07-24",
+    "planted_date": "2025-07-25",
     "smart_overrides": {
-      "zone_selection": "manual",
-      "emitter_sizing": "manual",
-      "duration": "manual"
+      "zone_selection": "smart",
+      "emitter_sizing": "smart"
     }
   },
   "2": {
     "library_book": "fruitbushes",
-    "plant_id": 1,
-    "common_name": "Strawberry, Red",
-    "quantity": 5,
-    "emitter_size": 4,
-    "zone_id": 1,
+    "plant_id": 2,
+    "common_name": "Raspberry, Red",
+    "quantity": 1,
+    "emitter_size": 1,
+    "zone_id": 2,
     "location_id": 2,
     "comments": "",
-    "planted_date": "2025-07-24",
+    "planted_date": "2025-07-25",
     "smart_overrides": {
-      "zone_selection": "manual",
-      "emitter_sizing": "manual",
-      "duration": "manual"
+      "zone_selection": "smart",
+      "emitter_sizing": "smart"
     }
   }
 }

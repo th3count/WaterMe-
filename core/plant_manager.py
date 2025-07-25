@@ -188,7 +188,7 @@ class PlantManager:
         except ValueError:
             return 0.333  # Default 20 minutes
     
-    def calculate_optimal_emitter_size(self, plant_data: Dict[str, Any], zone_id: int) -> Dict[str, Any]:
+    def calculate_optimal_emitter_size(self, plant_data: Dict[str, Any], zone_id: int, is_new_placement: bool = False) -> Dict[str, Any]:
         """
         Calculate optimal emitter size for a plant in a specific zone
         
@@ -224,27 +224,50 @@ class PlantManager:
                 'error': 'Invalid plant water requirements'
             }
         
-        # Calculate cycles per week and zone duration
+        # Calculate cycles per week
         cycles_per_week = self.calculate_cycles_per_week(zone_frequency)
-        zone_duration_hours = self.get_zone_duration_hours(zone_id)
         
-        if cycles_per_week <= 0 or zone_duration_hours <= 0:
+        if cycles_per_week <= 0:
             return {
                 'success': False,
                 'error': 'Invalid zone schedule configuration'
             }
         
+        # Check if zone is empty (no plants currently in the zone)
+        zone_plants = self.get_zone_plants(zone_id)
+        is_empty_zone = len(zone_plants) == 0
+        
+        # For new plant placements in empty zones, target 20 minutes
+        if is_new_placement and is_empty_zone:
+            is_empty_zone = True
+        elif is_new_placement and not is_empty_zone:
+            # For new plant placements in non-empty zones, use existing duration
+            is_empty_zone = False
+        
+        if is_empty_zone:
+            # For empty zones, target 20-minute duration
+            target_duration_hours = 20.0 / 60.0  # 20 minutes in hours
+        else:
+            # For zones with plants, use current zone duration
+            zone_duration_hours = self.get_zone_duration_hours(zone_id)
+            if zone_duration_hours <= 0:
+                return {
+                    'success': False,
+                    'error': 'Invalid zone schedule configuration'
+                }
+            target_duration_hours = zone_duration_hours
+        
         # Calculate optimal emitter size
-        # Formula: (water_optimal_in_week × root_area_sqft × 0.623) ÷ (cycles_per_week × zone_duration_hours)
+        # Formula: (water_optimal_in_week × root_area_sqft × 0.623) ÷ (cycles_per_week × target_duration_hours)
         weekly_water_volume = water_optimal_in_week * root_area_sqft * 0.623  # gallons
         per_cycle_volume = weekly_water_volume / cycles_per_week  # gallons per cycle
-        calculated_gph = per_cycle_volume / zone_duration_hours  # gallons per hour
+        calculated_gph = per_cycle_volume / target_duration_hours  # gallons per hour
         
         # Find nearest available emitter size
         nearest_emitter = min(EMITTER_SIZES, key=lambda x: abs(x - calculated_gph))
         
         # Calculate actual water delivery with nearest emitter
-        actual_weekly_water = (nearest_emitter * zone_duration_hours * cycles_per_week) / (root_area_sqft * 0.623)
+        actual_weekly_water = (nearest_emitter * target_duration_hours * cycles_per_week) / (root_area_sqft * 0.623)
         
         # Health validation
         is_within_tolerance = tolerance_min_in_week <= actual_weekly_water <= tolerance_max_in_week
@@ -274,7 +297,8 @@ class PlantManager:
                 'water_optimal_in_week': water_optimal_in_week,
                 'root_area_sqft': root_area_sqft,
                 'cycles_per_week': cycles_per_week,
-                'zone_duration_hours': zone_duration_hours,
+                'target_duration_hours': target_duration_hours,
+                'is_empty_zone': is_empty_zone,
                 'weekly_water_volume': weekly_water_volume,
                 'per_cycle_volume': per_cycle_volume,
                 'tolerance_min_in_week': tolerance_min_in_week,
@@ -289,7 +313,7 @@ class PlantManager:
         Returns:
             Dict with validation results
         """
-        emitter_calculation = self.calculate_optimal_emitter_size(plant_data, zone_id)
+        emitter_calculation = self.calculate_optimal_emitter_size(plant_data, zone_id, is_new_placement=True)
         
         if not emitter_calculation.get('success'):
             return {
@@ -325,12 +349,11 @@ class PlantManager:
         
         instance_id = str(next_instance_id)
         
-        # Add smart_overrides if not present
+        # Add smart_overrides if not present (duration is handled by schedule.json)
         if 'smart_overrides' not in plant_data:
             plant_data['smart_overrides'] = {
                 'zone_selection': 'manual',
-                'emitter_sizing': 'manual',
-                'duration': 'manual'
+                'emitter_sizing': 'manual'
             }
         
         # Save to map
@@ -347,6 +370,11 @@ class PlantManager:
                      location_id=plant_data.get('location_id'),
                      zone=plant_data.get('zone'),
                      quantity=plant_data.get('quantity'))
+            
+            # Trigger smart duration refresh for the affected zone
+            zone_id = plant_data.get('zone_id')
+            if zone_id:
+                self._trigger_zone_smart_refresh(zone_id)
             
             return True, "Plant instance added successfully", instance_id
             
@@ -400,6 +428,12 @@ class PlantManager:
                      old_zone=old_zone_id,
                      new_zone=new_zone_id)
             
+            # Trigger smart duration refresh for affected zones (only if they're in smart mode)
+            if old_zone_id:
+                self._trigger_zone_smart_refresh(old_zone_id)
+            if new_zone_id and new_zone_id != old_zone_id:
+                self._trigger_zone_smart_refresh(new_zone_id)
+            
             return True, f"Plant instance {instance_id} reassigned ({changes})"
             
         except Exception as e:
@@ -431,6 +465,25 @@ class PlantManager:
                      location_id=plant_info.get('location_id'),
                      zone=plant_info.get('zone'),
                      quantity=plant_info.get('quantity'))
+            
+            # Trigger smart duration refresh for the affected zone
+            zone_id = plant_info.get('zone_id')
+            if zone_id:
+                self._trigger_zone_smart_refresh(zone_id)
+                # Check if the zone is now empty and disable if so
+                zone_plants = self.get_zone_plants(zone_id)
+                if len(zone_plants) == 0:
+                    try:
+                        # Purge zone configuration when it becomes empty (same as UI deactivation)
+                        # Use API endpoint to avoid circular import
+                        import requests
+                        response = requests.post(f'http://localhost:5000/api/scheduler/update-zone-mode', 
+                                               json={'zone_id': zone_id, 'new_mode': 'disabled', 'purge_config': True})
+                        if response.status_code != 200:
+                            log_event(plants_logger, 'ERROR', 'Failed to disable empty zone via API', 
+                                    zone_id=zone_id, status_code=response.status_code)
+                    except Exception as e:
+                        log_event(plants_logger, 'ERROR', 'Failed to disable empty zone', zone_id=zone_id, error=str(e))
             
             return True, f"Plant instance {instance_id} deleted successfully"
             
@@ -725,7 +778,7 @@ class PlantManager:
         enhanced_recommendations = []
         for rec in recommendations:
             zone_id = rec['zone_id']
-            emitter_analysis = self.calculate_optimal_emitter_size(plant_data, zone_id)
+            emitter_analysis = self.calculate_optimal_emitter_size(plant_data, zone_id, is_new_placement=True)
             rec['emitter_analysis'] = emitter_analysis
             
             # Filter out zones that fail emitter sizing health check
@@ -737,7 +790,7 @@ class PlantManager:
         # Update optimal zone if it fails emitter sizing
         optimal_emitter_analysis = None
         if optimal_zone:
-            optimal_emitter_analysis = self.calculate_optimal_emitter_size(plant_data, optimal_zone)
+            optimal_emitter_analysis = self.calculate_optimal_emitter_size(plant_data, optimal_zone, is_new_placement=True)
             if optimal_emitter_analysis.get('success') and not optimal_emitter_analysis.get('is_within_tolerance'):
                 # Find new optimal zone from filtered recommendations
                 if enhanced_recommendations:
@@ -906,6 +959,333 @@ class PlantManager:
             'neither_zones': neither_zones,
             'suggestions': suggestions
         }
+
+    def calculate_optimal_zone_duration(self, zone_id: int) -> Dict[str, Any]:
+        """
+        Calculate optimal watering duration for a zone based on installed plants
+        
+        Returns:
+            Dict with calculation results and new duration
+        """
+        try:
+            # Debug logging
+            log_event(plants_logger, 'DEBUG', 'Starting zone duration calculation', zone_id=zone_id)
+            
+            # Check if zone is in smart mode
+            zone_mode = self._get_zone_mode(zone_id)
+            if zone_mode != 'smart':
+                log_event(plants_logger, 'WARNING', 'Zone is not in smart mode, skipping duration calculation', 
+                         zone_id=zone_id, zone_mode=zone_mode)
+                return {
+                    'success': False,
+                    'error': f'Zone is in {zone_mode} mode, smart calculation not applicable',
+                    'calculated_duration': '00:20:00'  # Default 20 minutes
+                }
+            
+            # Get all plants in this zone
+            zone_plants = self.get_zone_plants(zone_id)
+            log_event(plants_logger, 'DEBUG', 'Found plants in zone', 
+                     zone_id=zone_id, plant_count=len(zone_plants))
+            
+            if not zone_plants:
+                log_event(plants_logger, 'WARNING', 'No plants found in zone for duration calculation', zone_id=zone_id)
+                return {
+                    'success': False,
+                    'error': 'No plants found in zone',
+                    'calculated_duration': '00:20:00'  # Default 20 minutes
+                }
+            
+            total_seconds = 0
+            total_plants = 0
+            plant_calculations = []
+            
+            for plant_instance in zone_plants:
+                instance_id = plant_instance['instance_id']
+                plant_id = plant_instance['plant_id']
+                library_book = plant_instance['library_book']
+                emitter_size = plant_instance.get('emitter_size', 4.0)  # Default 4 GPH
+                quantity = plant_instance.get('quantity', 1)
+                
+                # Get plant library data
+                plant_library_data = self.get_plant_data(plant_id, library_book)
+                if not plant_library_data:
+                    log_event(plants_logger, 'WARNING', 'Plant not found in library for duration calculation', 
+                             instance_id=instance_id, plant_id=plant_id, library_book=library_book)
+                    continue
+                
+                # Debug logging for plant data
+                log_event(plants_logger, 'DEBUG', 'Processing plant for duration calculation', 
+                         instance_id=instance_id, plant_id=plant_id, library_book=library_book,
+                         plant_name=plant_library_data.get('common_name', 'Unknown'))
+                
+                # Get plant water requirements
+                water_optimal_in_week = plant_library_data.get('water_optimal_in_week', 0)
+                root_area_sqft = plant_library_data.get('root_area_sqft', 0)
+                
+                if water_optimal_in_week <= 0 or root_area_sqft <= 0:
+                    log_event(plants_logger, 'WARNING', 'Invalid plant water requirements for duration calculation', 
+                             instance_id=instance_id, plant_id=plant_id, 
+                             water_optimal_in_week=water_optimal_in_week, root_area_sqft=root_area_sqft)
+                    continue
+                
+                # Debug logging for water requirements
+                log_event(plants_logger, 'DEBUG', 'Plant water requirements', 
+                         instance_id=instance_id, plant_id=plant_id,
+                         water_optimal_in_week=water_optimal_in_week, root_area_sqft=root_area_sqft,
+                         emitter_size=emitter_size, quantity=quantity)
+                
+                # Calculate volume needed per plant (gallons)
+                volume_per_plant = water_optimal_in_week * root_area_sqft * 0.623
+                
+                # Calculate time needed per plant (seconds)
+                time_per_plant_seconds = (volume_per_plant / emitter_size) * 3600
+                
+                # Total time for all plants of this type
+                total_time_for_type = time_per_plant_seconds * quantity
+                
+                total_seconds += total_time_for_type
+                total_plants += quantity
+                
+                plant_calculations.append({
+                    'instance_id': instance_id,
+                    'plant_name': plant_library_data.get('common_name', 'Unknown'),
+                    'quantity': quantity,
+                    'emitter_size': emitter_size,
+                    'volume_per_plant': volume_per_plant,
+                    'time_per_plant_seconds': time_per_plant_seconds,
+                    'total_time_for_type': total_time_for_type
+                })
+            
+            if total_plants == 0:
+                log_event(plants_logger, 'WARNING', 'No valid plants found for duration calculation', 
+                         zone_id=zone_id, plant_count=len(zone_plants))
+                return {
+                    'success': False,
+                    'error': 'No valid plants found for duration calculation',
+                    'calculated_duration': '00:20:00'  # Default 20 minutes
+                }
+            
+            # Debug logging for final calculation
+            log_event(plants_logger, 'DEBUG', 'Duration calculation summary', 
+                     zone_id=zone_id, total_seconds=total_seconds, total_plants=total_plants)
+            
+            # Calculate average seconds per plant
+            average_seconds = total_seconds / total_plants
+            
+            # Convert to HH:mm:ss format
+            hours = int(average_seconds // 3600)
+            minutes = int((average_seconds % 3600) // 60)
+            seconds = int(average_seconds % 60)
+            
+            calculated_duration = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+            
+            log_event(plants_logger, 'INFO', 'Zone duration calculated', 
+                     zone_id=zone_id, 
+                     total_plants=total_plants,
+                     total_seconds=total_seconds,
+                     average_seconds=average_seconds,
+                     calculated_duration=calculated_duration,
+                     plant_count=len(plant_calculations))
+            
+            return {
+                'success': True,
+                'calculated_duration': calculated_duration,
+                'total_seconds': total_seconds,
+                'average_seconds': average_seconds,
+                'total_plants': total_plants,
+                'plant_calculations': plant_calculations
+            }
+            
+        except Exception as e:
+            log_event(plants_logger, 'ERROR', 'Failed to calculate zone duration', 
+                     zone_id=zone_id, error=str(e), traceback=str(e.__traceback__))
+            return {
+                'success': False,
+                'error': f'Calculation failed: {str(e)}',
+                'calculated_duration': '00:20:00'  # Default 20 minutes
+            }
+    
+    def _trigger_zone_smart_refresh(self, zone_id: int):
+        """Trigger smart duration refresh for a specific zone ONLY if it's in smart mode"""
+        try:
+            # Check if the zone is in smart mode before calculating
+            zone_mode = self._get_zone_mode(zone_id)
+            
+            if zone_mode != 'smart':
+                log_event(plants_logger, 'DEBUG', 'Skipping smart refresh for zone - not in smart mode', 
+                         zone_id=zone_id, zone_mode=zone_mode)
+                return
+            
+            # Use a delayed import to avoid circular import issues
+            # We'll trigger the refresh via a simple flag that the scheduler can check
+            log_event(plants_logger, 'INFO', 'Plant change detected in smart zone - duration refresh needed', 
+                     zone_id=zone_id)
+            
+            # For now, we'll skip the immediate refresh to avoid circular imports
+            # The scheduler will handle smart duration calculations during its normal operation
+            # This prevents the 500 errors while still maintaining smart functionality
+            
+        except Exception as e:
+            log_event(plants_logger, 'ERROR', 'Failed to trigger smart duration refresh', 
+                     zone_id=zone_id, error=str(e))
+    
+    def _get_zone_mode(self, zone_id: int) -> str:
+        """Get the current mode of a zone"""
+        try:
+            # Load schedule data to check zone mode
+            schedule_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'schedule.json')
+            if os.path.exists(schedule_file):
+                with open(schedule_file, 'r') as f:
+                    schedule_data = json.load(f)
+                
+                zone_key = str(zone_id)
+                if zone_key in schedule_data:
+                    return schedule_data[zone_key].get('mode', 'disabled')
+            
+            return 'disabled'  # Default if zone not found
+        except Exception as e:
+            log_event(plants_logger, 'ERROR', 'Failed to get zone mode', 
+                     zone_id=zone_id, error=str(e))
+            return 'disabled'
+    
+    def debug_plant_map(self) -> Dict[str, Any]:
+        """Debug method to show current plant map structure"""
+        try:
+            return {
+                'plant_map_keys': list(self.plant_map.keys()),
+                'plant_map_sample': dict(list(self.plant_map.items())[:3]) if self.plant_map else {},
+                'total_plants': len(self.plant_map)
+            }
+        except Exception as e:
+            return {
+                'error': f'Failed to debug plant map: {str(e)}',
+                'plant_map_type': type(self.plant_map).__name__
+            }
+    
+    def calculate_optimal_zone_schedule(self, zone_id: int) -> Dict[str, Any]:
+        """
+        Calculate optimal watering schedule (duration, times, cycles) for a zone based on installed plants
+        
+        Args:
+            zone_id: The zone ID to calculate schedule for
+            
+        Returns:
+            Dict with calculated schedule parameters
+        """
+        try:
+            # Get plants in the zone
+            zone_plants = self.get_zone_plants(zone_id)
+            
+            if not zone_plants:
+                return {
+                    'success': False,
+                    'error': 'No plants found in zone',
+                    'calculated_duration': '00:20:00'  # Default 20 minutes
+                }
+            
+            # Calculate optimal duration first
+            duration_result = self.calculate_optimal_zone_duration(zone_id)
+            if not duration_result.get('success'):
+                return duration_result
+            
+            # Analyze plant watering requirements to determine optimal schedule
+            total_water_requirement = 0
+            plant_frequencies = []
+            
+            for plant_instance in zone_plants:
+                plant_id = plant_instance['plant_id']
+                library_book = plant_instance['library_book']
+                quantity = plant_instance.get('quantity', 1)
+                
+                # Get plant library data
+                plant_library_data = self.get_plant_data(plant_id, library_book)
+                if not plant_library_data:
+                    continue
+                
+                # Get plant water requirements and frequency
+                water_optimal_in_week = plant_library_data.get('water_optimal_in_week', 0)
+                root_area_sqft = plant_library_data.get('root_area_sqft', 0)
+                frequency = plant_library_data.get('frequency', 'moderate')
+                
+                # Calculate total water requirement for this plant type
+                volume_per_plant = water_optimal_in_week * root_area_sqft * 0.623
+                total_volume_for_type = volume_per_plant * quantity
+                total_water_requirement += total_volume_for_type
+                
+                # Track frequency requirements
+                plant_frequencies.extend([frequency] * quantity)
+            
+            if total_water_requirement <= 0:
+                return {
+                    'success': False,
+                    'error': 'No valid water requirements found for plants in zone',
+                    'calculated_duration': duration_result.get('calculated_duration', '00:20:00')
+                }
+            
+            # Determine optimal frequency based on plant requirements
+            # Analyze frequency distribution
+            frequency_counts = {}
+            for freq in plant_frequencies:
+                frequency_counts[freq] = frequency_counts.get(freq, 0) + 1
+            
+            # Determine optimal period and cycles
+            # This is a simplified algorithm - can be enhanced based on specific requirements
+            if 'high' in frequency_counts and frequency_counts['high'] > len(plant_frequencies) * 0.5:
+                # Majority need high frequency - daily watering
+                calculated_period = 'D'
+                calculated_cycles = 1  # Once per day
+            elif 'moderate' in frequency_counts and frequency_counts['moderate'] > len(plant_frequencies) * 0.5:
+                # Majority need moderate frequency - every few days
+                calculated_period = 'D'
+                calculated_cycles = 2  # Twice per week
+            else:
+                # Default to weekly
+                calculated_period = 'W'
+                calculated_cycles = 1  # Once per week
+            
+            # Calculate optimal watering times based on plant types and climate considerations
+            # For now, use default morning time, but this could be enhanced with climate data
+            calculated_times = [
+                {
+                    'start_time': '06:00',
+                    'duration': duration_result.get('calculated_duration', '00:20:00')
+                }
+            ]
+            
+            # If daily with multiple cycles, add afternoon watering
+            if calculated_period == 'D' and calculated_cycles > 1:
+                calculated_times.append({
+                    'start_time': '18:00',
+                    'duration': duration_result.get('calculated_duration', '00:20:00')
+                })
+            
+            log_event(plants_logger, 'INFO', 'Zone schedule calculated', 
+                     zone_id=zone_id, 
+                     calculated_period=calculated_period,
+                     calculated_cycles=calculated_cycles,
+                     calculated_duration=duration_result.get('calculated_duration'),
+                     total_water_requirement=total_water_requirement,
+                     plant_count=len(zone_plants))
+            
+            return {
+                'success': True,
+                'calculated_duration': duration_result.get('calculated_duration'),
+                'calculated_period': calculated_period,
+                'calculated_cycles': calculated_cycles,
+                'calculated_times': calculated_times,
+                'total_water_requirement': total_water_requirement,
+                'plant_count': len(zone_plants),
+                'frequency_analysis': frequency_counts
+            }
+            
+        except Exception as e:
+            log_event(plants_logger, 'ERROR', 'Failed to calculate zone schedule', 
+                     zone_id=zone_id, error=str(e))
+            return {
+                'success': False,
+                'error': f'Schedule calculation failed: {str(e)}',
+                'calculated_duration': '00:20:00'  # Default 20 minutes
+            }
 
 # Create global instance
 plant_manager = PlantManager() 

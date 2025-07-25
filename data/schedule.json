@@ -1,69 +1,44 @@
 {
   "1": {
-    "comment": "Grass",
+    "comment": "",
     "cycles": 1,
     "mode": "manual",
     "originalIndex": 0,
     "period": "D",
-    "showTimePicker": 0,
-    "startDay": "2025-07-19",
+    "scheduleMode": "smart",
+    "showDurationPicker": null,
+    "showTimePicker": null,
+    "startDay": "2025-07-26",
     "times": [
       {
-        "duration": "000100",
-        "start_time": "16:41",
-        "value": "00:49"
+        "duration": "00:20:00",
+        "start_time": "06:00"
       }
     ]
   },
   "2": {
-    "comment": "Fruit",
-    "cycles": 2,
-    "mode": "manual",
-    "originalIndex": 1,
-    "period": "D",
-    "selectedSolarTime": null,
-    "showTimePicker": null,
-    "solarMode": true,
-    "startDay": "2025-07-19",
-    "times": [
-      {
-        "duration": "002000",
-        "start_time": "SUNRISE",
-        "value": "SUNRISE"
-      },
-      {
-        "duration": "",
-        "start_time": "SUNSET-30",
-        "value": "SUNSET-30"
-      }
-    ]
-  },
-  "3": {
-    "comment": "r",
+    "comment": "",
     "cycles": 1,
-    "mode": "manual",
+    "mode": "smart",
     "period": "W",
-    "startDay": "2025-07-24",
+    "startDay": "2025-07-25",
     "times": [
       {
-        "duration": "010000",
+        "duration": "00:42:03",
         "start_time": "SUNRISE+30",
         "value": "SUNRISE+30"
       }
-    ]
+    ],
+    "scheduleMode": "smart",
+    "originalIndex": 1,
+    "showTimePicker": null,
+    "showDurationPicker": null
+  },
+  "3": {
+    "mode": "disabled"
   },
   "4": {
-    "comment": "big trees",
-    "cycles": 1,
-    "mode": "manual",
-    "period": "M",
-    "startDay": "2025-07-19",
-    "times": [
-      {
-        "duration": "020000",
-        "value": "08:00"
-      }
-    ]
+    "mode": "disabled"
   },
   "5": {
     "mode": "disabled"

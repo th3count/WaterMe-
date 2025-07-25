@@ -126,8 +126,8 @@ interface Zone {
   period: string;
   cycles: number;
   mode?: string;
-  times?: { value: string; duration: string; start_time?: string }[];
-  time?: { value: string; duration: string; start_time?: string };
+  times?: { start_time: string; duration: string }[];
+  time?: { start_time: string; duration: string };
 }
 
 // Helper functions for next scheduled time calculation
@@ -145,7 +145,7 @@ function getNextScheduledDate(zone: any, zoneResolvedTimes?: Record<number, Reco
         
         // Check if any scheduled times are still coming today
         const hasTimeToday = zone.times.some((t: any) => {
-          const timeValue = t.value;
+          const timeValue = t.start_time;
           
           // Handle HH:MM format directly
           if (timeValue && timeValue.includes(':') && timeValue.length === 5) {
@@ -206,7 +206,7 @@ function getNextDailyTime(zone: any, zoneResolvedTimes: Record<number, Record<st
   if (Array.isArray(zone.times)) {
     // All times in array
     allTimes = zone.times.map((t: any) => {
-      const timeValue = t.value;
+      const timeValue = t.start_time;
       
       // Handle HH:MM format directly (no resolution needed)
       if (timeValue && timeValue.includes(':') && timeValue.length === 5) {
@@ -361,6 +361,7 @@ export default function GardenOverview() {
     recommendations: any[];
     optimal_emitter_analysis?: any;
     emitterSizingMode: 'smart' | 'manual';
+    zoneSelectionMode: 'smart' | 'manual';
   } | null>(null);
 
   const [showLocationForm, setShowLocationForm] = useState(false);
@@ -1032,7 +1033,8 @@ export default function GardenOverview() {
               bookFile: file,
               recommendations: analysis.recommendations || [],
               optimal_emitter_analysis: analysis.optimal_emitter_analysis,
-              emitterSizingMode: 'smart'
+              emitterSizingMode: 'smart',
+              zoneSelectionMode: 'smart'
             });
             
             // Auto-select the best match zone (first recommendation)
@@ -1062,7 +1064,8 @@ export default function GardenOverview() {
               bookFile: file,
               recommendations: [], // Empty recommendations since no compatible zones
               optimal_emitter_analysis: undefined,
-              emitterSizingMode: 'smart'
+              emitterSizingMode: 'smart',
+              zoneSelectionMode: 'smart'
             });
             
             // Set default values for smart placement
@@ -1149,6 +1152,17 @@ export default function GardenOverview() {
         }
         return loc;
       }));
+
+      // Refresh zones data to get updated durations
+      try {
+        const zonesResponse = await fetch(`${getApiBaseUrl()}/api/schedule`);
+        if (zonesResponse.ok) {
+          const zonesData = await zonesResponse.json();
+          setZones(zonesData);
+        }
+      } catch (zonesError) {
+        console.error('Error refreshing zones data:', zonesError);
+      }
 
       alert('Plant removed successfully!');
     } catch (error) {
@@ -1239,15 +1253,18 @@ export default function GardenOverview() {
 
       if (response.ok) {
         // Reload data
-        const [locationsRes, mapRes] = await Promise.all([
+        const [locationsRes, mapRes, zonesRes] = await Promise.all([
           fetch(`${getApiBaseUrl()}/api/locations`),
-          fetch(`${getApiBaseUrl()}/api/map`)
+          fetch(`${getApiBaseUrl()}/api/map`),
+          fetch(`${getApiBaseUrl()}/api/schedule`)
         ]);
-        const [newLocations, newMap] = await Promise.all([
+        const [newLocations, newMap, newZones] = await Promise.all([
           locationsRes.json(),
-          mapRes.json()
+          mapRes.json(),
+          zonesRes.json()
         ]);
         setLocations(newLocations);
+        setZones(newZones);
         
         // Clear reassignment state
         setReassignMessage('');
@@ -1397,7 +1414,11 @@ export default function GardenOverview() {
         zone_id: selectedZoneId,
         location_id: selectedLocationId,
         comments: modalData.comments || '',
-        planted_date: new Date().toISOString().split('T')[0]
+        planted_date: new Date().toISOString().split('T')[0],
+        smart_overrides: {
+          zone_selection: smartPlacementModal.zoneSelectionMode,
+          emitter_sizing: smartPlacementModal.emitterSizingMode
+        }
       };
 
       // Save to backend
@@ -1435,6 +1456,17 @@ export default function GardenOverview() {
         }
         return loc;
       }));
+
+      // Refresh zones data to get updated durations
+      try {
+        const zonesResponse = await fetch(`${getApiBaseUrl()}/api/schedule`);
+        if (zonesResponse.ok) {
+          const zonesData = await zonesResponse.json();
+          setZones(zonesData);
+        }
+      } catch (zonesError) {
+        console.error('Error refreshing zones data:', zonesError);
+      }
 
       // Reset modals and state
       setSmartPlacementModal(null);
@@ -1560,6 +1592,17 @@ export default function GardenOverview() {
         }
         return loc;
       }));
+
+      // Refresh zones data to get updated durations
+      try {
+        const zonesResponse = await fetch(`${getApiBaseUrl()}/api/schedule`);
+        if (zonesResponse.ok) {
+          const zonesData = await zonesResponse.json();
+          setZones(zonesData);
+        }
+      } catch (zonesError) {
+        console.error('Error refreshing zones data:', zonesError);
+      }
 
       // Reset modal and held plant
       setModal(null);
@@ -2139,8 +2182,8 @@ export default function GardenOverview() {
                   });
                   startTimeDisplay = resolvedTimeStrings.join(', ');
                 }
-              } else if (zone.time && (zone.time.start_time || zone.time.value)) {
-                const timeCode = zone.time.start_time || zone.time.value;
+              } else if (zone.time && zone.time.start_time) {
+                const timeCode = zone.time.start_time;
                 const resolvedTimes = zoneResolvedTimes[zone.zone_id] || {};
                 const resolved = resolvedTimes[timeCode];
                 startTimeDisplay = resolved && resolved !== 'N/A' && resolved !== '...' ? resolved : timeCode;

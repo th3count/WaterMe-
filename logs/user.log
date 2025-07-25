@@ -222,3 +222,62 @@ ed
 [2025-07-24 16:40:24] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
 [2025-07-24 16:41:13] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
 [2025-07-24 16:54:25] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 19:56:39] [INFO] [USER] Manual timer started | zone_id=1 duration=60
+[2025-07-24 19:58:48] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 19:58:53] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 19:59:18] [INFO] [USER] Zone updated and caches reloaded | zone_id=3 mode=active period=W times_count=1
+[2025-07-24 20:07:22] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 3: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 20:15:39] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 3: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 20:15:45] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 3: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 20:15:52] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 20:15:55] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 20:16:05] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 20:16:09] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 20:16:21] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 20:16:24] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 20:57:06] [INFO] [USER] Zone updated and caches reloaded | zone_id=3 mode=manual period=W times_count=1
+[2025-07-24 20:57:36] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 21:06:40] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 21:26:50] [INFO] [USER] Zone updated and caches reloaded | zone_id=2 mode=manual period=W times_count=1
+[2025-07-24 21:26:59] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 21:27:17] [INFO] [USER] Zone updated and caches reloaded | zone_id=3 mode=manual period=W times_count=1
+[2025-07-24 21:27:24] [INFO] [USER] Zone updated and caches reloaded | zone_id=4 mode=active period=W times_count=1
+[2025-07-24 21:27:33] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 4: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 21:27:35] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 4: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 21:39:44] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid mode (must be manual, smart, or disabled)', 'Zone 4: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 21:39:46] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid mode (must be manual, smart, or disabled)', 'Zone 4: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 21:39:47] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid mode (must be manual, smart, or disabled)', 'Zone 4: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 21:39:59] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid mode (must be manual, smart, or disabled)', 'Zone 4: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 21:40:03] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid mode (must be manual, smart, or disabled)', 'Zone 4: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 21:40:06] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 21:40:11] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 21:40:12] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 21:40:25] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 21:41:26] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 21:41:32] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 21:41:55] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 21:47:46] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 21:47:53] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid mode (must be manual, smart, or disabled)', 'Zone 4: Invalid mode (must be manual, smart, or disabled)', 'Zone 4: Invalid period (must be D, W, or M)', 'Zone 4: Must have at least one time in times array']
+[2025-07-24 21:48:02] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 21:48:57] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 21:49:23] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 21:49:31] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 21:50:26] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 21:50:39] [WARNING] [USER] Schedule save failed - validation errors | errors=['Zone 1: Invalid mode (must be manual, smart, or disabled)']
+[2025-07-24 21:51:25] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 21:51:32] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 21:51:41] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 21:51:48] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 21:51:56] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 21:55:25] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 21:55:44] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 21:55:49] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 21:55:54] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 21:58:24] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 21:58:29] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 21:59:30] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 21:59:39] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 22:01:04] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 22:02:48] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8
+[2025-07-24 22:03:00] [INFO] [USER] Zone updated and caches reloaded | zone_id=2 mode=active period=W times_count=1
+[2025-07-24 22:03:10] [INFO] [USER] Schedule saved and caches reloaded | zone_count=8

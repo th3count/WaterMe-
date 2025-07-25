@@ -3,39 +3,26 @@
     "assignedPlants": [
       {
         "plant": {
-          "plant_id": 1,
-          "common_name": "Strawberry, Red",
-          "watering_frequency": [
-            "W2"
-          ],
-          "preferred_time": [
-            "SUNRISE+30"
-          ],
-          "alternative_name": "",
-          "latin_name": "Fragaria × ananassa",
-          "compatible_watering_frequencies": [
-            "D1"
-          ],
-          "compatible_watering_times": [
-            "SUNSET-60"
-          ],
-          "root_area_sqft": 0.45,
-          "water_optimal_in_week": 1.5,
-          "tolerance_min_in_week": 1.05,
-          "tolerance_max_in_week": 1.95,
-          "usda_zones": "3-9",
-          "soil_preference": "Sandy loam, pH 5.5-6.5",
-          "sun_exposure": "Full Sun",
-          "fruiting_period": "June",
-          "planting_time": "Early Spring",
-          "spacing_inches": 12,
-          "growth_type": "Perennial"
+          "plant_id": 2,
+          "common_name": "Raspberry, Red"
         },
         "quantity": 1,
-        "emitterSize": 4,
-        "zoneId": 1,
+        "emitterSize": 0.5,
+        "zoneId": 3,
         "location_id": 2,
         "instanceId": "1",
+        "comments": ""
+      },
+      {
+        "plant": {
+          "plant_id": 10,
+          "common_name": "Santa Rosa Plum"
+        },
+        "quantity": 1,
+        "emitterSize": 8,
+        "zoneId": 3,
+        "location_id": 2,
+        "instanceId": "3",
         "comments": ""
       }
     ],
@@ -46,6 +33,15 @@
       2,
       3,
       5
+    ]
+  },
+  "3": {
+    "name": "s",
+    "description": "sdfg",
+    "zones": [
+      1,
+      2,
+      3
     ]
   }
 }

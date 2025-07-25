@@ -6,7 +6,7 @@ import os
 import time
 import threading
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Any
 import logging
 import configparser
 import pytz
@@ -53,6 +53,9 @@ class WateringScheduler:
         
         # Load any existing active zones from persistent storage
         self.load_active_zones()
+        
+        # Defer smart duration refresh to avoid circular imports during initialization
+        # Will be triggered after scheduler is fully loaded
         
         # Catch up on missed events with timeout protection
         try:
@@ -1113,6 +1116,10 @@ class WateringScheduler:
                             remaining = (end_time - current_time).total_seconds()
                             state['remaining'] = max(0, int(remaining))
                     
+                    # Check for daily refresh (midnight)
+                    if loop_count % 60 == 0:  # Check every minute
+                        self._check_daily_refresh()
+                    
                     # Debug zone states every 5 minutes to catch mismatches
                     if loop_count % 300 == 0:  # Every 5 minutes
                         self.debug_zone_states()
@@ -1191,6 +1198,373 @@ class WateringScheduler:
                 print(f"Active zones: {list(self.active_zones.keys())}")
                 if mismatches:
                     print("State mismatches:", ", ".join(mismatches))
+
+    def calculate_and_update_zone_duration(self, zone_id: int) -> Dict[str, Any]:
+        """
+        Calculate optimal watering duration for a zone and update the schedule
+        
+        Returns:
+            Dict with calculation results
+        """
+        try:
+            print(f"Scheduler: Starting duration calculation for zone {zone_id}")
+            
+            # Import plant manager for duration calculation
+            from .plant_manager import plant_manager
+            print("Scheduler: Plant manager imported successfully")
+            
+            # Calculate the optimal duration
+            result = plant_manager.calculate_optimal_zone_duration(zone_id)
+            print(f"Scheduler: Plant manager calculation result: {result}")
+            
+            if result.get('success') and result.get('calculated_duration'):
+                # Update the schedule with the new duration
+                self._update_zone_duration_in_schedule(zone_id, result['calculated_duration'])
+                
+                # Reload the schedule to reflect changes
+                self.reload_schedule()
+                
+                log_event(self.watering_logger, 'INFO', 'Zone duration updated with smart calculation', 
+                         zone_id=zone_id, 
+                         new_duration=result['calculated_duration'],
+                         total_plants=result.get('total_plants', 0))
+            
+            return result
+            
+        except ImportError as e:
+            print(f"Scheduler: Import error in calculate_and_update_zone_duration: {e}")
+            log_event(self.error_logger, 'ERROR', 'Import error in zone duration calculation', 
+                     zone_id=zone_id, error=str(e))
+            return {
+                'success': False,
+                'error': f'Import error: {str(e)}',
+                'calculated_duration': '00:20:00'  # Default 20 minutes
+            }
+        except Exception as e:
+            import traceback
+            print(f"Scheduler: Error in calculate_and_update_zone_duration: {e}")
+            print(f"Scheduler: Traceback: {traceback.format_exc()}")
+            log_event(self.error_logger, 'ERROR', 'Failed to calculate and update zone duration', 
+                     zone_id=zone_id, error=str(e), traceback=traceback.format_exc())
+            return {
+                'success': False,
+                'error': f'Calculation failed: {str(e)}',
+                'calculated_duration': '00:20:00'  # Default 20 minutes
+            }
+    
+    def calculate_and_update_zone_schedule(self, zone_id: int) -> Dict[str, Any]:
+        """
+        Calculate optimal watering schedule (duration, times, cycles) for a smart zone
+        
+        Returns:
+            Dict with calculation results
+        """
+        try:
+            # Import plant manager for schedule calculation
+            from .plant_manager import plant_manager
+            
+            # Calculate the optimal duration first
+            duration_result = plant_manager.calculate_optimal_zone_duration(zone_id)
+            
+            if not duration_result.get('success'):
+                return duration_result
+            
+            # Calculate optimal scheduling parameters based on plant requirements
+            schedule_result = plant_manager.calculate_optimal_zone_schedule(zone_id)
+            
+            if schedule_result.get('success'):
+                # Update the schedule with all calculated parameters
+                self._update_zone_schedule_in_schedule(zone_id, schedule_result)
+                
+                # Reload the schedule to reflect changes
+                self.reload_schedule()
+                
+                log_event(self.watering_logger, 'INFO', 'Zone schedule updated with smart calculation', 
+                         zone_id=zone_id, 
+                         new_duration=schedule_result.get('calculated_duration'),
+                         new_cycles=schedule_result.get('calculated_cycles'),
+                         new_times=schedule_result.get('calculated_times'))
+            
+            return schedule_result
+            
+        except Exception as e:
+            log_event(self.error_logger, 'ERROR', 'Failed to calculate and update zone schedule', 
+                     zone_id=zone_id, error=str(e))
+            return {
+                'success': False,
+                'error': f'Schedule calculation failed: {str(e)}',
+                'calculated_duration': '00:20:00'  # Default 20 minutes
+            }
+    
+    def _update_zone_duration_in_schedule(self, zone_id: int, new_duration: str):
+        """Update zone duration in the schedule file"""
+        try:
+            # Load current schedule
+            if os.path.exists(self.schedule_file):
+                with open(self.schedule_file, 'r') as f:
+                    schedule_data = json.load(f)
+            else:
+                schedule_data = {}
+            
+            # Update the zone's duration
+            zone_key = str(zone_id)
+            if zone_key in schedule_data:
+                zone_data = schedule_data[zone_key]
+                
+                # Update all time slots with the new duration
+                if 'times' in zone_data and isinstance(zone_data['times'], list):
+                    for time_slot in zone_data['times']:
+                        time_slot['duration'] = new_duration
+                
+                # Save the updated schedule
+                with open(self.schedule_file, 'w') as f:
+                    json.dump(schedule_data, f, indent=2)
+                
+                print(f"Updated zone {zone_id} duration to {new_duration}")
+            else:
+                print(f"Zone {zone_id} not found in schedule")
+                
+        except Exception as e:
+            print(f"Error updating zone duration in schedule: {e}")
+            raise
+    
+    def update_zone_mode(self, zone_id: int, new_mode: str, old_mode: str = None, purge_config: bool = False) -> bool:
+        """
+        Update zone mode and trigger smart duration calculation if converting to smart mode
+        
+        Args:
+            zone_id: The zone ID to update
+            new_mode: New mode ('manual', 'smart', 'disabled')
+            old_mode: Previous mode (optional, for logging)
+            
+        Returns:
+            bool: Success status
+        """
+        try:
+            # Load current schedule
+            if os.path.exists(self.schedule_file):
+                with open(self.schedule_file, 'r') as f:
+                    schedule_data = json.load(f)
+            else:
+                schedule_data = {}
+            
+            zone_key = str(zone_id)
+            if zone_key not in schedule_data:
+                log_event(self.error_logger, 'ERROR', 'Zone not found for mode update', zone_id=zone_id)
+                return False
+            
+            # Update the zone mode
+            if new_mode == 'disabled' and purge_config:
+                # Purge all configuration when disabling (same as UI deactivation)
+                schedule_data[zone_key] = { 'mode': 'disabled' }
+            else:
+                # Just update the mode
+                schedule_data[zone_key]['mode'] = new_mode
+            
+            # Save the updated schedule
+            with open(self.schedule_file, 'w') as f:
+                json.dump(schedule_data, f, indent=2)
+            
+            # Log the mode change
+            log_event(self.watering_logger, 'INFO', 'Zone mode updated', 
+                     zone_id=zone_id, old_mode=old_mode, new_mode=new_mode)
+            
+            # Trigger smart schedule calculation if converting to smart mode
+            if new_mode == 'smart' and old_mode != 'smart':
+                log_event(self.watering_logger, 'INFO', 'Zone converted to smart mode, calculating optimal schedule', 
+                         zone_id=zone_id)
+                result = self.calculate_and_update_zone_schedule(zone_id)
+                if result.get('success'):
+                    log_event(self.watering_logger, 'INFO', 'Smart schedule calculated for newly converted zone', 
+                             zone_id=zone_id, 
+                             calculated_duration=result.get('calculated_duration'),
+                             calculated_period=result.get('calculated_period'),
+                             calculated_cycles=result.get('calculated_cycles'))
+                else:
+                    log_event(self.error_logger, 'ERROR', 'Failed to calculate smart schedule for newly converted zone', 
+                             zone_id=zone_id, error=result.get('error'))
+            
+            return True
+            
+        except Exception as e:
+            log_event(self.error_logger, 'ERROR', 'Failed to update zone mode', 
+                     zone_id=zone_id, new_mode=new_mode, error=str(e))
+            return False
+    
+    def _update_zone_schedule_in_schedule(self, zone_id: int, schedule_result: Dict[str, Any]):
+        """Update zone schedule (duration, times, cycles) in the schedule file"""
+        try:
+            # Load current schedule
+            if os.path.exists(self.schedule_file):
+                with open(self.schedule_file, 'r') as f:
+                    schedule_data = json.load(f)
+            else:
+                schedule_data = {}
+            
+            # Update the zone's schedule
+            zone_key = str(zone_id)
+            if zone_key in schedule_data:
+                zone_data = schedule_data[zone_key]
+                
+                # Update duration
+                if 'calculated_duration' in schedule_result:
+                    if 'times' in zone_data and isinstance(zone_data['times'], list):
+                        for time_slot in zone_data['times']:
+                            time_slot['duration'] = schedule_result['calculated_duration']
+                
+                # Update cycles if provided
+                if 'calculated_cycles' in schedule_result:
+                    zone_data['cycles'] = schedule_result['calculated_cycles']
+                
+                # Update times if provided
+                if 'calculated_times' in schedule_result:
+                    zone_data['times'] = schedule_result['calculated_times']
+                
+                # Update period if provided
+                if 'calculated_period' in schedule_result:
+                    zone_data['period'] = schedule_result['calculated_period']
+                
+                # Save the updated schedule
+                with open(self.schedule_file, 'w') as f:
+                    json.dump(schedule_data, f, indent=2)
+                
+                print(f"Updated zone {zone_id} schedule with smart calculation")
+            else:
+                print(f"Zone {zone_id} not found in schedule")
+                
+        except Exception as e:
+            print(f"Error updating zone schedule in schedule: {e}")
+            raise
+    
+    def refresh_all_smart_durations(self) -> Dict[str, Any]:
+        """
+        Refresh durations for all zones in smart mode ONLY
+        
+        Returns:
+            Dict with results for all zones
+        """
+        try:
+            results = {}
+            updated_count = 0
+            skipped_count = 0
+            
+            # Load current schedule to check which zones are in smart mode
+            if os.path.exists(self.schedule_file):
+                with open(self.schedule_file, 'r') as f:
+                    schedule_data = json.load(f)
+                
+                for zone_key, zone_data in schedule_data.items():
+                    zone_id = int(zone_key)
+                    zone_mode = zone_data.get('mode', 'disabled')
+                    
+                    # ONLY update zones in smart mode - skip manual and disabled
+                    if zone_mode == 'smart':
+                        result = self.calculate_and_update_zone_duration(zone_id)
+                        results[zone_id] = result
+                        
+                        if result.get('success'):
+                            updated_count += 1
+                    else:
+                        # Log skipped zones for debugging
+                        skipped_count += 1
+                        results[zone_id] = {
+                            'success': False,
+                            'skipped': True,
+                            'reason': f'Zone is in {zone_mode} mode, smart calculation not applicable'
+                        }
+            
+            log_event(self.watering_logger, 'INFO', 'Smart duration refresh completed', 
+                     zones_updated=updated_count,
+                     zones_skipped=skipped_count,
+                     total_zones_checked=len(results))
+            
+            return {
+                'success': True,
+                'zones_updated': updated_count,
+                'zones_skipped': skipped_count,
+                'total_zones_checked': len(results),
+                'results': results
+            }
+            
+        except Exception as e:
+            log_event(self.error_logger, 'ERROR', 'Failed to refresh smart durations', error=str(e))
+            return {
+                'success': False,
+                'error': f'Refresh failed: {str(e)}',
+                'zones_updated': 0,
+                'zones_skipped': 0,
+                'total_zones_checked': 0,
+                'results': {}
+            }
+    
+    def _trigger_smart_duration_refresh(self):
+        """Trigger smart duration refresh for all zones in smart mode"""
+        try:
+            log_event(self.watering_logger, 'INFO', 'Triggering smart duration refresh on system boot')
+            result = self.refresh_all_smart_durations()
+            if result.get('success'):
+                log_event(self.watering_logger, 'INFO', 'Smart duration refresh completed on boot', 
+                         zones_updated=result.get('zones_updated', 0))
+            else:
+                log_event(self.error_logger, 'ERROR', 'Smart duration refresh failed on boot', 
+                         error=result.get('error', 'Unknown error'))
+        except Exception as e:
+            log_event(self.error_logger, 'ERROR', 'Failed to trigger smart duration refresh on boot', error=str(e))
+    
+    def trigger_initial_smart_refresh(self):
+        """Trigger initial smart duration refresh after scheduler is fully initialized"""
+        try:
+            print("Scheduler: Triggering initial smart duration refresh")
+            log_event(self.watering_logger, 'INFO', 'Triggering initial smart duration refresh after initialization')
+            result = self.refresh_all_smart_durations()
+            if result.get('success'):
+                log_event(self.watering_logger, 'INFO', 'Initial smart duration refresh completed', 
+                         zones_updated=result.get('zones_updated', 0))
+                print(f"Scheduler: Initial smart refresh completed, {result.get('zones_updated', 0)} zones updated")
+            else:
+                log_event(self.error_logger, 'ERROR', 'Initial smart duration refresh failed', 
+                         error=result.get('error', 'Unknown error'))
+                print(f"Scheduler: Initial smart refresh failed: {result.get('error', 'Unknown error')}")
+        except Exception as e:
+            print(f"Scheduler: Failed to trigger initial smart refresh: {e}")
+            log_event(self.error_logger, 'ERROR', 'Failed to trigger initial smart duration refresh', error=str(e))
+    
+    def _check_daily_refresh(self):
+        """Check if it's time for daily refresh (midnight) and trigger smart duration refresh"""
+        try:
+            current_time = self.get_current_time()
+            
+            # Check if it's midnight (00:00-00:01)
+            if current_time.hour == 0 and current_time.minute <= 1:
+                # Check if we've already done today's refresh
+                today = current_time.date().isoformat()
+                refresh_key = f"daily_refresh_{today}"
+                
+                # Simple in-memory tracking (could be enhanced with persistent storage)
+                if not hasattr(self, '_daily_refresh_done'):
+                    self._daily_refresh_done = set()
+                
+                if refresh_key not in self._daily_refresh_done:
+                    log_event(self.watering_logger, 'INFO', 'Triggering daily smart duration refresh at midnight')
+                    result = self.refresh_all_smart_durations()
+                    if result.get('success'):
+                        log_event(self.watering_logger, 'INFO', 'Daily smart duration refresh completed', 
+                                 zones_updated=result.get('zones_updated', 0))
+                    else:
+                        log_event(self.error_logger, 'ERROR', 'Daily smart duration refresh failed', 
+                                 error=result.get('error', 'Unknown error'))
+                    
+                    # Mark today's refresh as done
+                    self._daily_refresh_done.add(refresh_key)
+                    
+                    # Clean up old entries (keep last 7 days)
+                    if len(self._daily_refresh_done) > 7:
+                        old_keys = [k for k in self._daily_refresh_done if k < f"daily_refresh_{(current_time.date() - timedelta(days=7)).isoformat()}"]
+                        for old_key in old_keys:
+                            self._daily_refresh_done.discard(old_key)
+                            
+        except Exception as e:
+            log_event(self.error_logger, 'ERROR', 'Failed to check daily refresh', error=str(e))
 
 # Global scheduler instance
 scheduler = WateringScheduler() 
