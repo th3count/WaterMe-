@@ -118,7 +118,7 @@ class PlantManager:
     def reload_data(self):
         """Reload all data files"""
         self._load_data()
-
+    
     # Smart Emitter Sizing Methods
     
     def calculate_cycles_per_week(self, zone_frequency: str) -> float:
@@ -329,7 +329,7 @@ class PlantManager:
             'reason': 'Emitter sizing within tolerance' if is_within_tolerance else 'Emitter sizing outside tolerance',
             'emitter_calculation': emitter_calculation
         }
-
+    
     # Basic plant management functions (moved from API)
     
     def add_plant_instance(self, plant_data: Dict[str, Any]) -> Tuple[bool, str, Optional[str]]:
@@ -500,7 +500,9 @@ class PlantManager:
         
         # If library_book is provided, create the unique plant ID
         if library_book:
-            unique_plant_id = f"{library_book}_{plant_id}"
+            # Strip .json extension to match how it's stored in _load_plant_library
+            library_name = library_book.replace('.json', '')
+            unique_plant_id = f"{library_name}_{plant_id}"
             plant_info = self.plant_library.get(unique_plant_id)
             if plant_info:
                 log_event(plants_logger, 'DEBUG', 'Plant found with unique ID', 
@@ -1285,7 +1287,7 @@ class PlantManager:
                 'success': False,
                 'error': f'Schedule calculation failed: {str(e)}',
                 'calculated_duration': '00:20:00'  # Default 20 minutes
-            }
+        }
 
 # Create global instance
 plant_manager = PlantManager() 

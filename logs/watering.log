@@ -105,3 +105,104 @@
 [2025-07-24 22:03:19] [INFO] [watering] Zone duration updated with smart calculation | zone_id=2 new_duration=00:42:03 total_plants=2
 [2025-07-24 22:03:29] [INFO] [watering] Zone duration updated with smart calculation | zone_id=2 new_duration=00:16:49 total_plants=1
 [2025-07-24 22:03:38] [INFO] [watering] Zone duration updated with smart calculation | zone_id=2 new_duration=00:42:03 total_plants=2
+[2025-07-26 14:56:41] [INFO] [watering] Triggering initial smart duration refresh after initialization
+[2025-07-26 14:56:41] [INFO] [watering] Zone duration updated with smart calculation | zone_id=2 new_duration=00:42:03 total_plants=2
+[2025-07-26 14:56:41] [INFO] [watering] Smart duration refresh completed | zones_updated=1 zones_skipped=7 total_zones_checked=8
+[2025-07-26 14:56:41] [INFO] [watering] Initial smart duration refresh completed | zones_updated=1
+[2025-07-26 14:56:58] [INFO] [watering] Zone duration updated with smart calculation | zone_id=2 new_duration=00:16:49 total_plants=1
+[2025-07-26 14:57:12] [INFO] [watering] Zone duration updated with smart calculation | zone_id=2 new_duration=00:25:13 total_plants=2
+[2025-07-26 14:57:20] [INFO] [watering] Zone duration updated with smart calculation | zone_id=2 new_duration=00:28:02 total_plants=3
+[2025-07-26 14:57:26] [INFO] [watering] Zone duration updated with smart calculation | zone_id=2 new_duration=00:33:38 total_plants=2
+[2025-07-26 14:57:29] [INFO] [watering] Zone duration updated with smart calculation | zone_id=2 new_duration=00:33:38 total_plants=1
+[2025-07-26 14:57:41] [INFO] [watering] Zone mode updated | zone_id=2 old_mode=active new_mode=disabled
+[2025-07-26 14:57:42] [INFO] [watering] Zone mode updated | zone_id=1 old_mode=active new_mode=disabled
+[2025-07-26 14:57:47] [INFO] [watering] Zone mode updated | zone_id=1 old_mode=disabled new_mode=active
+[2025-07-26 14:57:58] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=1
+[2025-07-26 14:58:04] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=5
+[2025-07-26 14:58:09] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=1
+[2025-07-26 14:58:37] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=1
+[2025-07-26 14:58:44] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=2
+[2025-07-26 14:58:53] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=3
+[2025-07-26 15:25:14] [INFO] [watering] Triggering initial smart duration refresh after initialization
+[2025-07-26 15:25:14] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=3
+[2025-07-26 15:25:14] [INFO] [watering] Smart duration refresh completed | zones_updated=1 zones_skipped=7 total_zones_checked=8
+[2025-07-26 15:25:14] [INFO] [watering] Initial smart duration refresh completed | zones_updated=1
+[2025-07-26 15:27:51] [INFO] [watering] Triggering initial smart duration refresh after initialization
+[2025-07-26 15:27:51] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=3
+[2025-07-26 15:27:51] [INFO] [watering] Smart duration refresh completed | zones_updated=1 zones_skipped=7 total_zones_checked=8
+[2025-07-26 15:27:51] [INFO] [watering] Initial smart duration refresh completed | zones_updated=1
+[2025-07-26 15:29:35] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=2
+[2025-07-26 15:29:38] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=1
+[2025-07-26 19:37:37] [INFO] [watering] Manual zone activation | zone_id=1 duration=60
+[2025-07-26 19:37:38] [INFO] [watering] Triggering initial smart duration refresh after initialization
+[2025-07-26 19:37:38] [INFO] [watering] Smart duration refresh completed | zones_updated=0 zones_skipped=8 total_zones_checked=8
+[2025-07-26 19:37:38] [INFO] [watering] Initial smart duration refresh completed | zones_updated=0
+[2025-07-26 19:37:41] [INFO] [watering] Zone deactivated - manual | zone_id=1
+[2025-07-26 19:37:43] [INFO] [watering] Manual zone activation | zone_id=1 duration=1
+[2025-07-26 19:37:49] [INFO] [watering] Manual zone activation | zone_id=1 duration=1
+[2025-07-26 19:38:22] [INFO] [watering] Triggering initial smart duration refresh after initialization
+[2025-07-26 19:38:22] [INFO] [watering] Smart duration refresh completed | zones_updated=0 zones_skipped=8 total_zones_checked=8
+[2025-07-26 19:38:22] [INFO] [watering] Initial smart duration refresh completed | zones_updated=0
+[2025-07-26 19:38:22] [INFO] [watering] Manual zone activation | zone_id=1 duration=1
+[2025-07-26 19:38:27] [INFO] [watering] Manual zone activation | zone_id=1 duration=60
+[2025-07-26 19:52:23] [INFO] [watering] Triggering initial smart duration refresh after initialization
+[2025-07-26 19:52:23] [INFO] [watering] Smart duration refresh completed | zones_updated=0 zones_skipped=8 total_zones_checked=8
+[2025-07-26 19:52:23] [INFO] [watering] Initial smart duration refresh completed | zones_updated=0
+[2025-07-26 21:39:40] [INFO] [watering] Triggering initial smart duration refresh after initialization
+[2025-07-26 21:39:40] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=1
+[2025-07-26 21:39:40] [INFO] [watering] Smart duration refresh completed | zones_updated=1 zones_skipped=7 total_zones_checked=8
+[2025-07-26 21:39:40] [INFO] [watering] Initial smart duration refresh completed | zones_updated=1
+[2025-07-26 21:50:04] [INFO] [watering] Triggering initial smart duration refresh after initialization
+[2025-07-26 21:50:04] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=1
+[2025-07-26 21:50:04] [INFO] [watering] Smart duration refresh completed | zones_updated=1 zones_skipped=6 total_zones_checked=8
+[2025-07-26 21:50:04] [INFO] [watering] Initial smart duration refresh completed | zones_updated=1
+[2025-07-26 22:16:09] [INFO] [watering] Triggering initial smart duration refresh after initialization
+[2025-07-26 22:16:09] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=1
+[2025-07-26 22:16:09] [INFO] [watering] Smart duration refresh completed | zones_updated=1 zones_skipped=6 total_zones_checked=8
+[2025-07-26 22:16:09] [INFO] [watering] Initial smart duration refresh completed | zones_updated=1
+[2025-07-26 22:52:24] [INFO] [watering] Triggering initial smart duration refresh after initialization
+[2025-07-26 22:52:24] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=1
+[2025-07-26 22:52:24] [INFO] [watering] Smart duration refresh completed | zones_updated=1 zones_skipped=7 total_zones_checked=8
+[2025-07-26 22:52:24] [INFO] [watering] Initial smart duration refresh completed | zones_updated=1
+[2025-07-26 22:54:32] [INFO] [watering] Triggering initial smart duration refresh after initialization
+[2025-07-26 22:54:32] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=1
+[2025-07-26 22:54:32] [INFO] [watering] Smart duration refresh completed | zones_updated=1 zones_skipped=7 total_zones_checked=8
+[2025-07-26 22:54:32] [INFO] [watering] Initial smart duration refresh completed | zones_updated=1
+[2025-07-26 23:09:30] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=2
+[2025-07-26 23:11:55] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=1
+[2025-07-26 23:12:01] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=2
+[2025-07-26 23:14:04] [INFO] [watering] Triggering initial smart duration refresh after initialization
+[2025-07-26 23:14:04] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=2
+[2025-07-26 23:14:04] [INFO] [watering] Smart duration refresh completed | zones_updated=1 zones_skipped=6 total_zones_checked=8
+[2025-07-26 23:14:04] [INFO] [watering] Initial smart duration refresh completed | zones_updated=1
+[2025-07-26 23:14:53] [INFO] [watering] Zone duration updated with smart calculation | zone_id=2 new_duration=00:06:18 total_plants=1
+[2025-07-27 00:16:55] [INFO] [watering] Triggering initial smart duration refresh after initialization
+[2025-07-27 00:16:55] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=2
+[2025-07-27 00:16:55] [INFO] [watering] Zone duration updated with smart calculation | zone_id=2 new_duration=00:06:18 total_plants=1
+[2025-07-27 00:16:55] [INFO] [watering] Smart duration refresh completed | zones_updated=2 zones_skipped=6 total_zones_checked=8
+[2025-07-27 00:16:55] [INFO] [watering] Initial smart duration refresh completed | zones_updated=2
+[2025-07-27 00:25:25] [INFO] [watering] Triggering initial smart duration refresh after initialization
+[2025-07-27 00:25:25] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=2
+[2025-07-27 00:25:25] [INFO] [watering] Zone duration updated with smart calculation | zone_id=2 new_duration=00:06:18 total_plants=1
+[2025-07-27 00:25:25] [INFO] [watering] Smart duration refresh completed | zones_updated=2 zones_skipped=6 total_zones_checked=8
+[2025-07-27 00:25:25] [INFO] [watering] Initial smart duration refresh completed | zones_updated=2
+[2025-07-27 00:40:58] [INFO] [watering] Triggering initial smart duration refresh after initialization
+[2025-07-27 00:40:58] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=2
+[2025-07-27 00:40:58] [INFO] [watering] Zone duration updated with smart calculation | zone_id=2 new_duration=00:06:18 total_plants=1
+[2025-07-27 00:40:58] [INFO] [watering] Smart duration refresh completed | zones_updated=2 zones_skipped=6 total_zones_checked=8
+[2025-07-27 00:40:58] [INFO] [watering] Initial smart duration refresh completed | zones_updated=2
+[2025-07-27 00:42:48] [INFO] [watering] Triggering initial smart duration refresh after initialization
+[2025-07-27 00:42:48] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=2
+[2025-07-27 00:42:48] [INFO] [watering] Zone duration updated with smart calculation | zone_id=2 new_duration=00:06:18 total_plants=1
+[2025-07-27 00:42:48] [INFO] [watering] Smart duration refresh completed | zones_updated=2 zones_skipped=6 total_zones_checked=8
+[2025-07-27 00:42:48] [INFO] [watering] Initial smart duration refresh completed | zones_updated=2
+[2025-07-27 17:43:40] [INFO] [watering] Triggering initial smart duration refresh after initialization
+[2025-07-27 17:43:40] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=2
+[2025-07-27 17:43:40] [INFO] [watering] Zone duration updated with smart calculation | zone_id=2 new_duration=00:06:18 total_plants=1
+[2025-07-27 17:43:40] [INFO] [watering] Smart duration refresh completed | zones_updated=2 zones_skipped=6 total_zones_checked=8
+[2025-07-27 17:43:40] [INFO] [watering] Initial smart duration refresh completed | zones_updated=2
+[2025-07-28 12:28:50] [INFO] [watering] Triggering initial smart duration refresh after initialization
+[2025-07-28 12:28:50] [INFO] [watering] Zone duration updated with smart calculation | zone_id=1 new_duration=00:16:49 total_plants=2
+[2025-07-28 12:28:50] [INFO] [watering] Zone duration updated with smart calculation | zone_id=2 new_duration=00:06:18 total_plants=1
+[2025-07-28 12:28:50] [INFO] [watering] Smart duration refresh completed | zones_updated=2 zones_skipped=6 total_zones_checked=8
+[2025-07-28 12:28:50] [INFO] [watering] Initial smart duration refresh completed | zones_updated=2

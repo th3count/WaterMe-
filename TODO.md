@@ -164,4 +164,9 @@
 - [x] Scheduler deadlock prevention and live configuration reloading
 
 ---
+
+## 🐛 Known Bugs & Issues
+- [ ] Smart schedules not generating after zone changed to smart mode
+
+---
 *Update this file as features are added, planned, or completed!* 

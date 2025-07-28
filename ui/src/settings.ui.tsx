@@ -28,7 +28,7 @@ interface BackupInfo {
 }
 
 export default function Settings() {
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // removed as unused
   const [activeTab, setActiveTab] = useState<'garden' | 'location' | 'datetime' | 'gpio' | 'backup'>('garden');
   const [gardenSettings, setGardenSettings] = useState<GardenSettings>({
     garden_name: '',

@@ -2,37 +2,29 @@
   "1": {
     "comment": "",
     "cycles": 1,
-    "mode": "manual",
-    "originalIndex": 0,
-    "period": "D",
-    "scheduleMode": "smart",
-    "showDurationPicker": null,
-    "showTimePicker": null,
-    "startDay": "2025-07-26",
+    "mode": "smart",
+    "period": "W",
+    "startDay": "2025-07-27",
     "times": [
       {
-        "duration": "00:20:00",
+        "duration": "00:16:49",
         "start_time": "06:00"
       }
     ]
   },
   "2": {
-    "comment": "",
-    "cycles": 1,
     "mode": "smart",
     "period": "W",
-    "startDay": "2025-07-25",
+    "cycles": 2,
     "times": [
       {
-        "duration": "00:42:03",
-        "start_time": "SUNRISE+30",
-        "value": "SUNRISE+30"
+        "start_time": "06:00",
+        "duration": "00:06:18",
+        "value": "06:00"
       }
     ],
-    "scheduleMode": "smart",
-    "originalIndex": 1,
-    "showTimePicker": null,
-    "showDurationPicker": null
+    "startDay": "2025-07-28",
+    "comment": ""
   },
   "3": {
     "mode": "disabled"

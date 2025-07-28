@@ -37,3 +37,47 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Nuclear option - eliminate ALL purple borders */
+*:focus {
+  outline: none !important;
+}
+
+*:focus-visible {
+  outline: none !important;
+}
+
+button:focus {
+  outline: none !important;
+}
+
+button:focus-visible {
+  outline: none !important;
+}
+
+/* Target everything that could have purple */
+.form-btn,
+.form-btn:focus,
+.form-btn:focus-visible,
+.form-btn:focus-within,
+.form-btn--outline,
+.form-btn--outline:focus,
+.form-btn--outline:focus-visible,
+.form-btn--outline:focus-within,
+.form-btn--small,
+.form-btn--small:focus,
+.form-btn--small:focus-visible,
+.form-btn--small:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: var(--form-text-accent) !important;
+}
+
+/* Target any element with purple */
+* {
+  outline-color: transparent !important;
+}
+
+*:focus {
+  outline-color: transparent !important;
+}

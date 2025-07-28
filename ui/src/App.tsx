@@ -1,16 +1,16 @@
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { DateTime } from 'luxon';
-import ZoneSetup from './ZoneSetup';
-import ZoneSchedule from './ZoneSchedule';
-import GardenOverview from './GardenOverview'; // Using GardenOverview.tsx as Garden component
-// import GardenOverview from './GardenOverview'; // Archived - replaced by Garden component
-import Health from './Health';
-import Library from './Library';
-import Logs from './Logs';
-import Settings from './Settings';
+import ZoneSchedule from './zones.ui';
+import GardenOverview from './garden.ui'; // Using garden.ui.tsx as Garden component
+import Health from './health.ui';
+import Library from './library.ui';
+import Logs from './logs.ui';
+import Settings from './settings.ui';
+import FormsUI from './forms.ui';
 import Sidebar from './Sidebar';
 import { getApiBaseUrl } from './utils';
+import { FormLayerProvider } from './forms/FormLayerManager';
 
 const OPENCAGE_API_KEY = '2e52d2925b4a4575a786f4ba0ae2b6cc';
 
@@ -39,7 +39,7 @@ function CreateGarden() {
   const [error, setError] = useState('');
   const [created, setCreated] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
-  const navigate = useNavigate();
+  // Removed unused navigate variable
   const [timezone, setTimezone] = useState('America/Regina');
   const [currentTime, setCurrentTime] = useState(DateTime.now().setZone(timezone).toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS));
   const [timerMultiplier, setTimerMultiplier] = useState(1.0);
@@ -851,21 +851,24 @@ function CreateGarden() {
 
 function App() {
   return (
-    <div className="page-container">
-      <Sidebar />
-      <Routes>
-        <Route path="/" element={<GardenOverview />} />
-        <Route path="/garden" element={<GardenOverview />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/zones" element={<ZoneSchedule />} />
-        <Route path="/zoneschedule" element={<ZoneSchedule />} />
-        <Route path="/plants" element={<GardenOverview />} />
-        {/* <Route path="/overview" element={<GardenOverview />} /> */}
-        <Route path="/library" element={<Library />} />
-        <Route path="/health" element={<Health />} />
-        <Route path="/logs" element={<Logs />} />
-      </Routes>
-    </div>
+    <FormLayerProvider>
+      <div className="page-container">
+        <Sidebar />
+        <Routes>
+          <Route path="/" element={<GardenOverview />} />
+          <Route path="/garden" element={<GardenOverview />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/zones" element={<ZoneSchedule />} />
+          <Route path="/zoneschedule" element={<ZoneSchedule />} />
+          <Route path="/plants" element={<GardenOverview />} />
+          {/* <Route path="/overview" element={<GardenOverview />} /> */}
+          <Route path="/library" element={<Library />} />
+          <Route path="/health" element={<Health />} />
+          <Route path="/logs" element={<Logs />} />
+          <Route path="/forms" element={<FormsUI />} />
+        </Routes>
+      </div>
+    </FormLayerProvider>
   );
 }
 

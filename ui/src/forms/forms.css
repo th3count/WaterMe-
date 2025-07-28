@@ -1,0 +1,1364 @@
+/* Forms Common Stylesheet */
+/* Based on SmartPlacementForm as the standard */
+
+/* CSS Custom Properties for consistent colors */
+:root {
+  /* Background Colors */
+  --form-bg-primary: #232b3b;
+  --form-bg-secondary: #1a1f2a;
+  --form-bg-tertiary: #2a3441;
+  --form-bg-hover: #3a4451;
+  --form-bg-disabled: #1a1f2a;
+  
+  /* Border Colors */
+  --form-border-primary: #00bcd4;
+  --form-border-secondary: #444;
+  --form-border-hover: #555;
+  --form-border-disabled: #333;
+  
+  /* Text Colors */
+  --form-text-primary: #f4f4f4;
+  --form-text-secondary: #fff;
+  --form-text-accent: #00bcd4;
+  --form-text-error: #ff512f;
+  --form-text-success: #00ff88;
+  --form-text-disabled: #666;
+  --form-text-muted: #888;
+  
+  /* Interactive Colors */
+  --form-selected-bg: #00bcd4;
+  --form-selected-text: #181f2a;
+  --form-hover-bg: #3a4451;
+  --form-hover-border: #555;
+  
+  /* Button Colors */
+  --form-btn-primary-bg: #00bcd4;
+  --form-btn-primary-hover: #00a0b0;
+  --form-btn-primary-text: #181f2a;
+  --form-btn-secondary-bg: transparent;
+  --form-btn-secondary-text: #ff512f;
+  --form-btn-secondary-border: #ff512f;
+  --form-btn-disabled-bg: #666;
+  --form-btn-disabled-text: #999;
+  
+  /* Transitions */
+  --form-transition: all 0.2s;
+}
+
+/* Form Container Styles */
+.form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* Form layer management */
+.form-overlay--background {
+  pointer-events: none;
+}
+
+.form-overlay--background .form-container {
+  pointer-events: auto;
+}
+
+.form-container {
+  background: var(--form-bg-primary);
+  border-radius: 16px;
+  padding: 24px;
+  min-width: 500px;
+  max-width: 700px;
+  max-height: 95vh;
+  color: var(--form-text-primary);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.form-container--small {
+  min-width: 400px;
+  max-width: 500px;
+  padding: 24px;
+}
+
+.form-container--large {
+  min-width: 600px;
+  max-width: 800px;
+}
+
+.form-container--compact {
+  min-width: 700px;
+  max-width: 900px;
+  padding: 8px 16px;
+}
+
+/* Compact Form Styles */
+.form-field-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.form-field--half {
+  flex: 1;
+}
+
+.form-field--third {
+  flex: 1;
+  min-width: 0;
+}
+
+.form-label-compact {
+  color: var(--form-text-secondary);
+  font-weight: 600;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.form-required {
+  color: var(--form-text-error);
+  font-size: 12px;
+}
+
+.form-help {
+  color: var(--form-text-muted);
+  font-size: 10px;
+  cursor: help;
+  width: 12px;
+  height: 12px;
+  background: var(--form-text-muted);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.form-help:hover {
+  background: var(--form-text-accent);
+  color: var(--form-selected-text);
+}
+
+.form-value {
+  color: var(--form-text-primary);
+  font-size: 13px;
+  min-height: 18px;
+  display: flex;
+  align-items: center;
+}
+
+.form-value--italic {
+  font-style: italic;
+  color: var(--form-text-muted);
+}
+
+.form-input--compact {
+  padding: 4px 6px;
+  font-size: 13px;
+  border-radius: 3px;
+}
+
+.form-textarea--compact {
+  padding: 4px 6px;
+  font-size: 13px;
+  border-radius: 3px;
+  resize: vertical;
+}
+
+.form-range-separator {
+  color: var(--form-text-muted);
+  font-size: 13px;
+  align-self: center;
+  margin: 0 4px;
+}
+
+.form-unit {
+  color: var(--form-text-muted);
+  font-size: 13px;
+  align-self: center;
+  margin-left: 4px;
+}
+
+/* Form Content */
+.form-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.form-content--scrollable {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+/* Form Footer */
+.form-footer {
+  border-top: 1px solid var(--form-border-secondary);
+  padding-top: 16px;
+  margin-top: 16px;
+  flex-shrink: 0;
+}
+
+/* Form Headers */
+.form-header {
+  color: var(--form-text-accent);
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  text-align: left;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.form-header-content {
+  flex: 1;
+}
+
+.form-title {
+  color: var(--form-text-accent);
+  font-weight: 700;
+  font-size: 20px;
+  margin: 0;
+}
+
+.form-subtitle {
+  color: var(--form-text-muted);
+  font-size: 14px;
+  margin: 4px 0 0 0;
+}
+
+.form-header--h2 {
+  font-size: 20px;
+}
+
+.form-header--h3 {
+  font-size: 18px;
+}
+
+/* Form Sections */
+.form-section {
+  background: var(--form-bg-secondary);
+  border-radius: 4px;
+  padding: 6px;
+  margin-bottom: 8px;
+  border: 1px solid var(--form-border-secondary);
+}
+
+.form-section--large {
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.form-section--disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.form-section--deactivated {
+  border: 1px solid #666;
+}
+
+.form-section-title {
+  margin: 0 0 6px 0;
+  color: var(--form-text-accent);
+  font-weight: 700;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.form-section-title--deactivated {
+  color: #666;
+}
+
+/* Interactive Buttons/Cards */
+.form-button-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.form-select-button {
+  background: var(--form-bg-tertiary);
+  color: var(--form-text-secondary);
+  border-radius: 6px;
+  padding: 12px;
+  cursor: pointer;
+  border: 1px solid var(--form-border-secondary);
+  transition: var(--form-transition);
+  font-size: 14px;
+  font-weight: normal;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-select-button:hover:not(.form-select-button--selected):not(.form-select-button--disabled) {
+  background: var(--form-hover-bg);
+  border: 1px solid var(--form-hover-border);
+}
+
+.form-select-button--selected {
+  background: var(--form-selected-bg);
+  color: var(--form-selected-text);
+  border: 2px solid var(--form-selected-bg);
+  font-weight: bold;
+}
+
+.form-select-button--disabled {
+  background: var(--form-bg-disabled);
+  border: 1px solid var(--form-border-disabled);
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.form-select-button--disabled:hover {
+  background: var(--form-bg-tertiary);
+  border: 1px solid var(--form-border-secondary);
+  opacity: 0.8;
+}
+
+.form-select-button--deactivated {
+  opacity: 0.7;
+}
+
+.form-select-button--small {
+  padding: 4px 6px;
+  font-size: 11px;
+  min-width: auto;
+}
+
+.form-select-button--alternate {
+  background: var(--form-bg-primary);
+  border: 1px solid var(--form-border-primary);
+}
+
+/* Time Picker Specific Button Styles */
+.form-select-button--solar {
+  padding: 12px 16px;
+  font-size: 12px;
+  min-width: 80px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 4px;
+  background: var(--form-bg-primary) !important;
+  border: 1px solid var(--form-border-primary) !important;
+}
+
+/* Selected state overrides */
+.form-select-button--solar.form-select-button--selected {
+  background: var(--form-selected-bg) !important;
+  border: 2px solid var(--form-selected-bg) !important;
+}
+
+/* Offset buttons should have the same distinct styling as solar buttons */
+.form-select-button--offset {
+  background: var(--form-bg-primary) !important;
+  border: 1px solid var(--form-border-primary) !important;
+}
+
+.form-select-button--offset.form-select-button--small {
+  background: var(--form-bg-primary) !important;
+  border: 1px solid var(--form-border-primary) !important;
+}
+
+/* Quantity Buttons */
+.form-quantity-button {
+  width: 65px;
+  height: 50px;
+}
+
+/* Emitter Size Buttons */
+.form-emitter-button {
+  width: 90px;
+  height: 50px;
+  position: relative;
+}
+
+.form-emitter-button--smart-recommended {
+  background: var(--form-text-accent) !important;
+  color: var(--form-selected-text) !important;
+  border: 2px solid var(--form-text-accent) !important;
+  font-weight: bold;
+}
+
+.form-emitter-button--smart-recommended-indicator {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--form-text-success);
+  color: var(--form-selected-text);
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+/* Zone Selection Buttons */
+.form-zone-button {
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: var(--form-transition);
+}
+
+.form-zone-button--active {
+  background: var(--form-bg-tertiary);
+  border: 1px solid var(--form-border-secondary);
+  opacity: 1;
+}
+
+.form-zone-button--disabled {
+  background: var(--form-bg-disabled);
+  border: 1px solid var(--form-border-disabled);
+  opacity: 0.6;
+}
+
+.form-zone-button--selected {
+  background: var(--form-selected-bg);
+  border: 2px solid var(--form-selected-bg);
+}
+
+/* Hover effects for zone buttons */
+.form-zone-button:hover:not(.form-zone-button--selected) {
+  background: var(--form-hover-bg);
+  border: 1px solid var(--form-hover-border);
+  opacity: 1;
+}
+
+.form-zone-button:hover:not(.form-zone-button--selected).form-zone-button--disabled {
+  background: var(--form-bg-tertiary);
+  border: 1px solid var(--form-border-secondary);
+  opacity: 0.8;
+}
+
+.form-zone-button:hover:not(.form-zone-button--selected).form-zone-button--active {
+  background: var(--form-hover-bg);
+  border: 1px solid var(--form-hover-border);
+  opacity: 1;
+}
+
+/* Zone Selection Smart Recommended Indicator */
+.form-zone-button--smart-recommended {
+  position: relative;
+}
+
+.form-zone-button--smart-recommended::after {
+  content: "✓";
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--form-text-success);
+  color: var(--form-selected-text);
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+/* Zone Button Action Container */
+.form-zone-button-action {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* Zone Match Badge */
+.form-zone-match-badge {
+  background: #00bcd4;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.form-zone-match-badge--selected {
+  background: #fff;
+  color: #00bcd4;
+}
+
+.form-zone-match-badge--disabled {
+  background: #ff512f;
+  color: #fff;
+}
+
+.form-zone-match-badge--manual {
+  background: #666;
+  color: #fff;
+}
+
+.form-zone-details {
+  color: #e0e0e0;
+}
+
+/* Toggle Labels */
+.form-toggle-label {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.form-toggle-label--active {
+  color: var(--form-text-accent);
+  font-weight: 600;
+}
+
+.form-toggle-label--inactive {
+  color: var(--form-text-disabled);
+}
+
+.form-toggle-label--locked {
+  font-size: 10px;
+  font-style: italic;
+  margin-left: 4px;
+  color: var(--form-text-error);
+}
+
+/* Form Inputs */
+.form-input {
+  background: var(--form-bg-tertiary);
+  border: 1px solid var(--form-border-secondary);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--form-text-secondary);
+  font-size: 14px;
+  outline: none;
+  transition: var(--form-transition);
+}
+
+.form-input:hover:not(:disabled) {
+  background: var(--form-hover-bg);
+  border: 1px solid var(--form-hover-border);
+}
+
+.form-input:focus {
+  border: 1px solid var(--form-border-primary);
+}
+
+.form-input--full-width {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-input--custom {
+  width: 80px;
+}
+
+/* Number Input Spinner Styling */
+.form-input[type="number"]::-webkit-outer-spin-button,
+.form-input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+  background: var(--form-bg-tertiary);
+  border-left: 1px solid var(--form-border-secondary);
+  border-radius: 0 6px 6px 0;
+  width: 20px;
+  height: 100%;
+  position: relative;
+  cursor: pointer;
+}
+
+.form-input[type="number"]::-webkit-inner-spin-button {
+  background-image: 
+    linear-gradient(45deg, transparent 33.333%, var(--form-text-secondary) 33.333%, var(--form-text-secondary) 66.667%, transparent 66.667%),
+    linear-gradient(-45deg, transparent 33.333%, var(--form-text-secondary) 33.333%, var(--form-text-secondary) 66.667%, transparent 66.667%);
+  background-size: 8px 4px;
+  background-position: 
+    0 -2px,
+    0 2px;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.form-input[type="number"]::-webkit-outer-spin-button:hover,
+.form-input[type="number"]::-webkit-inner-spin-button:hover {
+  background-color: var(--form-hover-bg);
+}
+
+.form-input[type="number"]::-webkit-outer-spin-button:hover .form-input[type="number"]::-webkit-inner-spin-button {
+  background-image: 
+    linear-gradient(45deg, transparent 33.333%, var(--form-text-accent) 33.333%, var(--form-text-accent) 66.667%, transparent 66.667%),
+    linear-gradient(-45deg, transparent 33.333%, var(--form-text-accent) 33.333%, var(--form-text-accent) 66.667%, transparent 66.667%);
+}
+
+/* Disable mouse wheel scrolling on number inputs */
+.form-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.form-input[type="number"]::-webkit-outer-spin-button,
+.form-input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox number input styling */
+.form-input[type="number"]::-moz-number-spin-box {
+  background: var(--form-bg-tertiary);
+  border-left: 1px solid var(--form-border-secondary);
+}
+
+.form-input[type="number"]::-moz-number-spin-up,
+.form-input[type="number"]::-moz-number-spin-down {
+  background: var(--form-bg-tertiary);
+  border: none;
+  color: var(--form-text-secondary);
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.form-input[type="number"]::-moz-number-spin-up:hover,
+.form-input[type="number"]::-moz-number-spin-down:hover {
+  background: var(--form-hover-bg);
+  color: var(--form-text-accent);
+}
+
+/* Form Textareas */
+.form-textarea {
+  background: var(--form-bg-tertiary);
+  border: 1px solid var(--form-border-secondary);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--form-text-secondary);
+  font-size: 14px;
+  outline: none;
+  transition: var(--form-transition);
+  resize: vertical;
+  font-family: inherit;
+}
+
+.form-textarea:hover:not(:disabled) {
+  background: var(--form-hover-bg);
+  border: 1px solid var(--form-hover-border);
+}
+
+.form-textarea:focus {
+  border: 1px solid var(--form-border-primary);
+}
+
+.form-textarea--full-width {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Form Selects */
+.form-select {
+  background: var(--form-bg-primary);
+  color: var(--form-text-primary);
+  border: 1px solid var(--form-border-primary);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: var(--form-transition);
+}
+
+.form-select:hover:not(:disabled) {
+  background: var(--form-hover-bg);
+  border: 1px solid var(--form-hover-border);
+}
+
+.form-select:disabled {
+  color: var(--form-text-disabled);
+  cursor: not-allowed;
+}
+
+/* Action Buttons */
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.form-actions--end {
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.form-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: var(--form-transition);
+  border: none;
+  font-weight: 600;
+}
+
+.form-btn:focus {
+  outline: none !important;
+}
+
+.form-btn--primary {
+  background: var(--form-btn-primary-bg);
+  color: var(--form-btn-primary-text);
+  border: none;
+}
+
+.form-btn--primary:hover:not(:disabled) {
+  background: var(--form-btn-primary-hover);
+}
+
+.form-btn--primary:disabled {
+  background: var(--form-btn-disabled-bg);
+  color: var(--form-btn-disabled-text);
+  cursor: not-allowed;
+}
+
+.form-btn--secondary {
+  background: var(--form-btn-secondary-bg);
+  color: var(--form-btn-secondary-text);
+  border: 2px solid var(--form-btn-secondary-text);
+}
+
+.form-btn--secondary:hover {
+  background: var(--form-btn-secondary-text);
+  color: var(--form-text-secondary);
+}
+
+.form-btn--outline {
+  background: transparent;
+  border: 1px solid var(--form-text-accent);
+  color: var(--form-text-accent);
+}
+
+.form-btn--outline:hover {
+  background: var(--form-text-accent);
+  color: var(--form-btn-primary-text);
+}
+
+.form-btn--outline:focus {
+  outline: none !important;
+  border: 1px solid var(--form-text-accent) !important;
+  box-shadow: 0 0 0 2px rgba(0, 188, 212, 0.3) !important;
+}
+
+/* Nuclear option for picker buttons - eliminate ALL purple */
+.form-time-picker-modal .form-btn--outline,
+.form-time-picker-modal .form-btn--outline:focus,
+.form-time-picker-modal .form-btn--outline:focus-visible,
+.form-time-picker-modal .form-btn--outline:focus-within,
+.form-duration-picker-modal .form-btn--outline,
+.form-duration-picker-modal .form-btn--outline:focus,
+.form-duration-picker-modal .form-btn--outline:focus-visible,
+.form-duration-picker-modal .form-btn--outline:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+  border: 1px solid var(--form-text-accent) !important;
+}
+
+/* Override any remaining purple */
+.form-time-picker-modal button,
+.form-duration-picker-modal button {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Additional focus overrides to ensure no purple borders */
+.form-btn:focus-visible {
+  outline: none !important;
+}
+
+.form-btn:focus-within {
+  outline: none !important;
+}
+
+.form-btn--cancel {
+  background: transparent;
+  border: 1px solid var(--form-text-disabled);
+  color: var(--form-text-disabled);
+}
+
+.form-btn--cancel:hover {
+  background: var(--form-text-disabled);
+  color: var(--form-text-secondary);
+}
+
+.form-btn--small {
+  padding: 8px 16px;
+  font-size: 12px;
+}
+
+.form-btn--equal-width {
+  min-width: 70px;
+  text-align: center;
+}
+
+.form-btn--flex {
+  flex: 1;
+}
+
+/* Status Radio Buttons */
+.form-radio-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.form-radio-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  border: 1px solid var(--form-bg-secondary);
+  transition: var(--form-transition);
+}
+
+.form-radio-option--selected {
+  background: var(--form-selected-bg);
+  color: var(--form-selected-text);
+  font-weight: 600;
+}
+
+.form-radio-option:hover:not(.form-radio-option--selected) {
+  background: var(--form-hover-bg);
+  border: 1px solid var(--form-hover-border);
+}
+
+.form-radio-option input[type="radio"] {
+  display: none;
+}
+
+/* Toggle Sliders */
+.form-toggle {
+  width: 40px;
+  height: 20px;
+  background: var(--form-bg-tertiary);
+  border-radius: 10px;
+  border: 1px solid var(--form-border-secondary);
+  position: relative;
+  cursor: pointer;
+  transition: var(--form-transition);
+}
+
+.form-toggle--locked {
+  background: var(--form-bg-disabled);
+  border: 1px solid var(--form-border-disabled);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-toggle-handle {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  position: absolute;
+  top: 1px;
+  transition: var(--form-transition);
+}
+
+.form-toggle-handle--active {
+  background: var(--form-text-accent);
+  left: 1px;
+}
+
+.form-toggle-handle--inactive {
+  background: var(--form-text-disabled);
+  left: 23px;
+}
+
+/* Range Sliders */
+.form-range {
+  width: 100%;
+  accent-color: var(--form-text-accent);
+  cursor: pointer;
+}
+
+.form-range:disabled {
+  accent-color: var(--form-text-disabled);
+  cursor: not-allowed;
+}
+
+/* Labels and Text */
+.form-label {
+  color: var(--form-text-secondary);
+  font-weight: 600;
+  text-align: left;
+}
+
+.form-label--small {
+  font-size: 12px;
+}
+
+.form-text-muted {
+  color: var(--form-text-muted);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.form-text-muted--small {
+  font-size: 12px;
+}
+
+.form-text-muted--italic {
+  font-style: italic;
+}
+
+.form-text-error {
+  color: var(--form-text-error);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.form-text-accent--bold {
+  font-weight: 600;
+}
+
+.form-text-success--inline {
+  margin-left: 8px;
+}
+
+/* Alert Messages */
+.form-alert {
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-alert--error {
+  background: #2d1b1b;
+  border: 1px solid var(--form-text-error);
+  color: var(--form-text-error);
+}
+
+.form-alert--warning {
+  background: #2d2b1b;
+  border: 1px solid #ffa500;
+  color: #ffa500;
+}
+
+.form-alert--success {
+  background: #1b2d1b;
+  border: 1px solid var(--form-text-success);
+  color: var(--form-text-success);
+}
+
+/* Loading States */
+.form-loading {
+  text-align: center;
+  color: var(--form-text-primary);
+}
+
+/* Utility Classes */
+.form-flex {
+  display: flex;
+}
+
+.form-flex-column {
+  flex-direction: column;
+}
+
+.form-flex-wrap {
+  flex-wrap: wrap;
+}
+
+.form-flex-1 {
+  flex: 1;
+}
+
+.form-gap-4 {
+  gap: 4px;
+}
+
+.form-gap-8 {
+  gap: 8px;
+}
+
+.form-gap-12 {
+  gap: 12px;
+}
+
+.form-gap-16 {
+  gap: 16px;
+}
+
+.form-mb-8 {
+  margin-bottom: 8px;
+}
+
+.form-mb-12 {
+  margin-bottom: 12px;
+}
+
+.form-mb-16 {
+  margin-bottom: 16px;
+}
+
+.form-mb-20 {
+  margin-bottom: 20px;
+}
+
+.form-mt-8 {
+  margin-top: 8px;
+}
+
+.form-mt-16 {
+  margin-top: 16px;
+}
+
+.form-mt-20 {
+  margin-top: 20px;
+}
+
+.form-ml-4 {
+  margin-left: 4px;
+}
+
+.form-ml-8 {
+  margin-left: 8px;
+}
+
+.form-text-center {
+  text-align: center;
+}
+
+.form-text-left {
+  text-align: left;
+}
+
+.form-text-right {
+  text-align: right;
+}
+
+.form-text-italic {
+  font-style: italic;
+}
+
+.form-text-small {
+  font-size: 12px;
+}
+
+.form-text-medium {
+  font-size: 14px;
+}
+
+.form-text-large {
+  font-size: 16px;
+}
+
+.form-font-mono {
+  font-family: monospace;
+}
+
+.form-min-w-60 {
+  min-width: 60px;
+}
+
+.form-w-120 {
+  width: 120px;
+}
+
+.form-justify-between {
+  justify-content: space-between;
+}
+
+.form-justify-start {
+  justify-content: flex-start;
+}
+
+.form-justify-end {
+  justify-content: flex-end;
+}
+
+.form-items-center {
+  align-items: center;
+}
+
+.form-items-start {
+  align-items: flex-start;
+}
+
+.form-items-end {
+  align-items: flex-end;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .form-container {
+    min-width: 90vw;
+    max-width: 90vw;
+    padding: 20px;
+  }
+  
+  .form-container--compact {
+    min-width: 90vw;
+    max-width: 90vw;
+    padding: 16px;
+  }
+  
+  .form-field-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .form-field--half {
+    flex: none;
+  }
+  
+  .form-button-grid {
+    gap: 6px;
+  }
+  
+  .form-select-button {
+    padding: 10px;
+    font-size: 13px;
+  }
+  
+  .form-quantity-button,
+  .form-emitter-button {
+    width: 60px;
+    height: 45px;
+  }
+}
+
+/* Advanced Time Picker and Duration Picker Styles */
+.form-relative {
+  position: relative;
+}
+
+.form-cursor-pointer {
+  cursor: pointer;
+}
+
+.form-cursor-not-allowed {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-input--error {
+  border-color: var(--form-text-error) !important;
+  box-shadow: 0 0 0 2px rgba(255, 81, 47, 0.2);
+}
+
+.form-error-text {
+  color: var(--form-text-error);
+  font-size: 12px;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.form-time-picker-modal {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  background: var(--form-bg-tertiary);
+  border-radius: 8px;
+  border: 1px solid var(--form-border-primary);
+  padding: 20px;
+  min-width: 260px;
+  min-height: 200px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Solar time button container with better spacing */
+.form-solar-time-container {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+/* Offset section with better spacing */
+.form-offset-section {
+  padding-top: 4px;
+}
+
+/* Spacing between Exact button and offset buttons */
+.form-offset-section .form-select-button--offset {
+  margin-bottom: 8px;
+}
+
+.form-duration-picker-modal {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 1000;
+  background: var(--form-bg-tertiary);
+  border-radius: 8px;
+  border: 1px solid var(--form-border-primary);
+  padding: 16px;
+  min-width: 280px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.form-min-w-80 {
+  min-width: 80px;
+}
+
+.form-text-12 {
+  font-size: 12px;
+}
+
+.form-text-14 {
+  font-size: 14px;
+}
+
+.form-font-600 {
+  font-weight: 600;
+}
+
+/* Done Button Spacing - Reusable for all picker modals */
+.form-done-button {
+  margin-top: 16px;
+}
+
+/* Tighter spacing for time picker titles */
+.form-time-picker-modal .form-text-accent.form-text-center {
+  margin-bottom: 8px;
+}
+
+/* Reusable Compact Time Picker Layout */
+.form-time-picker--compact {
+  padding: 20px;
+  position: relative;
+}
+
+.form-time-picker--compact .form-text-accent.form-text-center {
+  margin-bottom: 8px;
+}
+
+.form-time-picker--compact .form-solar-time-container {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.form-time-picker--compact .form-offset-section {
+  padding-top: 4px;
+}
+
+.form-time-picker--compact .form-offset-section .form-select-button--offset {
+  margin-bottom: 8px;
+}
+
+/* Center clock time inputs in compact time picker */
+.form-time-picker--compact .form-flex.form-flex-column.form-gap-6 {
+  align-items: center;
+  text-align: center;
+}
+
+.form-time-picker--compact .form-flex.form-gap-4.form-justify-center {
+  justify-content: center;
+  align-items: center;
+}
+
+/* Use existing done button styling for time picker buttons */
+.form-time-picker--compact .form-btn--outline.form-btn--small {
+  margin-top: 16px;
+}
+
+/* Fix custom offset input and button alignment */
+.form-time-picker--compact .form-flex.form-gap-4.form-items-center.form-justify-center {
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-time-picker--compact .form-flex.form-gap-4.form-items-center.form-justify-center .form-input--custom {
+  width: 120px;
+  margin: 0;
+}
+
+.form-time-picker--compact .form-flex.form-gap-4.form-items-center.form-justify-center .form-btn--outline.form-btn--small {
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+/* Time Mode Toggle Slider */
+.form-time-mode-toggle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--form-text-muted);
+}
+
+.form-time-mode-toggle .form-toggle {
+  width: 40px;
+  height: 20px;
+  background: var(--form-bg-tertiary);
+  border: 1px solid var(--form-border-secondary);
+  border-radius: 10px;
+  cursor: pointer;
+  position: relative;
+  transition: var(--form-transition);
+}
+
+.form-time-mode-toggle .form-toggle--solar {
+  background: var(--form-selected-bg);
+  border-color: var(--form-selected-bg);
+}
+
+.form-time-mode-toggle .form-toggle-handle {
+  width: 16px;
+  height: 16px;
+  background: var(--form-text-primary);
+  border-radius: 50%;
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  transition: var(--form-transition);
+}
+
+.form-time-mode-toggle .form-toggle--solar .form-toggle-handle {
+  transform: translateX(20px);
+}
+
+.form-time-mode-toggle .form-toggle-label {
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+} 

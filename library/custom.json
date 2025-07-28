@@ -1,4 +1,34 @@
 {
   "Book Name": "Custom Plants",
-  "plants": []
+  "plants": [
+    {
+      "alternative_name": "Williams",
+      "common_name": "Bartlett Pear",
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "compatible_watering_times": [
+        "SUNRISE"
+      ],
+      "fruiting_period": "Late August to September",
+      "growth_type": "Perennial",
+      "latin_name": "Pyrus communis 'Bartlett'",
+      "planting_time": "Early Spring or Fall",
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "root_area_sqft": 26,
+      "soil_preference": "Well-drained, loamy, pH 6.0-7.0",
+      "spacing_inches": 144,
+      "sun_exposure": "Full Sun",
+      "tolerance_max_in_week": 2.7,
+      "tolerance_min_in_week": 0.95,
+      "usda_zones": "5-8",
+      "water_optimal_in_week": 1.6,
+      "watering_frequency": [
+        "W1"
+      ],
+      "plant_id": 1
+    }
+  ]
 }

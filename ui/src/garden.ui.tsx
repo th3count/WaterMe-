@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import dayjs from 'dayjs';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getApiBaseUrl } from './utils';
+import SmartPlacementForm from './forms/garden.form';
 
 // Helper to format HHMMSS as human readable
 function formatDuration(d: string): string {
@@ -336,7 +336,6 @@ function getNextDailyTime(zone: any, zoneResolvedTimes: Record<number, Record<st
           }
 
 export default function GardenOverview() {
-  console.log('=== GARDEN OVERVIEW COMPONENT STARTING ===');
   const [libraryFiles, setLibraryFiles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -349,8 +348,7 @@ export default function GardenOverview() {
   const [resolvedTimes, setResolvedTimes] = useState<Record<number, string[] | null>>({});
   // Store resolved times for specific dates (for weekly/monthly schedules)
   const [dateSpecificResolvedTimes, setDateSpecificResolvedTimes] = useState<Record<string, Record<string, string>>>({});
-  const [modal, setModal] = useState<null | { locationIdx: number }>(null);
-  const [modalData, setModalData] = useState<{ quantity: string; emitterSize: string; zoneId: string; locationId: string; comments: string; noCompatibleZones?: boolean }>({ quantity: '', emitterSize: '', zoneId: '', locationId: '', comments: '' });
+
   const [saving, setSaving] = useState(false);
   const [viewMode, setViewMode] = useState<'location' | 'zone'>('zone');
   const [smartRecommendations, setSmartRecommendations] = useState<{ plantName: string; recommendations: any[]; hasCompatibleZones: boolean } | null>(null);
@@ -386,9 +384,7 @@ export default function GardenOverview() {
   const [manualInputError, setManualInputError] = useState<Record<number, string>>({});
   const [manualTimerModal, setManualTimerModal] = useState<{ zoneId: number; zoneName: string } | null>(null);
 
-  // Zone configuration modal state (for auto-creation)
-  const [selectedZone, setSelectedZone] = useState<any | null>(null);
-  const [showZoneModal, setShowZoneModal] = useState(false);
+
   const [scheduleMode, setScheduleMode] = useState<'manual' | 'smart'>('manual');
 
   const navigate = useNavigate();
@@ -488,8 +484,7 @@ export default function GardenOverview() {
       // If click is not on a valid drop target, cancel the held plant
       if (!isValidDropTarget) {
         setHeldPlant(null);
-        setModal(null);
-        setModalData({ quantity: '', emitterSize: '', zoneId: '', locationId: '', comments: '' });
+        setSmartPlacementModal(null);
         setError(''); // Clear error when canceling plant selection
       }
     };
@@ -504,8 +499,139 @@ export default function GardenOverview() {
   }, [heldPlant]);
 
   // Load global smart mode setting and status data
+  const loadSettingsAndStatus = async () => {
+    try {
+      // Load smart mode setting and GPIO config in parallel
+      const [settingsRes, gpioRes] = await Promise.all([
+        fetch(`${getApiBaseUrl()}/config/settings.cfg`),
+        fetch(`${getApiBaseUrl()}/config/gpio.cfg`)
+      ]);
+      
+      const [settings, gpioConfig] = await Promise.all([
+        settingsRes.json(),
+        gpioRes.json()
+      ]);
+      
+      setGlobalSmartMode(settings.mode === 'smart');
+      const pumpZoneId = gpioConfig.pumpIndex || 0;
+
+      // Load live zone status and timers in parallel
+      let zoneStatusData = {};
+      let timersData = { timers: {} };
+      
+      try {
+        const [zoneStatusRes, timersRes] = await Promise.all([
+          fetch(`${getApiBaseUrl()}/api/zones/status`),
+          fetch(`${getApiBaseUrl()}/api/scheduler/timers`)
+        ]);
+        
+        if (zoneStatusRes.ok) {
+          zoneStatusData = await zoneStatusRes.json();
+        }
+        
+        if (timersRes.ok) {
+          timersData = await timersRes.json();
+        }
+      } catch (err) {
+        // Silently handle errors for status updates
+      }
+      
+      // Convert zone status to our format
+      const newZoneStates: Record<number, { active: boolean; remaining?: number }> = {};
+      
+      // Process zone status (hardware state)
+      Object.entries(zoneStatusData).forEach(([zoneId, status]: [string, any]) => {
+        const zoneIdNum = parseInt(zoneId);
+        newZoneStates[zoneIdNum] = {
+          active: status.active || false,
+          remaining: status.remaining || 0
+        };
+      });
+      
+      // Override with manual timer data (from active_zones.json) for active timers
+      if (timersData.timers) {
+        Object.entries(timersData.timers).forEach(([zoneId, timer]: [string, any]) => {
+          const zoneIdNum = parseInt(zoneId);
+          if (timer.active) {
+            newZoneStates[zoneIdNum] = {
+              active: true,
+              remaining: timer.remaining_seconds || 0
+            };
+          }
+        });
+      }
+      
+      setZoneStates(newZoneStates);
+      
+      // Validate zone states against expected states
+      const newValidationStates: Record<number, 'green' | 'gray' | 'orange' | 'red'> = {};
+      const now = Date.now();
+      const TIMEOUT_MS = 30000; // 30 seconds
+      
+      Object.entries(newZoneStates).forEach(([zoneId, status]) => {
+        const zoneIdNum = parseInt(zoneId);
+        const expectedState = expectedZoneStates[zoneIdNum];
+        const transitionTimestamp = zoneTransitionTimestamps[zoneIdNum];
+        const actualState = status.active;
+        
+        // If no expected state is set, initialize based on current state
+        if (expectedState === undefined) {
+          setExpectedZoneStates(prev => ({ ...prev, [zoneIdNum]: actualState }));
+          newValidationStates[zoneIdNum] = actualState ? 'green' : 'gray';
+          return;
+        }
+        
+        // Check if we're in a transition period
+        if (transitionTimestamp && (now - transitionTimestamp) < TIMEOUT_MS) {
+          // Still in transition period - check if states match
+          if (expectedState === actualState) {
+            // States match - transition complete
+            newValidationStates[zoneIdNum] = expectedState ? 'green' : 'gray';
+            setZoneTransitionTimestamps(prev => {
+              const newTimestamps = { ...prev };
+              delete newTimestamps[zoneIdNum];
+              return newTimestamps;
+            });
+          } else {
+            // States don't match - still orange (pending)
+            newValidationStates[zoneIdNum] = 'orange';
+          }
+        } else {
+          // Outside transition period - check if states match
+          if (expectedState === actualState) {
+            newValidationStates[zoneIdNum] = expectedState ? 'green' : 'gray';
+          } else {
+            // States don't match and outside transition period - red (error)
+            newValidationStates[zoneIdNum] = 'red';
+          }
+        }
+      });
+      
+      setZoneValidationStates(newValidationStates);
+      
+      // Load pump status
+      if (pumpZoneId > 0) {
+        try {
+          const pumpRes = await fetch(`${getApiBaseUrl()}/api/gpio/status/${pumpZoneId}`);
+          if (pumpRes.ok) {
+            const pumpStatus = await pumpRes.json();
+            setPumpStatus({
+              active: pumpStatus.active || false,
+              remaining: pumpStatus.remaining || 0
+            });
+          }
+        } catch (err) {
+          // Silently handle pump status errors
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error loading settings and status:', error);
+    }
+  };
+
   useEffect(() => {
-    const loadSettingsAndStatus = async () => {
+    const loadData = async () => {
       try {
         // Load smart mode setting and GPIO config in parallel
         const [settingsRes, gpioRes] = await Promise.all([
@@ -1037,25 +1163,7 @@ export default function GardenOverview() {
               zoneSelectionMode: 'smart'
             });
             
-            // Auto-select the best match zone (first recommendation)
-            if (analysis.recommendations && analysis.recommendations.length > 0) {
-              const bestZone = analysis.recommendations[0];
-              const smartEmitterSize = analysis.optimal_emitter_analysis?.recommended_emitter?.toString() || '4';
-              setModalData(prev => ({
-                ...prev,
-                quantity: '1',
-                emitterSize: smartEmitterSize,
-                zoneId: bestZone.zone_id.toString()
-              }));
-            } else {
-              // Set default values for smart placement (no zone auto-selection)
-              const smartEmitterSize = analysis.optimal_emitter_analysis?.recommended_emitter?.toString() || '4';
-              setModalData(prev => ({
-                ...prev,
-                quantity: '1',
-                emitterSize: smartEmitterSize
-              }));
-            }
+            // Smart placement modal will handle its own state internally
           } else if (!analysis.has_compatible_zones) {
             console.log(`No compatible zones found for ${analysis.plant_data.common_name}. Consider creating a new zone or adjusting watering requirements.`);
             // Show smart placement modal with deactivated zones even when no compatible zones found
@@ -1068,15 +1176,7 @@ export default function GardenOverview() {
               zoneSelectionMode: 'smart'
             });
             
-            // Set default values for smart placement
-            setModalData(prev => ({
-              ...prev,
-              quantity: '1',
-              emitterSize: '4',
-              zoneId: '',
-              locationId: '',
-              comments: ''
-            }));
+            // Smart placement modal will handle its own state internally
           }
         }
       } catch (error) {
@@ -1088,44 +1188,20 @@ export default function GardenOverview() {
   // When a location is clicked
   const handleLocationClick = (idx: number) => {
     if (heldPlant) {
-      setModal({ locationIdx: idx });
-      setModalData({ 
-        quantity: '', 
-        emitterSize: '', 
-        zoneId: '', 
-        locationId: locations[idx].location_id.toString(), 
-        comments: '' 
+      // Use the unified SmartPlacementForm for all plant placement
+      setSmartPlacementModal({
+        plant: heldPlant.plant,
+        bookFile: heldPlant.bookFile,
+        recommendations: [],
+        emitterSizingMode: 'manual',
+        zoneSelectionMode: 'manual'
       });
     }
   };
 
 
 
-  // Handle modal input changes
-  const handleModalChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const newData = { ...modalData, [e.target.name]: e.target.value };
-    
-    // If zone changes, clear the location selection if it's not available for the new zone
-    if (e.target.name === 'zoneId' && e.target.value) {
-      const selectedZone = Number(e.target.value);
-      if (newData.locationId) {
-        const selectedLocation = locations.find(loc => loc.location_id === Number(newData.locationId));
-        if (selectedLocation && !selectedLocation.zones.includes(selectedZone)) {
-          newData.locationId = '';
-        }
-      }
-    }
-    
-    // If location changes, clear the zone selection if it's not available in the new location
-    if (e.target.name === 'locationId' && e.target.value) {
-      const selectedLocation = locations.find(loc => loc.location_id === Number(e.target.value));
-      if (selectedLocation && newData.zoneId && !selectedLocation.zones.includes(Number(newData.zoneId))) {
-        newData.zoneId = '';
-      }
-    }
-    
-    setModalData(newData);
-  };
+
 
   const handleRemovePlant = async (locationIdx: number, instanceId: string) => {
     if (!confirm('Are you sure you want to remove this plant? This action cannot be undone.')) {
@@ -1211,17 +1287,6 @@ export default function GardenOverview() {
 
       // Update local state
       setLocations(updatedLocations);
-      
-      // Auto-select the newly created location in the smart placement form
-      if (smartPlacementModal && modalData.zoneId) {
-        const newLocation = updatedLocations.find(loc => loc.location_id === nextLocationId);
-        if (newLocation && newLocation.zones.includes(parseInt(modalData.zoneId))) {
-          setModalData(prev => ({
-            ...prev,
-            locationId: newLocation.location_id.toString()
-          }));
-        }
-      }
       
       setLocationName('');
       setLocationDescription('');
@@ -1318,304 +1383,11 @@ export default function GardenOverview() {
     }
   };
 
-  // Parse watering frequency code to get period and cycles
-  const parseWateringFrequency = (frequencyCode: string) => {
-    const period = frequencyCode.charAt(0);
-    const cycles = parseInt(frequencyCode.slice(1));
-    
-    let periodCode = 'D';
-    if (period === 'W') periodCode = 'W';
-    else if (period === 'M') periodCode = 'M';
-    
-    return { period: periodCode, cycles };
-  };
 
-  // Get plant data from library
-  const getPlantDataFromLibrary = (plantId: number, bookFile: string) => {
-    const plantBook = plantBooks[bookFile];
-    if (!plantBook) {
-      console.error(`Plant book not found: ${bookFile}`);
-      return null;
-    }
-    
-    const plant = plantBook.plants.find(p => p.plant_id === plantId);
-    if (!plant) {
-      console.error(`Plant with ID ${plantId} not found in book ${bookFile}`);
-      return null;
-    }
-    
-    return plant;
-  };
 
-  const handleAutoCreateZone = (zoneId: number, plant: PlantEntry, bookFile: string) => {
-    console.log('=== AUTO CREATE ZONE DEBUG ===');
-    console.log('Zone ID:', zoneId);
-    console.log('Plant:', plant);
-    console.log('Book file:', bookFile);
-    
-    // Get detailed plant data from library
-    const plantData = getPlantDataFromLibrary(plant.plant_id, bookFile);
-    if (!plantData) {
-      console.error('Plant data not found in library');
-      return;
-    }
 
-    console.log('Plant data from library:', plantData);
-    console.log('Watering frequency array:', plantData.watering_frequency);
-    console.log('Preferred time array:', plantData.preferred_time);
 
-    // Parse watering frequency
-    const wateringFreq = plantData.watering_frequency?.[0] || 'D1';
-    const { period, cycles } = parseWateringFrequency(wateringFreq);
-    
-    console.log('Parsed watering frequency:', { wateringFreq, period, cycles });
-    
-    // Get preferred time
-    const preferredTime = plantData.preferred_time?.[0] || 'SUNRISE';
-    
-    console.log('Preferred time:', preferredTime);
-    
-    // Create zone configuration with same structure as original zones
-    const zoneConfig = {
-      zone_id: zoneId,
-      mode: 'manual', // Use 'manual' for consistency with original zones
-      period: period,
-      cycles: cycles,
-      comment: '', // Leave blank for user to add zone comments
-      startDay: new Date().toISOString().split('T')[0],
-      times: [{
-        value: preferredTime,
-        start_time: preferredTime,
-        duration: '010000' // Default 1 hour duration
-      }]
-    };
 
-    console.log('Created zone config:', zoneConfig);
-    console.log('=== END AUTO CREATE ZONE DEBUG ===');
-
-    // Set the zone configuration and open the modal
-    setSelectedZone(zoneConfig);
-    setScheduleMode('manual'); // Default to manual mode for auto-created zones
-    setShowZoneModal(true);
-    
-    // Don't close the smart placement modal - keep it open for when we return
-  };
-
-  const handleSmartPlacementConfirm = async (selectedZoneId: number, selectedLocationId: number) => {
-    if (!smartPlacementModal) return;
-
-    try {
-      const plantData = {
-        library_book: smartPlacementModal.bookFile.replace('.json', ''),
-        plant_id: smartPlacementModal.plant.plant_id,
-        common_name: smartPlacementModal.plant.common_name,
-        quantity: parseInt(modalData.quantity),
-        emitter_size: parseFloat(modalData.emitterSize),
-        zone_id: selectedZoneId,
-        location_id: selectedLocationId,
-        comments: modalData.comments || '',
-        planted_date: new Date().toISOString().split('T')[0],
-        smart_overrides: {
-          zone_selection: smartPlacementModal.zoneSelectionMode,
-          emitter_sizing: smartPlacementModal.emitterSizingMode
-        }
-      };
-
-      // Save to backend
-      const response = await fetch(`${getApiBaseUrl()}/api/map/save`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(plantData)
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to assign plant');
-      }
-
-      const result = await response.json();
-      
-      // Update local state
-      const newAssignedPlant: AssignedPlant = {
-        plant: smartPlacementModal.plant,
-        quantity: plantData.quantity,
-        emitterSize: plantData.emitter_size,
-        zoneId: plantData.zone_id,
-        location_id: plantData.location_id,
-        instanceId: result.instance_id || `${plantData.location_id}-${plantData.plant_id}-${plantData.zone_id}-${plantData.quantity}-${plantData.emitter_size}-${Date.now()}`,
-        comments: plantData.comments
-      };
-
-      setLocations(prev => prev.map((loc) => {
-        if (loc.location_id === plantData.location_id) {
-          return {
-            ...loc,
-            assignedPlants: [...(loc.assignedPlants || []), newAssignedPlant]
-          };
-        }
-        return loc;
-      }));
-
-      // Refresh zones data to get updated durations
-      try {
-        const zonesResponse = await fetch(`${getApiBaseUrl()}/api/schedule`);
-        if (zonesResponse.ok) {
-          const zonesData = await zonesResponse.json();
-          setZones(zonesData);
-        }
-      } catch (zonesError) {
-        console.error('Error refreshing zones data:', zonesError);
-      }
-
-      // Reset modals and state
-      setSmartPlacementModal(null);
-      setModal(null);
-      setHeldPlant(null);
-      setSelectedPlants({});
-      setModalData({ quantity: '', emitterSize: '', zoneId: '', locationId: '', comments: '' });
-
-      alert('Plant assigned successfully!');
-    } catch (error) {
-      console.error('Error assigning plant:', error);
-      alert('Failed to assign plant. Please try again.');
-    }
-  };
-
-  const handleModalConfirm = async () => {
-    if (!modalData.quantity || !modalData.emitterSize || !modalData.zoneId) {
-      alert('Please fill in all required fields.');
-      return;
-    }
-
-    if (!heldPlant || !modal) return;
-
-    try {
-      const plantData = {
-        library_book: heldPlant.bookFile.replace('.json', ''),
-        plant_id: heldPlant.plant.plant_id,
-        common_name: heldPlant.plant.common_name,
-        quantity: parseInt(modalData.quantity),
-        emitter_size: parseFloat(modalData.emitterSize),
-        zone_id: parseInt(modalData.zoneId),
-        location_id: parseInt(modalData.locationId) || locations[modal.locationIdx].location_id,
-        comments: modalData.comments || '',
-        planted_date: new Date().toISOString().split('T')[0]
-      };
-
-      // First, analyze plant placement for smart recommendations (only if smart mode is enabled)
-      if (globalSmartMode) {
-        const analysisResponse = await fetch(`${getApiBaseUrl()}/api/smart/analyze-placement`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(plantData)
-      });
-
-      if (analysisResponse.ok) {
-        const analysis = await analysisResponse.json();
-        
-        // Check if the selected zone is optimal
-        const selectedZoneId = parseInt(modalData.zoneId);
-        const optimalZoneId = analysis.optimal_zone;
-        
-        if (optimalZoneId && selectedZoneId !== optimalZoneId) {
-          // Show smart recommendation
-          const optimalZone = zones.find(z => z.zone_id === optimalZoneId);
-          const selectedZone = zones.find(z => z.zone_id === selectedZoneId);
-          
-          const recommendationMessage = `Smart Recommendation: This plant would be better suited for Zone ${optimalZoneId} (${optimalZone?.comment || 'Unknown'}) with ${Math.round(analysis.optimal_score * 100)}% compatibility.\n\nCurrent selection: Zone ${selectedZoneId} (${selectedZone?.comment || 'Unknown'})\n\nWould you like to use the recommended zone instead?`;
-          
-          const useOptimal = confirm(recommendationMessage);
-          if (useOptimal) {
-            plantData.zone_id = optimalZoneId;
-            setModalData(prev => ({ ...prev, zoneId: optimalZoneId.toString() }));
-          }
-        }
-        
-        // If no compatible zones found, show options
-        if (!analysis.has_compatible_zones) {
-          const noCompatibleResponse = await fetch(`${getApiBaseUrl()}/api/smart/no-compatible-zone`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(plantData)
-          });
-          
-          if (noCompatibleResponse.ok) {
-            const noCompatibleData = await noCompatibleResponse.json();
-            const message = `No compatible zones found for this plant.\n\nAvailable zones:\n${noCompatibleData.available_zones.map((z: any) => `- Zone ${z.zone_id}: ${z.period} (${z.comment})`).join('\n')}\n\nSuggestions:\n${noCompatibleData.suggestions.join('\n')}\n\nDo you want to force assign to the selected zone anyway?`;
-            
-            const forceAssign = confirm(message);
-            if (!forceAssign) {
-              return; // User cancelled
-            }
-          }
-        }
-      }
-      }
-
-      // Save to backend
-      const response = await fetch(`${getApiBaseUrl()}/api/map/save`, {
-        method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(plantData)
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to assign plant');
-      }
-
-      const result = await response.json();
-      
-      // Update local state
-      const newAssignedPlant: AssignedPlant = {
-        plant: heldPlant.plant,
-        quantity: plantData.quantity,
-        emitterSize: plantData.emitter_size,
-        zoneId: plantData.zone_id,
-        location_id: plantData.location_id,
-        instanceId: result.instance_id || `${plantData.location_id}-${plantData.plant_id}-${plantData.zone_id}-${plantData.quantity}-${plantData.emitter_size}-${Date.now()}`,
-        comments: plantData.comments
-      };
-
-      setLocations(prev => prev.map((loc, idx) => {
-        if (idx === modal.locationIdx) {
-          return {
-            ...loc,
-            assignedPlants: [...(loc.assignedPlants || []), newAssignedPlant]
-          };
-        }
-        return loc;
-      }));
-
-      // Refresh zones data to get updated durations
-      try {
-        const zonesResponse = await fetch(`${getApiBaseUrl()}/api/schedule`);
-        if (zonesResponse.ok) {
-          const zonesData = await zonesResponse.json();
-          setZones(zonesData);
-        }
-      } catch (zonesError) {
-        console.error('Error refreshing zones data:', zonesError);
-      }
-
-      // Reset modal and held plant
-      setModal(null);
-      setHeldPlant(null);
-      setSelectedPlants({});
-      setModalData({ quantity: '', emitterSize: '', zoneId: '', locationId: '', comments: '' });
-
-      alert('Plant assigned successfully!');
-    } catch (error) {
-      console.error('Error assigning plant:', error);
-      alert('Failed to assign plant. Please try again.');
-    }
-  };
 
   // Get zone details for a location
   const getZonesForLocation = (loc: Location) => {
@@ -2491,1178 +2263,23 @@ export default function GardenOverview() {
           </div>
         )}
         
-        {/* Manual Placement Modal */}
-        {modal && heldPlant && (
-                              <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.8)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000
-          }}>
-            <div 
-              data-modal="true"
-              style={{
-                background: '#232b3b',
-                borderRadius: '16px',
-                padding: '32px',
-                minWidth: '500px',
-                maxWidth: '700px',
-                maxHeight: '95vh',
-                color: '#f4f4f4',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                overflow: 'auto'
-              }}
-            >
-              <h3 style={{
-                color: '#00bcd4',
-                fontWeight: 700,
-                margin: '0 0 16px 0',
-                textAlign: 'left',
-                flexShrink: 0
-              }}>
-                Manual Placement: {heldPlant.plant.common_name}
-              </h3>
-              
-              {modalData.noCompatibleZones && (
-                <div style={{
-                  background: '#2d1b1b',
-                  border: '1px solid #ff512f',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  marginBottom: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  <span style={{ color: '#ff512f', fontSize: '16px' }}>⚠️</span>
-                  <span style={{ color: '#ff512f', fontWeight: 600, fontSize: '14px' }}>
-                    No compatible zones found for this plant. You can still manually place it by selecting a zone below.
-                  </span>
-                </div>
-              )}
-              
-              <div style={{
-                background: '#1a1f2a',
-                borderRadius: '8px',
-                padding: '16px',
-                marginBottom: '20px',
-                border: '1px solid #00bcd4'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '12px'
-                }}>
-                  <p style={{ margin: 0, color: '#00bcd4', fontWeight: 600 }}>
-                    🎯 Select zone for manual placement:
-                  </p>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <span style={{
-                      color: '#666',
-                      fontSize: '12px',
-                      fontWeight: 500
-                    }}>Smart</span>
-                    <div 
-                      style={{
-                        width: '40px',
-                        height: '20px',
-                        background: '#2a3441',
-                        borderRadius: '10px',
-                        border: '1px solid #444',
-                        position: 'relative',
-                        cursor: 'not-allowed',
-                        opacity: 0.6
-                      }}
-                    >
-                      <div style={{
-                        width: '16px',
-                        height: '16px',
-                        background: '#666',
-                        borderRadius: '50%',
-                        position: 'absolute',
-                        top: '1px',
-                        right: '1px',
-                        transition: 'all 0.2s'
-                      }} />
-                            </div>
-                    <span style={{
-                      color: '#00bcd4',
-                      fontSize: '12px',
-                      fontWeight: 600
-                    }}>Manual</span>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {zones.filter(z => z.mode !== 'disabled').map((zone: any, index: number) => {
-                    const zoneId = zone.zone_id;
-                    const isSelected = modalData.zoneId === zoneId.toString();
-                    
-                    return (
-                      <div key={zoneId} style={{
-                        background: isSelected ? '#00bcd4' : '#2a3441',
-                        borderRadius: '6px',
-                        padding: '12px',
-                        border: isSelected ? '2px solid #00bcd4' : '1px solid #444',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }} onClick={() => {
-                        // Find locations that have this zone
-                        const locationsWithZone = locations.filter(loc => loc.zones.includes(zoneId));
-                        if (locationsWithZone.length > 0) {
-                          setModalData(prev => ({
-                            ...prev,
-                            zoneId: zoneId.toString(),
-                            locationId: locationsWithZone[0].location_id.toString() // Auto-select first location
-                          }));
-                        } else {
-                          // Just set the zone if no locations support it
-                          setModalData(prev => ({
-                            ...prev,
-                            zoneId: zoneId.toString(),
-                            locationId: '' // Clear location since none support this zone
-                          }));
-                        }
-                      }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div>
-                            <strong>Zone {zoneId}</strong> ({zone.period})
-                            <div style={{ fontSize: '12px', opacity: 0.8 }}>
-                              {zone.comment}
-                            </div>
-                          </div>
-                          <div style={{ 
-                            background: isSelected ? '#fff' : '#666', 
-                            color: isSelected ? '#00bcd4' : '#fff',
-                            padding: '4px 8px',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            fontWeight: 'bold'
-                          }}>
-                            Manual
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
 
-              <form style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '16px'
-              }} onSubmit={e => { 
-                e.preventDefault(); 
-                handleModalConfirm();
-              }}>
-                <div style={{
-                  background: '#1a1f2a',
-                  borderRadius: '8px',
-                  padding: '16px',
-                  marginBottom: '20px',
-                  border: '1px solid #00bcd4'
-                }}>
-                  <p style={{ margin: '0 0 12px 0', color: '#00bcd4', fontWeight: 600 }}>
-                    📊 Select quantity:
-                  </p>
-                <div style={{
-                  display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '8px',
-                    marginBottom: '12px'
-                  }}>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 18, 20, 25, 30].map(num => (
-                      <div
-                        key={num}
-                        onClick={() => setModalData(prev => ({ ...prev, quantity: num.toString() }))}
-                        style={{
-                          background: modalData.quantity === num.toString() ? '#00bcd4' : '#2a3441',
-                          color: modalData.quantity === num.toString() ? '#181f2a' : '#fff',
-                          borderRadius: '6px',
-                          padding: '12px',
-                          cursor: 'pointer',
-                          border: modalData.quantity === num.toString() ? '2px solid #00bcd4' : '1px solid #444',
-                          transition: 'all 0.2s',
-                          fontSize: '14px',
-                          fontWeight: modalData.quantity === num.toString() ? 'bold' : 'normal',
-                          width: '65px',
-                          height: '50px',
-                          textAlign: 'center',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      >
-                        {num}
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                  gap: '8px'
-                }}>
-                    <span style={{
-                    color: '#fff',
-                      fontSize: '14px',
-                      fontWeight: 500
-                    }}>Custom:</span>
-                    <input
-                      type="number"
-                      min="1"
-                      max="99"
-                      placeholder="Enter quantity"
-                    value={modalData.quantity}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === '' || (parseInt(value) >= 1 && parseInt(value) <= 99)) {
-                          setModalData(prev => ({ ...prev, quantity: value }));
-                        }
-                              }}
-                              style={{
-                        background: '#2a3441',
-                        border: '1px solid #444',
-                                borderRadius: '6px',
-                        padding: '8px 12px',
-                        color: '#fff',
-                        fontSize: '14px',
-                        width: '80px',
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
-                </div>
-                <div style={{
-                      background: '#1a1f2a',
-                  borderRadius: '8px',
-                  padding: '16px',
-                  marginBottom: '20px',
-                  border: '1px solid #00bcd4'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '12px'
-                  }}>
-                    <p style={{ margin: 0, color: '#00bcd4', fontWeight: 600 }}>
-                      💧 Emitter Size (GPH):
-                    </p>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}>
-                      <span style={{
-                        color: '#666',
-                        fontSize: '12px',
-                        fontWeight: 500
-                      }}>Smart</span>
-                      <div style={{
-                        width: '40px',
-                        height: '20px',
-                        background: '#2a3441',
-                        borderRadius: '10px',
-                        border: '1px solid #444',
-                        position: 'relative',
-                        cursor: 'not-allowed',
-                        opacity: 0.6
-                      }}>
-                        <div style={{
-                          width: '16px',
-                          height: '16px',
-                          background: '#666',
-                          borderRadius: '50%',
-                          position: 'absolute',
-                          top: '1px',
-                          right: '1px',
-                          transition: 'all 0.2s'
-                        }} />
-                      </div>
-                      <span style={{
-                        color: '#00bcd4',
-                        fontSize: '12px',
-                        fontWeight: 600
-                      }}>Manual</span>
-                    </div>
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '8px',
-                    marginBottom: '12px'
-                  }}>
-                    {[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0].map(size => (
-                      <div
-                        key={size}
-                        onClick={() => setModalData(prev => ({ ...prev, emitterSize: size.toString() }))}
-                        style={{
-                          background: modalData.emitterSize === size.toString() ? '#00bcd4' : '#2a3441',
-                          color: modalData.emitterSize === size.toString() ? '#181f2a' : '#fff',
-                          borderRadius: '6px',
-                          padding: '12px',
-                          cursor: 'pointer',
-                          border: modalData.emitterSize === size.toString() ? '2px solid #00bcd4' : '2px solid #444',
-                          transition: 'all 0.2s',
-                          fontSize: '14px',
-                          fontWeight: modalData.emitterSize === size.toString() ? 'bold' : 'normal',
-                          width: '90px',
-                          height: '50px',
-                          textAlign: 'center',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      >
-                        {size} GPH
-                      </div>
-                    ))}
-                  </div>
-                              <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <span style={{
-                                color: '#fff',
-                      fontSize: '14px',
-                      fontWeight: 500
-                    }}>Custom:</span>
-                    <input
-                      type="number"
-                      min="0.1"
-                      max="50"
-                      step="0.1"
-                      placeholder="Enter GPH"
-                      value={modalData.emitterSize}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === '' || (parseFloat(value) >= 0.1 && parseFloat(value) <= 50)) {
-                          setModalData(prev => ({ ...prev, emitterSize: value }));
-                        }
-                      }}
-                      style={{
-                        background: '#2a3441',
-                        border: '1px solid #444',
-                        borderRadius: '6px',
-                        padding: '8px 12px',
-                        color: '#fff',
-                        fontSize: '14px',
-                        width: '80px',
-                      outline: 'none'
-                    }}
-                    />
-                  </div>
-                </div>
-
-                <div style={{
-                  background: '#1a1f2a',
-                                borderRadius: '8px',
-                  padding: '16px',
-                  marginBottom: '20px',
-                  border: '1px solid #00bcd4'
-                              }}>
-                  <p style={{ margin: '0 0 12px 0', color: '#00bcd4', fontWeight: 600 }}>
-                    📍 Select location:
-                  </p>
-                                <div style={{
-                                  display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '8px',
-                    marginBottom: '12px'
-                  }}>
-                    {locations
-                      .filter(loc => loc.zones.includes(parseInt(modalData.zoneId)))
-                      .map(loc => (
-                        <div
-                          key={loc.location_id}
-                          onClick={() => setModalData(prev => ({ ...prev, locationId: loc.location_id.toString() }))}
-                          style={{
-                            background: modalData.locationId === loc.location_id.toString() ? '#00bcd4' : '#2a3441',
-                            color: modalData.locationId === loc.location_id.toString() ? '#181f2a' : '#fff',
-                            borderRadius: '6px',
-                            padding: '12px',
-                            cursor: 'pointer',
-                            border: modalData.locationId === loc.location_id.toString() ? '2px solid #00bcd4' : '1px solid #444',
-                            transition: 'all 0.2s',
-                            fontSize: '14px',
-                            fontWeight: modalData.locationId === loc.location_id.toString() ? 'bold' : 'normal',
-                            minWidth: '100px',
-                            height: '50px',
-                            textAlign: 'center',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          {loc.name}
-                        </div>
-                      ))}
-                    {locations.filter(loc => loc.zones.includes(parseInt(modalData.zoneId))).length === 0 && (
-                      <div style={{
-                        color: '#666',
-                        fontSize: '14px',
-                        fontStyle: 'italic'
-                      }}>
-                        No locations support this zone
-                      </div>
-                    )}
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'flex-start',
-                    marginTop: '8px'
-                                }}>
-                                  <button
-                      type="button"
-                      onClick={() => {
-                        setShowLocationForm(true);
-                                    }}
-                                    style={{
-                                      background: 'transparent',
-                        border: '1px solid #00bcd4',
-                        color: '#00bcd4',
-                        borderRadius: '6px',
-                        padding: '8px 16px',
-                        fontSize: '14px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      + Add New Location
-                                  </button>
-                  </div>
-                </div>
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px'
-                }}>
-                  <label style={{
-                    color: '#fff',
-                    fontWeight: 600,
-                    textAlign: 'left'
-                  }}>Comments (optional):</label>
-                  <input
-                    type="text"
-                    name="comments"
-                    value={modalData.comments}
-                    onChange={handleModalChange}
-                    style={{
-                      padding: '10px 12px',
-                      borderRadius: '8px',
-                      border: '1px solid #00bcd4',
-                      background: '#1a1f2a',
-                      color: '#fff',
-                      outline: 'none'
-                    }}
-                    placeholder="Any additional notes..."
-                  />
-                </div>
-                <div style={{
-                  display: 'flex',
-                  gap: '12px',
-                  marginTop: '16px'
-                }}>
-                                  <button
-                    type="button"
-                    onClick={() => { 
-                      setModal(null);
-                      setHeldPlant(null);
-                      setSelectedPlants({});
-                      setModalData({ quantity: '', emitterSize: '', zoneId: '', locationId: '', comments: '' });
-                                    }}
-                                    style={{
-                      padding: '10px 20px',
-                      borderRadius: '8px',
-                                      border: '2px solid #ff512f',
-                                      background: 'transparent',
-                                      color: '#ff512f',
-                      fontWeight: 600,
-                      fontSize: '14px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      flex: 1
-                    }}
-                  >Cancel</button>
-                  <button
-                    type="submit"
-                    disabled={!modalData.zoneId || !modalData.locationId || !modalData.quantity || !modalData.emitterSize}
-                    style={{
-                      padding: '10px 20px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      background: modalData.zoneId && modalData.locationId && modalData.quantity && modalData.emitterSize ? '#00bcd4' : '#666',
-                      color: modalData.zoneId && modalData.locationId && modalData.quantity && modalData.emitterSize ? '#181f2a' : '#999',
-                                      fontWeight: 700,
-                      fontSize: '14px',
-                      cursor: modalData.zoneId && modalData.locationId && modalData.quantity && modalData.emitterSize ? 'pointer' : 'not-allowed',
-                      transition: 'all 0.2s',
-                      flex: 1
-                    }}
-                  >
-                    Assign Plant
-                                  </button>
-                                </div>
-              </form>
-                              </div>
-                      </div>
-                    )}
 
         {/* Smart Placement Modal */}
         {smartPlacementModal && (
-                    <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.8)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000
-          }}>
-            <div 
-              data-modal="true"
-              style={{
-                background: '#232b3b',
-                borderRadius: '16px',
-                padding: '32px',
-                minWidth: '500px',
-                maxWidth: '700px',
-                maxHeight: '95vh',
-                color: '#f4f4f4',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                overflow: 'auto'
-              }}
-            >
-              <h3 style={{
-                      color: '#00bcd4',
-                fontWeight: 700,
-                margin: '0 0 16px 0',
-                textAlign: 'left',
-                flexShrink: 0
-              }}>
-                Smart Placement: {smartPlacementModal.plant.common_name}
-              </h3>
+          <SmartPlacementForm
+            plant_id={smartPlacementModal.plant.plant_id}
+            library_book={smartPlacementModal.bookFile}
+            onCancel={() => setSmartPlacementModal(null)}
+            onSuccess={(data) => {
+              // Handle the form submission data
+              console.log('Smart placement form submitted:', data);
+              setSmartPlacementModal(null);
               
-              {smartPlacementModal.recommendations.length === 0 && (
-                <div style={{
-                  background: '#2d1b1b',
-                  border: '1px solid #ff512f',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  marginBottom: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  <span style={{ color: '#ff512f', fontSize: '16px' }}>⚠️</span>
-                  <span style={{ color: '#ff512f', fontWeight: 600, fontSize: '14px' }}>
-                    No compatible zones found for this plant. Check deactivated zones below for auto-creation options.
-                  </span>
-                    </div>
-              )}
-
-                      <div style={{
-                background: '#1a1f2a',
-                        borderRadius: '8px',
-                padding: '16px',
-                marginBottom: '20px',
-                border: '1px solid #00bcd4'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '12px'
-                }}>
-                  <p style={{ margin: 0, color: '#00bcd4', fontWeight: 600 }}>
-                    🎯 {smartPlacementModal.recommendations.length > 0 ? 'Compatible zones found! Select your preferred zone:' : 'Available zones:'}
-                  </p>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <span style={{
-                      color: zoneSelectionMode === 'smart' ? '#00bcd4' : '#666',
-                      fontSize: '12px',
-                      fontWeight: zoneSelectionMode === 'smart' ? 600 : 500
-                    }}>Smart</span>
-                    <div 
-                      style={{
-                        width: '40px',
-                        height: '20px',
-                        background: '#2a3441',
-                        borderRadius: '10px',
-                        border: '1px solid #444',
-                        position: 'relative',
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => setZoneSelectionMode(prev => prev === 'smart' ? 'manual' : 'smart')}
-                    >
-                      <div style={{
-                        width: '16px',
-                        height: '16px',
-                        background: zoneSelectionMode === 'smart' ? '#00bcd4' : '#666',
-                        borderRadius: '50%',
-                        position: 'absolute',
-                        top: '1px',
-                        left: zoneSelectionMode === 'smart' ? '1px' : '23px',
-                        transition: 'all 0.2s'
-                      }} />
-                    </div>
-                    <span style={{
-                      color: zoneSelectionMode === 'manual' ? '#00bcd4' : '#666',
-                      fontSize: '12px',
-                      fontWeight: zoneSelectionMode === 'manual' ? 600 : 500
-                    }}>Manual</span>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {(zoneSelectionMode === 'smart' ? smartPlacementModal.recommendations.slice(0, 3) : zones.filter(z => z.mode !== 'disabled')).map((rec: any, index: number) => {
-                    const isSmartMode = zoneSelectionMode === 'smart';
-                    const zoneId = isSmartMode ? rec.zone_id : rec.zone_id;
-                    const isSelected = modalData.zoneId === zoneId.toString();
-                    
-                    return (
-                      <div key={zoneId} style={{
-                        background: isSelected ? '#00bcd4' : '#2a3441',
-                        borderRadius: '6px',
-                        padding: '12px',
-                        border: isSelected ? '2px solid #00bcd4' : '1px solid #444',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }} onClick={() => {
-                        // Find locations that have this zone
-                        const locationsWithZone = locations.filter(loc => loc.zones.includes(zoneId));
-                        if (locationsWithZone.length > 0) {
-                          setModalData(prev => ({
-                            ...prev,
-                            zoneId: zoneId.toString(),
-                            locationId: locationsWithZone[0].location_id.toString() // Auto-select first location
-                          }));
-                        } else {
-                          // Just set the zone if no locations support it
-                          setModalData(prev => ({
-                            ...prev,
-                            zoneId: zoneId.toString(),
-                            locationId: '' // Clear location since none support this zone
-                          }));
-                        }
-                      }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div>
-                            <strong>Zone {zoneId}</strong> ({isSmartMode ? rec.period : rec.period})
-                            <div style={{ fontSize: '12px', opacity: 0.8 }}>
-                              {isSmartMode ? rec.comment : rec.comment}
-                        </div>
-                        </div>
-                          {isSmartMode && (
-                            <div style={{ 
-                              background: isSelected ? '#fff' : '#00bcd4', 
-                              color: isSelected ? '#00bcd4' : '#fff',
-                              padding: '4px 8px',
-                              borderRadius: '4px',
-                              fontSize: '12px',
-                              fontWeight: 'bold'
-                            }}>
-                              {Math.round(rec.score * 100)}% match
-                      </div>
-                    )}
-                          {!isSmartMode && (
-                            <div style={{ 
-                              background: isSelected ? '#fff' : '#666', 
-                              color: isSelected ? '#00bcd4' : '#fff',
-                              padding: '4px 8px',
-                              borderRadius: '4px',
-                              fontSize: '12px',
-                              fontWeight: 'bold'
-                            }}>
-                              Manual
-                            </div>
-                          )}
-                        </div>
-                  </div>
-                );
-              })}
-                </div>
-          </div>
-          
-              {/* Deactivated Zones Section - Only show when no compatible zones found */}
-              {smartPlacementModal.recommendations.length === 0 && zones.filter(z => z.mode === 'disabled').length > 0 && (
-            <div style={{
-                  background: '#1a1f2a',
-                  borderRadius: '8px',
-                  padding: '16px',
-                  marginBottom: '20px',
-                  border: '1px solid #666'
-                }}>
-                  <p style={{ margin: '0 0 12px 0', color: '#666', fontWeight: 600 }}>
-                    🔧 Deactivated Zones (Available for Auto-Creation):
-                  </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {zones.filter(z => z.mode === 'disabled').map((zone: any) => (
-                      <div key={zone.zone_id} style={{
-                        background: '#2a3441',
-                        borderRadius: '6px',
-                        padding: '12px',
-                        border: '1px solid #444',
-                        opacity: 0.7
-                      }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div>
-                            <strong style={{ color: '#666' }}>Zone {zone.zone_id}</strong>
-                            <div style={{ fontSize: '12px', opacity: 0.8, color: '#666' }}>
-                              {zone.comment || 'No description'}
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              console.log('Auto-create clicked for zone:', zone.zone_id);
-                              console.log('Plant data from modal:', smartPlacementModal.plant);
-                              console.log('Book file:', smartPlacementModal.bookFile);
-                              handleAutoCreateZone(zone.zone_id, smartPlacementModal.plant, smartPlacementModal.bookFile);
-                            }}
-                            style={{
-                              background: '#00bcd4',
-                              color: '#181f2a',
-                              border: 'none',
-                              borderRadius: '4px',
-                              padding: '6px 12px',
-                              fontSize: '12px',
-                              fontWeight: 'bold',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            Auto-Create
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <form style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '16px'
-              }} onSubmit={e => { 
-                e.preventDefault(); 
-                if (modalData.zoneId && modalData.locationId) {
-                  handleSmartPlacementConfirm(parseInt(modalData.zoneId), parseInt(modalData.locationId));
-                }
-              }}>
-            <div style={{
-                  background: '#1a1f2a',
-                  borderRadius: '8px',
-                  padding: '16px',
-                  marginBottom: '20px',
-                  border: '1px solid #00bcd4'
-                }}>
-                  <p style={{ margin: '0 0 12px 0', color: '#00bcd4', fontWeight: 600 }}>
-                    📊 Select quantity:
-                  </p>
-            <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '8px',
-                    marginBottom: '12px'
-                  }}>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 18, 20, 25, 30].map(num => (
-                      <div
-                        key={num}
-                        onClick={() => setModalData(prev => ({ ...prev, quantity: num.toString() }))}
-                        style={{
-                          background: modalData.quantity === num.toString() ? '#00bcd4' : '#2a3441',
-                          color: modalData.quantity === num.toString() ? '#181f2a' : '#fff',
-                          borderRadius: '6px',
-                          padding: '12px',
-                          cursor: 'pointer',
-                          border: modalData.quantity === num.toString() ? '2px solid #00bcd4' : '1px solid #444',
-                          transition: 'all 0.2s',
-                          fontSize: '14px',
-                          fontWeight: modalData.quantity === num.toString() ? 'bold' : 'normal',
-                          width: '65px',
-                          height: '50px',
-                          textAlign: 'center',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      >
-                        {num}
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <span style={{
-                      color: '#fff',
-                      fontSize: '14px',
-                      fontWeight: 500
-                    }}>Custom:</span>
-                    <input
-                      type="number"
-                      min="1"
-                      max="99"
-                      placeholder="Enter quantity"
-                      value={modalData.quantity}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === '' || (parseInt(value) >= 1 && parseInt(value) <= 99)) {
-                          setModalData(prev => ({ ...prev, quantity: value }));
-                        }
-                      }}
-                      style={{
-                        background: '#2a3441',
-                        border: '1px solid #444',
-                        borderRadius: '6px',
-                        padding: '8px 12px',
-                        color: '#fff',
-                        fontSize: '14px',
-                        width: '80px',
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
-                </div>
-                <div style={{
-                  background: '#1a1f2a',
-                  borderRadius: '8px',
-                  padding: '16px',
-                  marginBottom: '20px',
-                  border: '1px solid #00bcd4'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '12px'
-                  }}>
-                    <p style={{ margin: 0, color: '#00bcd4', fontWeight: 600 }}>
-                      💧 Emitter Size (GPH):
-                      {smartPlacementModal.optimal_emitter_analysis && (
-                        <span style={{
-                          color: '#00ff88',
-                          fontSize: '14px',
-                          fontWeight: 500,
-                          marginLeft: '8px'
-                        }}>
-                          (Smart: {smartPlacementModal.optimal_emitter_analysis.recommended_emitter} GPH)
-                        </span>
-                      )}
-                    </p>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}>
-                      <span style={{
-                        color: smartPlacementModal.emitterSizingMode === 'smart' ? '#00bcd4' : '#666',
-                        fontSize: '12px',
-                        fontWeight: smartPlacementModal.emitterSizingMode === 'smart' ? 600 : 500
-                      }}>Smart</span>
-                      <div 
-                        style={{
-                          width: '40px',
-                          height: '20px',
-                          background: '#2a3441',
-                          borderRadius: '10px',
-                          border: '1px solid #444',
-                          position: 'relative',
-                          cursor: 'pointer'
-                        }}
-                        onClick={() => setSmartPlacementModal(prev => prev ? {
-                          ...prev,
-                          emitterSizingMode: prev.emitterSizingMode === 'smart' ? 'manual' : 'smart'
-                        } : null)}
-                      >
-                        <div style={{
-                          width: '16px',
-                          height: '16px',
-                          background: smartPlacementModal.emitterSizingMode === 'smart' ? '#00bcd4' : '#666',
-                          borderRadius: '50%',
-                          position: 'absolute',
-                          top: '1px',
-                          left: smartPlacementModal.emitterSizingMode === 'smart' ? '1px' : '23px',
-                          transition: 'all 0.2s'
-                        }} />
-                      </div>
-                      <span style={{
-                        color: smartPlacementModal.emitterSizingMode === 'manual' ? '#00bcd4' : '#666',
-                        fontSize: '12px',
-                        fontWeight: smartPlacementModal.emitterSizingMode === 'manual' ? 600 : 500
-                      }}>Manual</span>
-                    </div>
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '8px',
-                    marginBottom: '12px'
-                  }}>
-                    {[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0].map(size => {
-                      const isSelected = modalData.emitterSize === size.toString();
-                      const isSmartRecommended = smartPlacementModal.optimal_emitter_analysis && 
-                        smartPlacementModal.optimal_emitter_analysis.recommended_emitter === size;
-                      const isSmartMode = smartPlacementModal.emitterSizingMode === 'smart';
-                      
-                      return (
-                        <div
-                          key={size}
-                          onClick={() => setModalData(prev => ({ ...prev, emitterSize: size.toString() }))}
-                          style={{
-                            background: isSelected ? '#00bcd4' : (isSmartRecommended && isSmartMode ? '#00ff88' : '#2a3441'),
-                            color: isSelected ? '#181f2a' : (isSmartRecommended && isSmartMode ? '#181f2a' : '#fff'),
-                            borderRadius: '6px',
-                            padding: '12px',
-                            cursor: 'pointer',
-                            border: isSelected ? '2px solid #00bcd4' : (isSmartRecommended && isSmartMode ? '2px solid #00ff88' : '1px solid #444'),
-                            transition: 'all 0.2s',
-                            fontSize: '14px',
-                            fontWeight: (isSelected || (isSmartRecommended && isSmartMode)) ? 'bold' : 'normal',
-                            width: '90px',
-                            height: '50px',
-                            textAlign: 'center',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            position: 'relative'
-                          }}
-                        >
-                          {size} GPH
-                          {isSmartRecommended && isSmartMode && !isSelected && (
-                            <div style={{
-                              position: 'absolute',
-                              top: '-4px',
-                              right: '-4px',
-                              background: '#00ff88',
-                              color: '#181f2a',
-                              borderRadius: '50%',
-                              width: '16px',
-                              height: '16px',
-                              fontSize: '10px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontWeight: 'bold'
-                            }}>
-                              ✓
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <span style={{
-                      color: '#fff',
-                      fontSize: '14px',
-                      fontWeight: 500
-                    }}>Custom:</span>
-                    <input
-                      type="number"
-                      min="0.1"
-                      max="50"
-                      step="0.1"
-                      placeholder="Enter GPH"
-                      value={modalData.emitterSize}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === '' || (parseFloat(value) >= 0.1 && parseFloat(value) <= 50)) {
-                          setModalData(prev => ({ ...prev, emitterSize: value }));
-                        }
-                      }}
-                      style={{
-                        background: '#2a3441',
-                        border: '1px solid #444',
-                        borderRadius: '6px',
-                        padding: '8px 12px',
-                        color: '#fff',
-                        fontSize: '14px',
-                        width: '80px',
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div style={{
-                  background: '#1a1f2a',
-                  borderRadius: '8px',
-                  padding: '16px',
-                  marginBottom: '20px',
-                  border: '1px solid #00bcd4'
-                }}>
-                  <p style={{ margin: '0 0 12px 0', color: '#00bcd4', fontWeight: 600 }}>
-                    📍 Select location:
-                  </p>
-                  <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '8px',
-                    marginBottom: '12px'
-                  }}>
-                    {locations
-                      .filter(loc => loc.zones.includes(parseInt(modalData.zoneId)))
-                      .map(loc => (
-                        <div
-                          key={loc.location_id}
-                          onClick={() => setModalData(prev => ({ ...prev, locationId: loc.location_id.toString() }))}
-                                                        style={{
-                                background: modalData.locationId === loc.location_id.toString() ? '#00bcd4' : '#2a3441',
-                                color: modalData.locationId === loc.location_id.toString() ? '#181f2a' : '#fff',
-                                borderRadius: '6px',
-                                padding: '12px',
-                                cursor: 'pointer',
-                                border: modalData.locationId === loc.location_id.toString() ? '2px solid #00bcd4' : '1px solid #444',
-                                transition: 'all 0.2s',
-                                fontSize: '14px',
-                                fontWeight: modalData.locationId === loc.location_id.toString() ? 'bold' : 'normal',
-                                minWidth: '100px',
-                                height: '50px',
-                                textAlign: 'center',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}
-                        >
-                          {loc.name}
-                        </div>
-                      ))}
-                    {locations.filter(loc => loc.zones.includes(parseInt(modalData.zoneId))).length === 0 && (
-                      <div style={{
-                        color: '#666',
-                        fontSize: '14px',
-                        fontStyle: 'italic'
-                      }}>
-                        No locations support this zone
-                      </div>
-                    )}
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'flex-start',
-                    marginTop: '8px'
-                  }}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowLocationForm(true);
-                      }}
-                      style={{
-                        background: 'transparent',
-                        border: '1px solid #00bcd4',
-                        color: '#00bcd4',
-                        borderRadius: '6px',
-                        padding: '8px 16px',
-                        fontSize: '14px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      + Add New Location
-                    </button>
-                  </div>
-                </div>
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px'
-                }}>
-                  <label style={{
-                    color: '#fff',
-                    fontWeight: 600,
-                    textAlign: 'left'
-                  }}>Comments (optional):</label>
-                  <input
-                    type="text"
-                    name="comments"
-                    value={modalData.comments}
-                    onChange={handleModalChange}
-                    style={{
-                      padding: '10px 12px',
-                      borderRadius: '8px',
-                      border: '1px solid #00bcd4',
-                      background: '#1a1f2a',
-                      color: '#fff',
-                      outline: 'none'
-                    }}
-                    placeholder="Any additional notes..."
-                  />
-                </div>
-                <div style={{
-                  display: 'flex',
-                  gap: '12px',
-                  marginTop: '16px'
-                }}>
-                  <button
-                    type="button"
-                    onClick={() => { 
-                      setSmartPlacementModal(null);
-                      setHeldPlant(null);
-                      setSelectedPlants({});
-                      setModalData({ quantity: '', emitterSize: '', zoneId: '', locationId: '', comments: '' });
-                    }}
-                    style={{
-                      padding: '10px 20px',
-                      borderRadius: '8px',
-                      border: '2px solid #ff512f',
-                      background: 'transparent',
-                      color: '#ff512f',
-                      fontWeight: 600,
-                      fontSize: '14px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      flex: 1
-                    }}
-                  >Cancel</button>
-                  <button
-                    type="submit"
-                    disabled={!modalData.zoneId || !modalData.locationId || !modalData.quantity || !modalData.emitterSize}
-                    style={{
-                      padding: '10px 20px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      background: modalData.zoneId && modalData.locationId && modalData.quantity && modalData.emitterSize ? '#00bcd4' : '#666',
-                      color: modalData.zoneId && modalData.locationId && modalData.quantity && modalData.emitterSize ? '#181f2a' : '#999',
-                      fontWeight: 700,
-                      fontSize: '14px',
-                      cursor: modalData.zoneId && modalData.locationId && modalData.quantity && modalData.emitterSize ? 'pointer' : 'not-allowed',
-                      transition: 'all 0.2s',
-                      flex: 1
-                    }}
-                  >
-                    Place Plant
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+              // Force a page refresh to show the newly added plant
+              window.location.reload();
+            }}
+          />
         )}
 
         {/* Location Creation Modal */}
@@ -3848,504 +2465,6 @@ export default function GardenOverview() {
           </div>
         )}
         
-        {/* Zone Configuration Modal */}
-        {showZoneModal && selectedZone && (
-          <div 
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0, 0, 0, 0.8)',
-                              display: 'flex',
-                              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1000
-            }}
-            onClick={() => {
-              setShowZoneModal(false);
-              setSelectedZone(null);
-              // Keep smart placement modal open to return to it
-            }}
-          >
-            <div 
-              style={{
-                background: '#232b3b',
-                borderRadius: '16px',
-                padding: '24px',
-                maxWidth: '600px',
-                width: '90%',
-                maxHeight: '90vh',
-                overflowY: 'auto',
-                border: '1px solid #1a1f2a',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '20px'
-              }}>
-                <h2 style={{
-                  color: selectedZone.mode === 'disabled' ? '#666' : '#00bcd4',
-                  margin: 0,
-                  fontWeight: 600
-                }}>
-                  Configure Zone {selectedZone.zone_id}
-                  {selectedZone.mode === 'disabled' && (
-                    <span style={{
-                      color: '#666',
-                      fontSize: '14px',
-                      fontWeight: 400,
-                      marginLeft: '8px'
-                    }}>
-                      (Disabled)
-                            </span>
-                  )}
-                </h2>
-                <button
-                  onClick={() => {
-                    setShowZoneModal(false);
-                    setSelectedZone(null);
-                    // Keep smart placement modal open to return to it
-                  }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#888',
-                    fontSize: '24px',
-                    cursor: 'pointer',
-                    padding: '0',
-                    width: '30px',
-                    height: '30px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-
-                              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '20px'
-              }}>
-                {/* Zone Status Card */}
-                <div style={{
-                  background: '#1a1f2a',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  border: '1px solid #00bcd4'
-                }}>
-                  <div style={{
-                    color: '#f4f4f4',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    marginBottom: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <span>🌱</span>
-                    Zone Status:
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    gap: '8px',
-                    flexWrap: 'wrap'
-                  }}>
-                    {['active', 'disabled'].map(status => (
-                      <label
-                        key={status}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          padding: '8px 12px',
-                          borderRadius: '6px',
-                          background: selectedZone.mode === status ? '#00bcd4' : '#232b3b',
-                          color: selectedZone.mode === status ? '#000' : '#f4f4f4',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                          fontWeight: selectedZone.mode === status ? 600 : 400,
-                          border: '1px solid #1a1f2a'
-                        }}
-                      >
-                        <input
-                          type="radio"
-                          name="status"
-                          value={status}
-                          checked={selectedZone.mode === status}
-                          onChange={() => setSelectedZone({ ...selectedZone, mode: status })}
-                          style={{ display: 'none' }}
-                        />
-                        {status.charAt(0).toUpperCase() + status.slice(1)}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Period Selection Card */}
-                <div style={{
-                  background: '#1a1f2a',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  border: '1px solid #00bcd4',
-                  opacity: selectedZone.mode === 'disabled' ? 0.5 : 1
-                }}>
-                  <div style={{
-                    color: selectedZone.mode === 'disabled' ? '#666' : '#f4f4f4',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    marginBottom: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <span>📅</span>
-                    Period:
-                  </div>
-                  <select
-                    value={selectedZone.period}
-                    onChange={(e) => setSelectedZone({ ...selectedZone, period: e.target.value })}
-                    disabled={selectedZone.mode === 'disabled'}
-                    style={{
-                                background: '#232b3b',
-                      color: selectedZone.mode === 'disabled' ? '#666' : '#f4f4f4',
-                      border: '1px solid #00bcd4',
-                      borderRadius: '6px',
-                                padding: '8px 12px',
-                      fontSize: '14px',
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      cursor: selectedZone.mode === 'disabled' ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    <option value="D">Daily</option>
-                    <option value="W">Weekly</option>
-                    <option value="M">Monthly</option>
-                  </select>
-                </div>
-
-                {/* Cycles Card */}
-                <div style={{
-                  background: '#1a1f2a',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  border: '1px solid #00bcd4',
-                  opacity: selectedZone.mode === 'disabled' ? 0.5 : 1
-                }}>
-                  <div style={{
-                    color: selectedZone.mode === 'disabled' ? '#666' : '#f4f4f4',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    marginBottom: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <span>🔄</span>
-                    Cycles: {selectedZone.cycles}
-                              </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max={selectedZone.period === 'D' ? 10 : selectedZone.period === 'W' ? 6 : 3}
-                    value={selectedZone.cycles}
-                    onChange={(e) => setSelectedZone({ ...selectedZone, cycles: parseInt(e.target.value) })}
-                    disabled={selectedZone.mode === 'disabled'}
-                    style={{
-                      width: '100%',
-                      accentColor: selectedZone.mode === 'disabled' ? '#666' : '#00bcd4',
-                      cursor: selectedZone.mode === 'disabled' ? 'not-allowed' : 'pointer'
-                    }}
-                  />
-                  </div>
-
-                {/* Time Configuration Card */}
-                <div style={{
-                  background: '#1a1f2a',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  border: '1px solid #00bcd4',
-                  opacity: selectedZone.mode === 'disabled' ? 0.5 : 1
-                }}>
-                  <div style={{
-                    color: selectedZone.mode === 'disabled' ? '#666' : '#f4f4f4',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    marginBottom: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <span>⏰</span>
-                    Schedule Time:
-                </div>
-                  <input
-                    type="text"
-                    placeholder="Time (HH:MM or SUNRISE/SUNSET)"
-                    value={selectedZone.times?.[0]?.value || ''}
-                    onChange={(e) => {
-                      const newTimes = [...(selectedZone.times || [])];
-                      newTimes[0] = { 
-                        ...newTimes[0], 
-                        value: e.target.value, 
-                        start_time: e.target.value 
-                      };
-                      setSelectedZone({ ...selectedZone, times: newTimes });
-                    }}
-                    disabled={selectedZone.mode === 'disabled'}
-                    style={{
-                      padding: '8px 12px',
-                      borderRadius: '6px',
-                      border: '1px solid #1a1f2a',
-                      background: '#232b3b',
-                      color: selectedZone.mode === 'disabled' ? '#666' : '#f4f4f4',
-                      fontSize: '14px',
-                      width: '100%',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-            </div>
-
-                {/* Comment Card */}
-                <div style={{
-                  background: '#1a1f2a',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  border: '1px solid #00bcd4'
-                }}>
-                  <div style={{
-                    color: '#f4f4f4',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    marginBottom: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <span>💬</span>
-                    Comment:
-        </div>
-                  <input
-                    type="text"
-                    value={selectedZone.comment || ''}
-                    onChange={(e) => setSelectedZone({ ...selectedZone, comment: e.target.value })}
-                    placeholder="Optional description"
-                    style={{
-                      padding: '8px 12px',
-                      borderRadius: '6px',
-                      border: '1px solid #1a1f2a',
-                      background: '#232b3b',
-                      color: '#f4f4f4',
-                      fontSize: '14px',
-                      width: '100%',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-      </div>
-
-                {/* Action Buttons */}
-                <div style={{
-                  display: 'flex',
-                  gap: '12px',
-                  justifyContent: 'flex-end',
-                  marginTop: '20px'
-                }}>
-                  <button
-                    onClick={() => {
-                      setShowZoneModal(false);
-                      setSelectedZone(null);
-                      // Keep smart placement modal open to return to it
-                    }}
-                    style={{
-                      padding: '12px 20px',
-                      borderRadius: '8px',
-                      border: '1px solid #666',
-                      background: 'transparent',
-                      color: '#666',
-                      fontSize: '14px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={async () => {
-                      try {
-                        console.log('Saving zone configuration:', selectedZone);
-                        
-                        // Prepare zone data based on mode
-                        let zoneData;
-                        if (selectedZone.mode === 'disabled') {
-                          // For disabled zones, only send the mode
-                          zoneData = { mode: 'disabled' };
-                          console.log('Zone is disabled, sending only mode:', zoneData);
-                        } else {
-                          // For active zones, send all configuration data
-                          zoneData = {
-                            mode: selectedZone.mode,
-                            period: selectedZone.period,
-                            cycles: selectedZone.cycles,
-                            comment: selectedZone.comment,
-                            startDay: selectedZone.startDay,
-                            times: selectedZone.times
-                          };
-                          console.log('Zone is active, sending full config:', zoneData);
-                        }
-
-                        console.log('Final zone data being sent:', zoneData);
-
-                        // Save zone configuration to backend
-                        const response = await fetch(`${getApiBaseUrl()}/api/schedule/${selectedZone.zone_id}`, {
-                          method: 'PUT',
-                          headers: {
-                            'Content-Type': 'application/json',
-                          },
-                          body: JSON.stringify(zoneData)
-                        });
-
-                        if (!response.ok) {
-                          const errorText = await response.text();
-                          console.error('Server response:', response.status, errorText);
-                          throw new Error(`Failed to save zone configuration: ${response.status} - ${errorText}`);
-                        }
-
-                        // Update local zones state
-                        setZones(prev => prev.map(zone => {
-                          if (zone.zone_id === selectedZone.zone_id) {
-                            if (selectedZone.mode === 'disabled') {
-                              // For disabled zones, only keep the mode
-                              return { zone_id: selectedZone.zone_id, mode: 'disabled' };
-                            } else {
-                              // For active zones, keep all configuration
-                              return { ...zone, ...selectedZone };
-                            }
-                          }
-                          return zone;
-                        }));
-
-                        // Close the modal
-                        setShowZoneModal(false);
-                        setSelectedZone(null);
-
-                        // Wait a moment for backend to fully process the zone save
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                        
-                        // Reload zones data to ensure we have the latest state
-                        try {
-                          const zonesResponse = await fetch(`${getApiBaseUrl()}/api/schedule`);
-                          if (zonesResponse.ok) {
-                            const zonesData = await zonesResponse.json();
-                            setZones(zonesData);
-                            console.log('Reloaded zones data:', zonesData);
-                          }
-                        } catch (error) {
-                          console.error('Failed to reload zones:', error);
-                        }
-                        
-                        // Force a complete refresh by re-triggering the smart placement process
-                        if (smartPlacementModal) {
-                          console.log('Forcing complete smart placement refresh...');
-                          
-                          // Re-trigger the original smart placement logic
-                          const plantData = {
-                            library_book: smartPlacementModal.bookFile.replace('.json', ''),
-                            plant_id: smartPlacementModal.plant.plant_id,
-                            common_name: smartPlacementModal.plant.common_name,
-                            quantity: parseInt(modalData.quantity) || 1,
-                            emitter_size: parseFloat(modalData.emitterSize) || 1.0,
-                            zone_id: 1, // Default for analysis
-                            location_id: 1, // Default for analysis
-                            comments: modalData.comments || '',
-                            planted_date: new Date().toISOString().split('T')[0]
-                          };
-
-                          console.log('Re-analyzing with plant data:', plantData);
-                          console.log('Current zones state before analysis:', zones);
-                          
-                          // Log the specific zone we just created
-                          const createdZone = zones.find(z => z.zone_id === selectedZone.zone_id);
-                          console.log('Created zone details:', createdZone);
-
-                          const analysisResponse = await fetch(`${getApiBaseUrl()}/api/smart/analyze-placement`, {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify(plantData)
-                          });
-
-                          if (analysisResponse.ok) {
-                            const analysis = await analysisResponse.json();
-                            
-                            console.log('Analysis after zone creation:', analysis);
-                            console.log('Has compatible zones:', analysis.has_compatible_zones);
-                            console.log('Recommendations:', analysis.recommendations);
-                            
-                            // Update smart recommendations with new analysis
-                            setSmartRecommendations({
-                              plantName: analysis.plant_data.common_name,
-                              recommendations: analysis.recommendations || [],
-                              hasCompatibleZones: analysis.has_compatible_zones
-                            });
-
-                            // Update the smart placement modal with new recommendations
-                            if (smartPlacementModal) {
-                              const updatedModal = {
-                                ...smartPlacementModal,
-                                recommendations: analysis.recommendations || []
-                              };
-                              console.log('Updating smart placement modal:', updatedModal);
-                              setSmartPlacementModal(updatedModal);
-                              
-                              // If we now have compatible zones, auto-select the best one
-                              if (analysis.recommendations && analysis.recommendations.length > 0) {
-                                const bestZone = analysis.recommendations[0];
-                                console.log('Auto-selecting best zone:', bestZone);
-                                setModalData(prev => ({
-                                  ...prev,
-                                  zoneId: bestZone.zone_id.toString()
-                                }));
-                              }
-                            }
-                          } else {
-                            console.error('Failed to re-analyze:', analysisResponse.status);
-                            const errorText = await analysisResponse.text();
-                            console.error('Error response:', errorText);
-                          }
-                        }
-
-                        alert('Zone configuration saved successfully!');
-                      } catch (error) {
-                        console.error('Error saving zone configuration:', error);
-                        alert('Failed to save zone configuration. Please try again.');
-                      }
-                    }}
-                    style={{
-                      padding: '12px 20px',
-                      borderRadius: '8px',
-                      border: '1px solid #00bcd4',
-                      background: '#00bcd4',
-                      color: '#000',
-                      fontSize: '14px',
-                      cursor: 'pointer',
-                      fontWeight: 600
-                    }}
-                  >
-                    Save & Continue
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
       
       <style>{`

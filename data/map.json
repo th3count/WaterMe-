@@ -5,25 +5,36 @@
     "common_name": "Raspberry, Red",
     "quantity": 1,
     "emitter_size": 4,
-    "zone_id": 2,
+    "zone_id": 1,
     "location_id": 2,
     "comments": "",
-    "planted_date": "2025-07-25",
+    "planted_date": "2025-07-26",
     "smart_overrides": {
       "zone_selection": "smart",
       "emitter_sizing": "smart"
     }
   },
   "2": {
-    "library_book": "fruitbushes",
     "plant_id": 2,
-    "common_name": "Raspberry, Red",
+    "library_book": "fruitbushes",
+    "zone_id": 1,
+    "location_id": 2,
     "quantity": 1,
-    "emitter_size": 1,
+    "emitter_size": 4,
+    "comments": "",
+    "smart_overrides": {
+      "zone_selection": "smart",
+      "emitter_sizing": "smart"
+    }
+  },
+  "3": {
+    "plant_id": 1,
+    "library_book": "fruitbushes",
     "zone_id": 2,
     "location_id": 2,
+    "quantity": 1,
+    "emitter_size": 4,
     "comments": "",
-    "planted_date": "2025-07-25",
     "smart_overrides": {
       "zone_selection": "smart",
       "emitter_sizing": "smart"

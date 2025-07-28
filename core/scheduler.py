@@ -105,6 +105,30 @@ class WateringScheduler:
             if os.path.exists(self.schedule_file):
                 with open(self.schedule_file, 'r') as f:
                     self.schedule = json.load(f)
+                
+                # Clean up any UI-specific fields that shouldn't be in the backend data
+                cleaned = False
+                for zone_key, zone_data in self.schedule.items():
+                    if isinstance(zone_data, dict):
+                        # Remove UI-specific fields
+                        ui_fields = ['scheduleMode', 'showDurationPicker', 'showTimePicker', 'originalIndex', 'zone_id']
+                        for field in ui_fields:
+                            if field in zone_data:
+                                del zone_data[field]
+                                cleaned = True
+                        
+                        # If zone is disabled, purge all data except mode
+                        if zone_data.get('mode') == 'disabled':
+                            if len(zone_data) > 1:  # More than just 'mode'
+                                self.schedule[zone_key] = {'mode': 'disabled'}
+                                cleaned = True
+                
+                # Save cleaned data back to file if any fields were removed
+                if cleaned:
+                    with open(self.schedule_file, 'w') as f:
+                        json.dump(self.schedule, f, indent=2)
+                    print(f"Cleaned UI-specific fields and purged disabled zones from schedule file")
+                
                 print(f"Loaded {len(self.schedule)} zones from schedule")
             else:
                 print(f"No schedule file found at {self.schedule_file}")
@@ -135,6 +159,17 @@ class WateringScheduler:
     def reload_schedule(self):
         """Reload schedule from file (call when schedule changes)"""
         self._load_schedule()
+    
+    def cleanup_schedule_file(self):
+        """Manually trigger cleanup of schedule.json to remove UI fields and purge disabled zones"""
+        try:
+            print("Scheduler: Starting manual schedule cleanup")
+            self._load_schedule()  # This will trigger the cleanup logic
+            print("Scheduler: Schedule cleanup completed")
+            return True
+        except Exception as e:
+            print(f"Scheduler: Error during schedule cleanup: {e}")
+            return False
 
     def reload_settings(self):
         """Reload settings from file (call when settings change)"""
@@ -1530,23 +1565,18 @@ class WateringScheduler:
             log_event(self.error_logger, 'ERROR', 'Failed to trigger initial smart duration refresh', error=str(e))
     
     def _check_daily_refresh(self):
-        """Check if it's time for daily refresh (midnight) and trigger smart duration refresh"""
+        """Check if daily smart duration refresh should be triggered"""
         try:
             current_time = self.get_current_time()
+            refresh_key = f"daily_refresh_{current_time.date().isoformat()}"
             
-            # Check if it's midnight (00:00-00:01)
-            if current_time.hour == 0 and current_time.minute <= 1:
-                # Check if we've already done today's refresh
-                today = current_time.date().isoformat()
-                refresh_key = f"daily_refresh_{today}"
-                
-                # Simple in-memory tracking (could be enhanced with persistent storage)
-                if not hasattr(self, '_daily_refresh_done'):
-                    self._daily_refresh_done = set()
-                
-                if refresh_key not in self._daily_refresh_done:
-                    log_event(self.watering_logger, 'INFO', 'Triggering daily smart duration refresh at midnight')
+            # Check if refresh already done today
+            if refresh_key not in self._daily_refresh_done:
+                # Trigger refresh at 6 AM
+                if current_time.hour >= 6:
+                    print(f"Scheduler: Triggering daily smart duration refresh for {current_time.date()}")
                     result = self.refresh_all_smart_durations()
+                    
                     if result.get('success'):
                         log_event(self.watering_logger, 'INFO', 'Daily smart duration refresh completed', 
                                  zones_updated=result.get('zones_updated', 0))
@@ -1566,5 +1596,298 @@ class WateringScheduler:
         except Exception as e:
             log_event(self.error_logger, 'ERROR', 'Failed to check daily refresh', error=str(e))
 
+    # Zone Configuration Save Methods (moved from api.py for centralized file access)
+    
+    def save_schedule_data(self, schedule_data) -> dict:
+        """Save complete schedule data to schedule.json with validation and cache reload"""
+        try:
+            with self.lock:
+                if not schedule_data:
+                    return {'status': 'error', 'message': 'Invalid schedule data'}
+                
+                # If data is a list, convert to dict with str(zone_id) keys
+                if isinstance(schedule_data, list):
+                    schedule_dict = {}
+                    for zone in schedule_data:
+                        if 'zone_id' in zone:
+                            zone_id = zone['zone_id']
+                            # Remove zone_id from zone data since it's stored as the key
+                            zone_copy = zone.copy()
+                            del zone_copy['zone_id']
+                            schedule_dict[str(zone_id)] = zone_copy
+                else:
+                    schedule_dict = schedule_data
+                
+                # Validate the data
+                errors = self._validate_schedule_data(list(schedule_dict.values()))
+                if errors:
+                    return {'status': 'error', 'message': 'Validation failed', 'details': errors}
+                
+                # Save to file
+                if self._save_json_file(self.schedule_file, schedule_dict):
+                    # Reload cached schedule data
+                    self._load_schedule()
+                    
+                    # Reload plant manager's schedule data
+                    try:
+                        from .plant_manager import plant_manager
+                        plant_manager._load_schedule()
+                    except ImportError:
+                        pass  # Plant manager not available
+                    
+                    log_event(self.user_logger, 'INFO', 'Schedule saved and caches reloaded', zone_count=len(schedule_dict))
+                    return {'status': 'success'}
+                else:
+                    log_event(self.error_logger, 'ERROR', 'Schedule save failed - save error', zone_count=len(schedule_dict))
+                    return {'status': 'error', 'message': 'Failed to save schedule'}
+                    
+        except Exception as e:
+            log_event(self.error_logger, 'ERROR', 'Schedule save exception', error=str(e))
+            return {'status': 'error', 'message': f'Save failed: {str(e)}'}
+
+    def add_zone_to_schedule(self, zone_data) -> dict:
+        """Add a new zone to the schedule"""
+        try:
+            with self.lock:
+                if not zone_data:
+                    return {'status': 'error', 'message': 'Invalid zone data'}
+                
+                # Load existing schedule
+                existing = self._load_json_file(self.schedule_file, {})
+                
+                # Find next available zone_id
+                next_id = 1
+                while str(next_id) in existing:
+                    next_id += 1
+                
+                key = str(next_id)
+                
+                # Remove UI-specific fields that shouldn't be saved to backend
+                clean_zone_data = {k: v for k, v in zone_data.items() 
+                                 if k not in ['scheduleMode', 'showDurationPicker', 'showTimePicker', 'originalIndex', 'zone_id']}
+                
+                # Add to dict (zone_id is stored as the key, not in the data)
+                existing[key] = clean_zone_data
+                
+                if self._save_json_file(self.schedule_file, existing):
+                    # Reload cached schedule data
+                    self._load_schedule()
+                    log_event(self.user_logger, 'INFO', 'Zone created and schedule reloaded', 
+                             zone_id=next_id, 
+                             mode=zone_data.get('mode', ''),
+                             period=zone_data.get('period', ''),
+                             times_count=len(zone_data.get('times', [])))
+                    return {'status': 'success', 'message': 'Zone added', 'zone_id': next_id}
+                else:
+                    log_event(self.error_logger, 'ERROR', 'Zone creation failed - save error', 
+                             zone_id=next_id, 
+                             mode=zone_data.get('mode', ''))
+                    return {'status': 'error', 'message': 'Failed to add zone'}
+                    
+        except Exception as e:
+            log_event(self.error_logger, 'ERROR', 'Zone creation exception', error=str(e))
+            return {'status': 'error', 'message': f'Add zone failed: {str(e)}'}
+
+    def update_zone_in_schedule(self, zone_id: int, zone_data) -> dict:
+        """Update a specific zone in the schedule"""
+        try:
+            with self.lock:
+                if not zone_data:
+                    return {'status': 'error', 'message': 'Invalid zone data'}
+                
+                key = str(zone_id)
+                existing = self._load_json_file(self.schedule_file, {})
+                
+                if key in existing:
+                    # If zone is being set to disabled, purge all other data
+                    if zone_data.get('mode') == 'disabled':
+                        existing[key] = {'mode': 'disabled'}
+                    else:
+                        # Remove UI-specific fields that shouldn't be saved to backend
+                        clean_zone_data = {k: v for k, v in zone_data.items() 
+                                         if k not in ['scheduleMode', 'showDurationPicker', 'showTimePicker', 'originalIndex', 'zone_id']}
+                        existing[key].update(clean_zone_data)
+                    if self._save_json_file(self.schedule_file, existing):
+                        # Reload cached schedule data
+                        self._load_schedule()
+                        
+                        # Reload plant manager's schedule data
+                        try:
+                            from .plant_manager import plant_manager
+                            plant_manager._load_schedule()
+                        except ImportError:
+                            pass  # Plant manager not available
+                        
+                        log_event(self.user_logger, 'INFO', 'Zone updated and caches reloaded', 
+                                 zone_id=zone_id, 
+                                 mode=zone_data.get('mode', ''),
+                                 period=zone_data.get('period', ''),
+                                 times_count=len(zone_data.get('times', [])))
+                        return {'status': 'success', 'message': 'Zone updated'}
+                    else:
+                        log_event(self.error_logger, 'ERROR', 'Zone update failed - save error', zone_id=zone_id)
+                        return {'status': 'error', 'message': 'Failed to update zone'}
+                else:
+                    log_event(self.user_logger, 'WARN', 'Zone update failed - not found', zone_id=zone_id)
+                    return {'status': 'error', 'message': 'Zone not found'}
+                    
+        except Exception as e:
+            log_event(self.error_logger, 'ERROR', 'Zone update exception', zone_id=zone_id, error=str(e))
+            return {'status': 'error', 'message': f'Update zone failed: {str(e)}'}
+
+    def delete_zone_from_schedule(self, zone_id: int) -> dict:
+        """Delete a specific zone from the schedule"""
+        try:
+            with self.lock:
+                key = str(zone_id)
+                existing = self._load_json_file(self.schedule_file, {})
+                
+                if key in existing:
+                    zone_info = existing[key]
+                    del existing[key]
+                    if self._save_json_file(self.schedule_file, existing):
+                        # Reload cached schedule data
+                        self._load_schedule()
+                        log_event(self.user_logger, 'INFO', 'Zone deleted and schedule reloaded', 
+                                 zone_id=zone_id, 
+                                 mode=zone_info.get('mode', ''),
+                                 period=zone_info.get('period', ''))
+                        return {'status': 'success', 'message': 'Zone deleted'}
+                    else:
+                        log_event(self.error_logger, 'ERROR', 'Zone deletion failed - save error', zone_id=zone_id)
+                        return {'status': 'error', 'message': 'Failed to delete zone'}
+                else:
+                    log_event(self.user_logger, 'WARN', 'Zone deletion failed - not found', zone_id=zone_id)
+                    return {'status': 'error', 'message': 'Zone not found'}
+                    
+        except Exception as e:
+            log_event(self.error_logger, 'ERROR', 'Zone deletion exception', zone_id=zone_id, error=str(e))
+            return {'status': 'error', 'message': f'Delete zone failed: {str(e)}'}
+
+    def get_schedule_data(self) -> list:
+        """Get schedule data in API format (list with zone_id included)"""
+        try:
+            with self.lock:
+                data = self._load_json_file(self.schedule_file, {})
+                # Convert dict to sorted list by zone_id, adding zone_id from key
+                zones = []
+                for zone_id_str, zone_data in data.items():
+                    zone_id = int(zone_id_str)
+                    zone_data['zone_id'] = zone_id  # Add zone_id for frontend compatibility
+                    zones.append(zone_data)
+                
+                # Sort by zone_id
+                zones.sort(key=lambda x: x['zone_id'])
+                return zones
+                
+        except Exception as e:
+            log_event(self.error_logger, 'ERROR', 'Schedule data retrieval failed', error=str(e))
+            return []
+
+    # Helper methods for file operations and validation
+    
+    def _load_json_file(self, file_path, default_value=None):
+        """Load JSON file with error handling and default value"""
+        try:
+            if os.path.exists(file_path):
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            log_event(self.error_logger, 'ERROR', f'Error loading {file_path}', error=str(e))
+        return default_value if default_value is not None else {}
+
+    def _save_json_file(self, file_path, data, indent=2):
+        """Save JSON file with error handling"""
+        try:
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=indent, ensure_ascii=False)
+            return True
+        except IOError as e:
+            log_event(self.error_logger, 'ERROR', f'Error saving {file_path}', error=str(e))
+            return False
+
+    def _validate_schedule_data(self, schedule):
+        """Validate schedule data"""
+        errors = []
+        
+        if not isinstance(schedule, list):
+            errors.append('Schedule must be a list of zones')
+            return errors
+        
+        for i, zone in enumerate(schedule):
+            if not isinstance(zone, dict):
+                errors.append(f'Zone {i+1}: Invalid zone data')
+                continue
+            
+            # Mode validation
+            mode = zone.get('mode', '')
+            if mode not in ['manual', 'smart', 'disabled']:
+                errors.append(f'Zone {i+1}: Invalid mode (must be manual, smart, or disabled)')
+            
+            # Skip other validations for disabled zones
+            if mode == 'disabled':
+                continue
+            
+            # Period validation (only for active zones)
+            period = zone.get('period', '')
+            if period not in ['D', 'W', 'M']:
+                errors.append(f'Zone {i+1}: Invalid period (must be D, W, or M)')
+            
+            # Time validation - only times array is used (only for active zones)
+            times = zone.get('times', [])
+            if not times or len(times) == 0:
+                errors.append(f'Zone {i+1}: Must have at least one time in times array')
+            
+            # Validate time codes (only for active zones)
+            time_codes = []
+            for t in times:
+                if t.get('start_time'):
+                    time_codes.append(t['start_time'])
+            
+            for code in time_codes:
+                if not self._validate_time_code(code):
+                    errors.append(f'Zone {i+1}: Invalid time code "{code}"')
+        
+        return errors
+
+    def _validate_time_code(self, code):
+        """Validate a time code (HH:MM, HHMM, SUNRISE, SUNSET, etc.)"""
+        if not isinstance(code, str):
+            return False
+        
+        # Check for HH:MM format (new standard)
+        if ':' in code and len(code) == 5:
+            try:
+                hour, minute = map(int, code.split(':'))
+                return 0 <= hour <= 23 and 0 <= minute <= 59
+            except ValueError:
+                return False
+        
+        # Check for legacy HHMM format
+        if code.isdigit() and len(code) == 4:
+            hour = int(code[:2])
+            minute = int(code[2:])
+            return 0 <= hour <= 23 and 0 <= minute <= 59
+        
+        # Check for solar codes
+        solar_codes = ['SUNRISE', 'SUNSET', 'ZENITH']
+        if code in solar_codes:
+            return True
+        
+        # Check for solar codes with offsets
+        for solar in solar_codes:
+            if code.startswith(solar):
+                offset = code[len(solar):]
+                if offset.startswith('+') or offset.startswith('-'):
+                    try:
+                        int(offset[1:])
+                        return True
+                    except ValueError:
+                        pass
+        
+        return False 
+
 # Global scheduler instance
-scheduler = WateringScheduler() 
+scheduler = WateringScheduler()

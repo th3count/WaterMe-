@@ -1041,59 +1041,22 @@ def get_settings_cfg():
 
 @app.route('/api/schedule', methods=['GET'])
 def get_schedule():
-    data = load_json_file(SCHEDULE_JSON_PATH, {})
-    # Convert dict to sorted list by zone_id, adding zone_id from key
-    zones = []
-    for zone_id_str, zone_data in data.items():
-        zone_id = int(zone_id_str)
-        zone_data['zone_id'] = zone_id  # Add zone_id for frontend compatibility
-        zones.append(zone_data)
-    
-    # Sort by zone_id
-    zones.sort(key=lambda x: x['zone_id'])
+    from core.scheduler import scheduler
+    zones = scheduler.get_schedule_data()
     return jsonify(zones)
 
 @app.route('/api/schedule', methods=['POST'])
 def save_schedule():
     data = request.json
     
-    if not data:
-        log_event(user_logger, 'WARN', f'Schedule save failed - invalid data')
-        return jsonify({'status': 'error', 'message': 'Invalid schedule data'}), 400
+    from core.scheduler import scheduler
+    result = scheduler.save_schedule_data(data)
     
-    # If data is a list, convert to dict with str(zone_id) keys
-    if isinstance(data, list):
-        schedule_dict = {}
-        for zone in data:
-            if 'zone_id' in zone:
-                zone_id = zone['zone_id']
-                # Remove zone_id from zone data since it's stored as the key
-                zone_copy = zone.copy()
-                del zone_copy['zone_id']
-                schedule_dict[str(zone_id)] = zone_copy
+    if result['status'] == 'success':
+        return jsonify(result)
     else:
-        schedule_dict = data
-    
-    # Validate the data
-    errors = validate_schedule_data(list(schedule_dict.values()))
-    if errors:
-        log_event(user_logger, 'WARN', f'Schedule save failed - validation errors', errors=errors)
-        return jsonify({'status': 'error', 'message': 'Validation failed', 'details': errors}), 400
-    
-    # Use the new incremental save function
-    if save_json_file(SCHEDULE_JSON_PATH, schedule_dict):
-        # Reload the scheduler's cached schedule data
-        from core.scheduler import scheduler
-        scheduler.reload_schedule()
-        
-        # Reload the plant manager's schedule data
-        plant_manager._load_schedule()
-        
-        log_event(user_logger, 'INFO', f'Schedule saved and caches reloaded', zone_count=len(schedule_dict))
-        return jsonify({'status': 'success'})
-    else:
-        log_event(error_logger, 'ERROR', f'Schedule save failed - save error', zone_count=len(schedule_dict))
-        return jsonify({'error': 'Failed to save schedule'}), 500
+        status_code = 400 if 'validation' in result.get('message', '').lower() else 500
+        return jsonify(result), status_code
 
 @app.route('/api/resolve_times', methods=['POST'])
 def resolve_times():
@@ -1216,22 +1179,8 @@ def delete_location(location_id):
 
 @app.route('/api/library-files', methods=['GET'])
 def list_library_files():
-    library_dir = os.path.join(os.path.dirname(__file__), 'library')
-    files = []
-    
-    for filename in os.listdir(library_dir):
-        if filename.endswith('.json') and os.path.isfile(os.path.join(library_dir, filename)):
-            try:
-                with open(os.path.join(library_dir, filename), 'r') as f:
-                    file_data = json.load(f)
-                    files.append({
-                        'filename': filename,
-                        'plants': file_data.get('plants', [])
-                    })
-            except Exception as e:
-                print(f"Error loading library file {filename}: {e}")
-                continue
-    
+    from core.library import get_library_files
+    files = get_library_files()
     return jsonify(files)
 
 @app.route('/library/<path:filename>')
@@ -1240,30 +1189,17 @@ def get_library_file(filename):
 
 @app.route('/api/library/<path:filename>/<int:plant_id>', methods=['GET'])
 def get_library_plant(filename, plant_id):
-    library_dir = os.path.join(os.path.dirname(__file__), 'library')
-    file_path = os.path.join(library_dir, filename)
+    from core.library import get_plant_from_library
+    plant = get_plant_from_library(filename, plant_id)
     
-    if not os.path.exists(file_path):
-        return jsonify({'error': 'Library file not found'}), 404
+    if not plant:
+        return jsonify({'error': 'Plant not found'}), 404
     
-    try:
-        with open(file_path, 'r') as f:
-            file_data = json.load(f)
-        
-        plants = file_data.get('plants', [])
-        plant = next((p for p in plants if p.get('plant_id') == plant_id), None)
-        
-        if not plant:
-            return jsonify({'error': 'Plant not found'}), 404
-        
-        return jsonify(plant)
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    return jsonify(plant)
 
 @app.route('/api/library/custom/add', methods=['POST'])
 def add_to_custom_library():
-    custom_file_path = os.path.join(os.path.dirname(__file__), 'library', 'custom.json')
+    from core.library import add_plant_to_custom_library
     
     try:
         plant_data = request.json
@@ -1272,36 +1208,12 @@ def add_to_custom_library():
             log_event(user_logger, 'WARN', f'Custom plant addition failed - invalid data')
             return jsonify({'error': 'Invalid plant data'}), 400
         
-        # Load existing custom library or create new one
-        custom_data = load_json_file(custom_file_path, {
-            "Book Name": "Custom Plants",
-            "plants": []
-        })
+        result = add_plant_to_custom_library(plant_data)
         
-        # Find the next available plant_id (start at 1, increment until we find a gap or the next number)
-        existing_plant_ids = [plant.get('plant_id', 0) for plant in custom_data['plants']]
-        next_plant_id = 1
-        while next_plant_id in existing_plant_ids:
-            next_plant_id += 1
-        
-        # Set the plant_id for the new plant
-        plant_data['plant_id'] = next_plant_id
-        
-        # Add the new plant
-        custom_data['plants'].append(plant_data)
-        
-        # Save the updated custom library
-        if save_json_file(custom_file_path, custom_data):
-            log_event(user_logger, 'INFO', f'Custom plant added', 
-                     plant_id=next_plant_id, 
-                     common_name=plant_data.get('common_name', ''),
-                     latin_name=plant_data.get('latin_name', ''))
-            return jsonify({'status': 'success', 'message': 'Plant added to custom library', 'plant_id': next_plant_id})
+        if 'error' in result:
+            return jsonify(result), 500
         else:
-            log_event(error_logger, 'ERROR', f'Custom plant addition failed - save error', 
-                     plant_id=next_plant_id, 
-                     common_name=plant_data.get('common_name', ''))
-            return jsonify({'error': 'Failed to save custom library'}), 500
+            return jsonify(result)
             
     except Exception as e:
         log_event(error_logger, 'ERROR', f'Custom plant addition exception', error=str(e))
@@ -1309,20 +1221,20 @@ def add_to_custom_library():
 
 @app.route('/library/custom.json', methods=['POST'])
 def save_custom_library():
-    custom_file_path = os.path.join(os.path.dirname(__file__), 'library', 'custom.json')
+    from core.library import save_custom_library
     
     try:
         library_data = request.json
         
-        # Validate the data structure
-        if not isinstance(library_data, dict) or 'plants' not in library_data:
-            return jsonify({'error': 'Invalid library data format'}), 400
+        if not library_data:
+            return jsonify({'error': 'Invalid library data'}), 400
         
-        # Save the custom library
-        if save_json_file(custom_file_path, library_data):
-            return jsonify({'status': 'success', 'message': 'Custom library saved'})
+        result = save_custom_library(library_data)
+        
+        if 'error' in result:
+            return jsonify(result), 500
         else:
-            return jsonify({'error': 'Failed to save custom library'}), 500
+            return jsonify(result)
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -1697,7 +1609,11 @@ def start_manual_timer(zone_id):
             if not success:
                 log_event(error_logger, 'ERROR', f'Manual timer failed - scheduler activation failed', zone_id=zone_id, duration=duration)
                 return jsonify({'error': f'Failed to activate zone {zone_id}'}), 400
+        except ImportError as e:
+            print(f"API: Failed to import scheduler for manual timer: {e}")
+            return jsonify({'error': 'Scheduler not available'}), 503
         except Exception as e:
+            print(f"API: Scheduler error in manual timer: {e}")
             log_event(error_logger, 'ERROR', f'Manual timer failed - scheduler error', zone_id=zone_id, duration=duration, error=str(e))
             return jsonify({'error': f'Scheduler error: {str(e)}'}), 500
         
@@ -1733,7 +1649,11 @@ def stop_manual_timer(zone_id):
             'message': f'Manual timer stopped for zone {zone_id}'
         })
         
+    except ImportError as e:
+        print(f"API: Failed to import scheduler for manual timer stop: {e}")
+        return jsonify({'error': 'Scheduler not available'}), 503
     except Exception as e:
+        print(f"API: Scheduler error in manual timer stop: {e}")
         log_event(error_logger, 'ERROR', f'Manual timer stop exception', zone_id=zone_id, error=str(e))
         return jsonify({'error': str(e)}), 500
 
@@ -1742,12 +1662,33 @@ def get_zone_status():
     """Get hardware status of all zones directly from GPIO (lock-free)"""
     try:
         print("API: Starting zone status request")
-        from core.scheduler import scheduler
-        print("API: Scheduler imported successfully")
+        
+        # Try to import scheduler with better error handling
+        try:
+            from core.scheduler import scheduler
+            print("API: Scheduler imported successfully")
+        except ImportError as e:
+            print(f"API: Failed to import scheduler: {e}")
+            # Return empty status instead of error
+            return jsonify({})
+        except Exception as e:
+            print(f"API: Unexpected error importing scheduler: {e}")
+            # Return empty status instead of error
+            return jsonify({})
+        
+        # Check if scheduler is properly initialized
+        if not hasattr(scheduler, 'get_all_zone_status'):
+            print("API: Scheduler not properly initialized - missing get_all_zone_status method")
+            return jsonify({})
         
         # Get comprehensive status from scheduler (includes hardware state and remaining time)
-        scheduler_status = scheduler.get_all_zone_status()
-        print(f"API: Got scheduler status: {scheduler_status}")
+        try:
+            scheduler_status = scheduler.get_all_zone_status()
+            print(f"API: Got scheduler status: {scheduler_status}")
+        except Exception as e:
+            print(f"API: Error getting scheduler status: {e}")
+            # Return empty status instead of error
+            return jsonify({})
         
         # Convert to the expected format
         status = {}
@@ -1760,15 +1701,12 @@ def get_zone_status():
         
         print(f"API: Returning zone status: {status}")
         return jsonify(status)
-    except ImportError as e:
-        print(f"API: Import error in get_zone_status: {e}")
-        return jsonify({'error': f'Import error: {str(e)}'}), 500
     except Exception as e:
         import traceback
-        print(f"API: Error in get_zone_status: {e}")
+        print(f"API: Unexpected error in get_zone_status: {e}")
         print(f"API: Traceback: {traceback.format_exc()}")
-        log_event(error_logger, 'ERROR', f'Zone status query failed', error=str(e))
-        return jsonify({'error': str(e)}), 500
+        # Return empty status instead of error to prevent frontend crashes
+        return jsonify({})
 
 @app.route('/api/zones/<int:zone_id>/status', methods=['GET'])
 def get_single_zone_status(zone_id):
@@ -1844,95 +1782,40 @@ def update_location(location_id):
 def add_zone():
     """Add a new zone to the schedule"""
     data = request.json
-    if not data:
-        log_event(user_logger, 'WARN', f'Zone creation failed - invalid data')
-        return jsonify({'error': 'Invalid zone data'}), 400
     
-    # Load existing schedule
-    existing = load_json_file(SCHEDULE_JSON_PATH, {})
+    from core.scheduler import scheduler
+    result = scheduler.add_zone_to_schedule(data)
     
-    # Find next available zone_id
-    next_id = 1
-    while str(next_id) in existing:
-        next_id += 1
-    
-    key = str(next_id)
-    
-    # Add to dict (zone_id is stored as the key, not in the data)
-    existing[key] = data
-    
-    if save_json_file(SCHEDULE_JSON_PATH, existing):
-        # Reload the scheduler's cached schedule data
-        from core.scheduler import scheduler
-        scheduler.reload_schedule()
-        log_event(user_logger, 'INFO', f'Zone created and schedule reloaded', 
-                 zone_id=next_id, 
-                 mode=data.get('mode', ''),
-                 period=data.get('period', ''),
-                 times_count=len(data.get('times', [])))
-        return jsonify({'status': 'success', 'message': 'Zone added', 'zone_id': next_id})
+    if result['status'] == 'success':
+        return jsonify(result)
     else:
-        log_event(error_logger, 'ERROR', f'Zone creation failed - save error', 
-                 zone_id=next_id, 
-                 mode=data.get('mode', ''))
-        return jsonify({'error': 'Failed to add zone'}), 500
+        return jsonify(result), 500
 
 @app.route('/api/schedule/<int:zone_id>', methods=['PUT'])
 def update_zone(zone_id):
     """Update a specific zone"""
     data = request.json
-    if not data:
-        log_event(user_logger, 'WARN', f'Zone update failed - invalid data', zone_id=zone_id)
-        return jsonify({'error': 'Invalid zone data'}), 400
     
-    key = str(zone_id)
-    existing = load_json_file(SCHEDULE_JSON_PATH, {})
-    if key in existing:
-        existing[key].update(data)
-        if save_json_file(SCHEDULE_JSON_PATH, existing):
-            # Reload the scheduler's cached schedule data
-            from core.scheduler import scheduler
-            scheduler.reload_schedule()
-            
-            # Reload the plant manager's schedule data
-            plant_manager._load_schedule()
-            
-            log_event(user_logger, 'INFO', f'Zone updated and caches reloaded', 
-                     zone_id=zone_id, 
-                     mode=data.get('mode', ''),
-                     period=data.get('period', ''),
-                     times_count=len(data.get('times', [])))
-            return jsonify({'status': 'success', 'message': 'Zone updated'})
-        else:
-            log_event(error_logger, 'ERROR', f'Zone update failed - save error', zone_id=zone_id)
-            return jsonify({'error': 'Failed to update zone'}), 500
+    from core.scheduler import scheduler
+    result = scheduler.update_zone_in_schedule(zone_id, data)
+    
+    if result['status'] == 'success':
+        return jsonify(result)
     else:
-        log_event(user_logger, 'WARN', f'Zone update failed - not found', zone_id=zone_id)
-        return jsonify({'error': 'Zone not found'}), 404
+        status_code = 404 if 'not found' in result.get('message', '').lower() else 500
+        return jsonify(result), status_code
 
 @app.route('/api/schedule/<int:zone_id>', methods=['DELETE'])
 def delete_zone(zone_id):
     """Delete a specific zone"""
-    key = str(zone_id)
-    existing = load_json_file(SCHEDULE_JSON_PATH, {})
-    if key in existing:
-        zone_info = existing[key]
-        del existing[key]
-        if save_json_file(SCHEDULE_JSON_PATH, existing):
-            # Reload the scheduler's cached schedule data
-            from core.scheduler import scheduler
-            scheduler.reload_schedule()
-            log_event(user_logger, 'INFO', f'Zone deleted and schedule reloaded', 
-                     zone_id=zone_id, 
-                     mode=zone_info.get('mode', ''),
-                     period=zone_info.get('period', ''))
-            return jsonify({'status': 'success', 'message': 'Zone deleted'})
-        else:
-            log_event(error_logger, 'ERROR', f'Zone deletion failed - save error', zone_id=zone_id)
-            return jsonify({'error': 'Failed to delete zone'}), 500
+    from core.scheduler import scheduler
+    result = scheduler.delete_zone_from_schedule(zone_id)
+    
+    if result['status'] == 'success':
+        return jsonify(result)
     else:
-        log_event(user_logger, 'WARN', f'Zone deletion failed - not found', zone_id=zone_id)
-        return jsonify({'error': 'Zone not found'}), 404
+        status_code = 404 if 'not found' in result.get('message', '').lower() else 500
+        return jsonify(result), status_code
 
 # Health Alert Management Endpoints
 @app.route('/api/health/alerts', methods=['GET'])
@@ -2189,15 +2072,35 @@ def get_active_timers():
     """Get status of active timers"""
     try:
         print("API: Starting active timers request")
-        from core.scheduler import scheduler
-        print("API: Scheduler imported successfully for timers")
+        
+        # Try to import scheduler with better error handling
+        try:
+            from core.scheduler import scheduler
+            print("API: Scheduler imported successfully for timers")
+        except ImportError as e:
+            print(f"API: Failed to import scheduler: {e}")
+            # Return empty timers instead of error
+            return jsonify({'status': 'success', 'timers': {}})
+        except Exception as e:
+            print(f"API: Unexpected error importing scheduler: {e}")
+            # Return empty timers instead of error
+            return jsonify({'status': 'success', 'timers': {}})
+        
+        # Check if scheduler is properly initialized
+        if not hasattr(scheduler, 'get_active_zones'):
+            print("API: Scheduler not properly initialized - missing get_active_zones method")
+            return jsonify({'status': 'success', 'timers': {}})
         
         # Check if scheduler is running
         print(f"API: Scheduler running: {scheduler.running}")
         print(f"API: Scheduler thread alive: {scheduler.thread.is_alive() if scheduler.thread else False}")
         
-        active_zones = scheduler.get_active_zones()
-        print(f"API: Got active zones: {active_zones}")
+        try:
+            active_zones = scheduler.get_active_zones()
+            print(f"API: Got active zones: {active_zones}")
+        except Exception as e:
+            print(f"API: Error getting active zones: {e}")
+            return jsonify({'status': 'success', 'timers': {}})
         
         timers = {}
         for zone_id, end_time in active_zones.items():
@@ -2223,15 +2126,12 @@ def get_active_timers():
             'status': 'success',
             'timers': timers
         })
-    except ImportError as e:
-        print(f"API: Import error in get_active_timers: {e}")
-        return jsonify({'error': f'Import error: {str(e)}'}), 500
     except Exception as e:
         import traceback
-        print(f"API: Error in get_active_timers: {e}")
+        print(f"API: Unexpected error in get_active_timers: {e}")
         print(f"API: Traceback: {traceback.format_exc()}")
-        error_logger.error(f"Error getting active timers: {e}")
-        return jsonify({'error': 'Failed to get active timers'}), 500
+        # Return empty timers instead of error to prevent frontend crashes
+        return jsonify({'status': 'success', 'timers': {}})
 
 # Backup and Restore Functions
 def create_backup():
@@ -2243,6 +2143,9 @@ def create_backup():
             os.makedirs(backup_dir)
             
             # Define files to backup
+            # Define backup file mapping
+            from core.library import get_library_file_paths
+            
             backup_files = {
                 'config/settings.cfg': SETTINGS_PATH,
                 'config/gpio.cfg': GPIO_PATH,
@@ -2251,9 +2154,12 @@ def create_backup():
                 'data/map.json': MAP_JSON_PATH,
                 'data/health_alerts.json': HEALTH_ALERTS_PATH,
                 'data/logs.json': LOGS_JSON_PATH,
-                'library/custom.json': os.path.join(os.path.dirname(__file__), 'library', 'custom.json'),
-                'library/fruitbushes.json': os.path.join(os.path.dirname(__file__), 'library', 'fruitbushes.json')
             }
+            
+            # Add library files to backup
+            library_paths = get_library_file_paths()
+            for filename, file_path in library_paths.items():
+                backup_files[f'library/{filename}'] = file_path
             
             # Copy files to backup directory
             for backup_path, source_path in backup_files.items():
@@ -2318,6 +2224,8 @@ def restore_backup(backup_data):
                 metadata = json.load(f)
             
             # Define restore mapping
+            from core.library import get_library_file_paths
+            
             restore_files = {
                 'config/settings.cfg': SETTINGS_PATH,
                 'config/gpio.cfg': GPIO_PATH,
@@ -2326,9 +2234,12 @@ def restore_backup(backup_data):
                 'data/map.json': MAP_JSON_PATH,
                 'data/health_alerts.json': HEALTH_ALERTS_PATH,
                 'data/logs.json': LOGS_JSON_PATH,
-                'library/custom.json': os.path.join(os.path.dirname(__file__), 'library', 'custom.json'),
-                'library/fruitbushes.json': os.path.join(os.path.dirname(__file__), 'library', 'fruitbushes.json')
             }
+            
+            # Add library files to restore
+            library_paths = get_library_file_paths()
+            for filename, file_path in library_paths.items():
+                restore_files[f'library/{filename}'] = file_path
             
             # Restore files
             restored_files = []
@@ -2412,6 +2323,8 @@ def get_backup_info():
     """Get information about backup functionality"""
     try:
         # Check which files exist and their sizes
+        from core.library import get_library_file_paths
+        
         backup_files = {
             'config/settings.cfg': SETTINGS_PATH,
             'config/gpio.cfg': GPIO_PATH,
@@ -2420,9 +2333,12 @@ def get_backup_info():
             'data/map.json': MAP_JSON_PATH,
             'data/health_alerts.json': HEALTH_ALERTS_PATH,
             'data/logs.json': LOGS_JSON_PATH,
-            'library/custom.json': os.path.join(os.path.dirname(__file__), 'library', 'custom.json'),
-            'library/fruitbushes.json': os.path.join(os.path.dirname(__file__), 'library', 'fruitbushes.json')
         }
+        
+        # Add library files to backup info
+        library_paths = get_library_file_paths()
+        for filename, file_path in library_paths.items():
+            backup_files[f'library/{filename}'] = file_path
         
         file_info = {}
         total_size = 0
@@ -2762,6 +2678,19 @@ def debug_test_scheduler():
             'error': f'Scheduler test failed: {str(e)}',
             'traceback': traceback.format_exc()
         }), 500
+
+@app.route('/api/scheduler/cleanup-schedule', methods=['POST'])
+def cleanup_schedule():
+    """Manually trigger cleanup of schedule.json to remove UI fields and purge disabled zones"""
+    try:
+        from core.scheduler import scheduler
+        success = scheduler.cleanup_schedule_file()
+        if success:
+            return jsonify({'status': 'success', 'message': 'Schedule cleanup completed'})
+        else:
+            return jsonify({'status': 'error', 'message': 'Schedule cleanup failed'}), 500
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': f'Cleanup failed: {str(e)}'}), 500
 
 @app.route('/api/scheduler/trigger-initial-refresh', methods=['POST'])
 def trigger_initial_smart_refresh():

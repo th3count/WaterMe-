@@ -154,6 +154,19 @@ export default function Sidebar() {
         <NavLink to="/zones" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Zones</NavLink>
         <NavLink to="/settings" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Settings</NavLink>
         <NavLink to="/logs" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Logs</NavLink>
+        
+        {/* Separator Bar */}
+        <div style={{
+          height: '1px',
+          background: '#2d3748',
+          margin: '16px 8px',
+          borderRadius: '1px'
+        }}></div>
+        
+        {/* Forms Link */}
+        <NavLink to="/forms" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+          <span style={{ fontSize: '13px' }}>📝 Forms</span>
+        </NavLink>
       </nav>
       <style>{`
         .nav-link {
