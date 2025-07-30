@@ -348,3 +348,15 @@ ed
 [2025-07-26 23:00:32] [INFO] [user] Zone updated and caches reloaded | zone_id=2 mode=smart period=W times_count=1
 [2025-07-26 23:00:34] [INFO] [user] Zone updated and caches reloaded | zone_id=2 mode=smart period=W times_count=1
 [2025-07-27 02:07:10] [INFO] [USER] Custom plant added | plant_id=1 common_name=Bartlett Pear latin_name=Pyrus communis 'Bartlett'
+[2025-07-30 15:04:03] [INFO] [USER] Custom plant deleted | plant_id=7
+[2025-07-30 15:04:13] [INFO] [USER] Custom plant deleted | plant_id=6
+[2025-07-30 15:04:28] [INFO] [USER] Custom plant deleted | plant_id=1
+[2025-07-30 15:08:28] [INFO] [USER] Custom plant deleted | plant_id=4
+[2025-07-30 15:08:37] [INFO] [USER] Custom plant deleted | plant_id=2
+[2025-07-30 15:08:45] [INFO] [USER] Custom plant deleted | plant_id=3
+[2025-07-30 15:09:28] [INFO] [USER] Custom plant deleted | plant_id=5
+[2025-07-30 15:09:37] [INFO] [USER] Custom plant deleted | plant_id=1
+[2025-07-30 15:11:20] [INFO] [USER] Custom plant deleted | plant_id=1
+[2025-07-30 15:15:29] [INFO] [USER] Custom plant deleted | plant_id=1
+[2025-07-30 15:17:46] [INFO] [USER] Manual timer started | zone_id=1 duration=10
+[2025-07-30 18:08:04] [INFO] [user] Zone updated and caches reloaded | zone_id=2 mode=disabled period=W times_count=1

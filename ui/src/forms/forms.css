@@ -68,6 +68,64 @@
   pointer-events: auto;
 }
 
+/* Garden Form Container - Create wrapper for scrollbar positioning */
+.form-container[data-modal="true"] {
+  max-height: 80vh;
+  overflow: hidden; /* Hide overflow on main container */
+  padding: 0; /* Remove padding from main container */
+  position: relative; /* For scrollbar positioning */
+}
+
+/* Create scrollable content wrapper */
+.form-container[data-modal="true"] .form-scrollable-content {
+  max-height: 80vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 24px; /* Add padding to content */
+  padding-right: 30px; /* Extra space for scrollbar */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+/* Hide the default scrollbar completely */
+.form-container[data-modal="true"] .form-scrollable-content::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/WebKit */
+}
+
+/* Create a custom scrollbar track using pseudo-element on the container */
+.form-container[data-modal="true"]::before {
+  content: '';
+  position: absolute;
+  top: 30px; /* Offset from top to respect border-radius */
+  right: 12px; /* Position inside the padding area */
+  bottom: 30px; /* Offset from bottom to respect border-radius */
+  width: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Create a custom scrollbar thumb using another pseudo-element on the container */
+.form-container[data-modal="true"]::after {
+  content: '';
+  position: absolute;
+  top: var(--scrollbar-thumb-top, 30px); /* Position updated by JS */
+  right: 12px;
+  width: 4px;
+  height: var(--scrollbar-thumb-height, 40px); /* Height updated by JS */
+  background: var(--form-text-muted);
+  border-radius: 2px;
+  opacity: var(--scrollbar-opacity, 0);
+  transition: opacity 0.2s;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.form-container[data-modal="true"]:hover::after {
+  opacity: var(--scrollbar-opacity, 0);
+}
+
 .form-container {
   background: var(--form-bg-primary);
   border-radius: 16px;
@@ -191,6 +249,10 @@
   letter-spacing: 0.3px;
 }
 
+.form-data-label--required {
+  color: var(--form-text-error) !important;
+}
+
 .form-data-value {
   font-size: 13px;
   color: var(--form-text-color);
@@ -200,32 +262,33 @@
 
 .form-data-input {
   font-size: 13px;
-  padding: 6px 8px;
-  border: 1px solid var(--form-border-color);
+  min-height: 20px;
+  padding: 3px 8px;
+  border: 1px solid var(--form-border-secondary);
   border-radius: 4px;
-  background: var(--form-input-bg);
-  color: var(--form-text-color);
+  background: var(--form-bg-tertiary);
+  color: var(--form-text-primary);
 }
 
 .form-data-input:focus {
-  border-color: var(--form-border-focus);
+  border-color: var(--form-border-primary);
   outline: none;
 }
 
 .form-data-textarea {
   font-size: 13px;
   padding: 8px;
-  border: 1px solid var(--form-border-color);
+  border: 1px solid var(--form-border-secondary);
   border-radius: 4px;
-  background: var(--form-input-bg);
-  color: var(--form-text-color);
+  background: var(--form-bg-tertiary);
+  color: var(--form-text-primary);
   resize: vertical;
   min-height: 60px;
   font-family: inherit;
 }
 
 .form-data-textarea:focus {
-  border-color: var(--form-border-focus);
+  border-color: var(--form-border-primary);
   outline: none;
 }
 
@@ -455,6 +518,8 @@
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 8px;
+  justify-content: center;
+  align-items: center;
 }
 
 .form-select-button {
@@ -524,14 +589,16 @@
   justify-content: center;
   gap: 8px;
   margin: 0 4px;
-  background: var(--form-bg-primary) !important;
-  border: 1px solid var(--form-border-primary) !important;
+  background: var(--form-btn-primary-bg) !important;
+  border: 1px solid var(--form-btn-primary-bg) !important;
+  color: var(--form-btn-primary-text) !important;
 }
 
 /* Selected state overrides */
 .form-select-button--solar.form-select-button--selected {
   background: var(--form-selected-bg) !important;
-  border: 2px solid var(--form-selected-bg) !important;
+  border-color: var(--form-selected-bg) !important;
+  color: var(--form-selected-text) !important;
 }
 
 /* Offset buttons should have the same distinct styling as solar buttons */
@@ -871,7 +938,7 @@
 }
 
 .form-btn {
-  padding: 10px 20px;
+  padding: 10px 12px;
   border-radius: 8px;
   font-size: 14px;
   cursor: pointer;
@@ -928,6 +995,24 @@
   box-shadow: 0 0 0 2px rgba(0, 188, 212, 0.3) !important;
 }
 
+.form-btn--danger {
+  background: #dc3545;
+  color: white;
+  border: 2px solid #dc3545;
+}
+
+.form-btn--danger:hover:not(:disabled) {
+  background: #c82333;
+  border-color: #c82333;
+}
+
+.form-btn--danger:disabled {
+  background: var(--form-btn-disabled-bg);
+  color: var(--form-btn-disabled-text);
+  border-color: var(--form-btn-disabled-bg);
+  cursor: not-allowed;
+}
+
 /* Nuclear option for picker buttons - eliminate ALL purple */
 .form-time-picker-modal .form-btn--outline,
 .form-time-picker-modal .form-btn--outline:focus,
@@ -958,6 +1043,92 @@
   outline: none !important;
 }
 
+/* Nuclear option for tab buttons - eliminate ALL purple */
+.form-btn--small:focus,
+.form-btn--small:focus-visible,
+.form-btn--small:focus-within,
+.form-btn--outline:focus,
+.form-btn--outline:focus-visible,
+.form-btn--outline:focus-within,
+.form-btn--primary:focus,
+.form-btn--primary:focus-visible,
+.form-btn--primary:focus-within {
+  outline: none !important;
+  outline-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Nuclear option for ALL form elements - eliminate ALL purple */
+.form-container *:focus,
+.form-container *:focus-visible,
+.form-container *:focus-within,
+.form-container button:focus,
+.form-container button:focus-visible,
+.form-container button:focus-within {
+  outline: none !important;
+  outline-color: transparent !important;
+  outline-style: none !important;
+  outline-width: 0 !important;
+  box-shadow: none !important;
+  border-color: inherit !important;
+}
+
+/* Nuclear override for any remaining purple elements */
+.form-btn--small,
+.form-btn--outline,
+.form-btn--primary,
+.form-btn--small *,
+.form-btn--outline *,
+.form-btn--primary * {
+  text-shadow: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  outline: none !important;
+  outline-color: transparent !important;
+  outline-style: none !important;
+  outline-width: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Remove gray separator bar between tabs */
+.form-btn--small + div,
+.form-btn--outline + div,
+.form-btn--primary + div {
+  display: none !important;
+}
+
+/* Nuclear option for hover states - eliminate ONLY purple on hover */
+.form-btn--small:hover,
+.form-btn--small:hover *,
+.form-btn--outline:hover,
+.form-btn--outline:hover *,
+.form-btn--primary:hover,
+.form-btn--primary:hover * {
+  outline: none !important;
+  outline-color: transparent !important;
+  outline-style: none !important;
+  outline-width: 0 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  border-color: var(--form-border-primary) !important;
+  color: var(--form-text-primary) !important;
+  background-color: var(--form-btn-primary-bg) !important;
+}
+
+/* Target any possible purple source without affecting colors */
+.form-btn--small,
+.form-btn--outline,
+.form-btn--primary,
+.form-btn--small *,
+.form-btn--outline *,
+.form-btn--primary * {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+}
+
 .form-btn--cancel {
   background: transparent;
   border: 1px solid var(--form-text-disabled);
@@ -980,7 +1151,7 @@
 }
 
 .form-btn--flex {
-  flex: 1;
+  flex: 0 0 auto; /* Don't grow, don't shrink, use natural size */
 }
 
 /* Status Radio Buttons */
@@ -1365,6 +1536,34 @@
 /* Offset section with better spacing */
 .form-offset-section {
   padding-top: 4px;
+  text-align: center;
+}
+
+/* Center align offset buttons specifically */
+.form-offset-section .form-button-grid {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+/* Center align exact button */
+.form-select-button--exact {
+  margin: 0 auto;
+  display: block;
+}
+
+/* Center align custom offset input in time picker */
+.form-offset-section .form-data-field {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Center align exact button */
+.form-select-button--exact {
+  margin: 0 auto;
+  display: block;
 }
 
 /* Spacing between Exact button and offset buttons */
@@ -1403,6 +1602,120 @@
 
 /* Done Button Spacing - Reusable for all picker modals */
 .form-done-button {
+  margin-top: 16px;
+}
+
+/* Time Picker Button Styles */
+.btn-done {
+  background: transparent;
+  color: var(--form-btn-primary-bg);
+  border: 1px solid var(--form-btn-primary-bg);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: var(--form-transition);
+  font-weight: 600;
+  min-width: 70px;
+  text-align: center;
+}
+
+.btn-done:hover:not(:disabled) {
+  background: var(--form-btn-primary-bg);
+  color: var(--form-btn-primary-text);
+  border: none;
+}
+
+.btn-done:focus {
+  outline: none !important;
+}
+
+.btn-done:focus-visible {
+  outline: none !important;
+}
+
+.btn-done:focus-within {
+  outline: none !important;
+}
+
+.btn-cancel {
+  background: transparent;
+  border: 1px solid var(--form-btn-secondary-text);
+  color: var(--form-btn-secondary-text);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: var(--form-transition);
+  font-weight: 600;
+  min-width: 70px;
+  text-align: center;
+}
+
+.btn-cancel:hover {
+  background: var(--form-btn-secondary-text);
+  color: var(--form-text-secondary);
+  border: none;
+}
+
+/* Prevent white border flashes during transition - only on hover */
+.btn-done:hover,
+.btn-cancel:hover {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Prevent white flicker during transition back to default */
+.btn-cancel,
+.btn-cancel:hover {
+  border-color: var(--form-btn-secondary-text) !important;
+}
+
+/* Nuclear option for time picker buttons - eliminate ALL purple */
+.btn-done,
+.btn-done:focus,
+.btn-done:focus-visible,
+.btn-done:focus-within,
+.btn-cancel,
+.btn-cancel:focus,
+.btn-cancel:focus-visible,
+.btn-cancel:focus-within {
+  outline: none !important;
+  outline-color: transparent !important;
+  outline-style: none !important;
+  outline-width: 0 !important;
+  box-shadow: none !important;
+  border-color: inherit !important;
+}
+
+.btn-done:hover,
+.btn-done:hover *,
+.btn-cancel:hover,
+.btn-cancel:hover * {
+  outline: none !important;
+  outline-color: transparent !important;
+  outline-style: none !important;
+  outline-width: 0 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+}
+
+.btn-done,
+.btn-cancel,
+.btn-done *,
+.btn-cancel * {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+}
+
+/* Time Picker Button Container */
+.form-time-picker-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
   margin-top: 16px;
 }
 
@@ -1470,39 +1783,63 @@
 .form-time-picker--compact .form-flex.form-gap-4.form-items-center.form-justify-center .form-btn--outline.form-btn--small {
   margin-top: 0;
   flex-shrink: 0;
-}
+} 
 
-/* Time Mode Toggle Slider */
-.form-time-mode-toggle {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* Unified Styles for Consistent Design System */
+.unified-btn-red {
+  background: transparent;
+  border: 1px solid var(--form-btn-secondary-text);
+  color: var(--form-btn-secondary-text);
+  padding: 8px 16px;
+  border-radius: 8px;
   font-size: 12px;
-  color: var(--form-text-muted);
+  cursor: pointer;
+  transition: var(--form-transition);
+  font-weight: 600;
+  min-width: 70px;
+  text-align: center;
 }
 
-.form-time-mode-toggle .form-toggle {
-  width: 40px;
-  height: 20px;
+.unified-btn-red:hover {
+  background: var(--form-btn-secondary-text);
+  color: var(--form-text-secondary);
+  border: none;
+}
+
+.unified-btn-blue {
+  background: transparent;
+  color: var(--form-btn-primary-bg);
+  border: 1px solid var(--form-btn-primary-bg);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: var(--form-transition);
+  font-weight: 600;
+  min-width: 70px;
+  text-align: center;
+}
+
+.unified-btn-blue:hover {
+  background: var(--form-btn-primary-bg);
+  color: var(--form-btn-primary-text);
+  border: none;
+}
+
+.unified-toggle-slider {
+  width: 32px;
+  height: 16px;
   background: var(--form-bg-tertiary);
   border: 1px solid var(--form-border-secondary);
-  border-radius: 10px;
+  border-radius: 8px;
   cursor: pointer;
   position: relative;
   transition: var(--form-transition);
 }
 
-.form-time-mode-toggle .form-toggle--solar {
-  background: var(--form-selected-bg);
-  border-color: var(--form-selected-bg);
-}
-
-.form-time-mode-toggle .form-toggle-handle {
-  width: 16px;
-  height: 16px;
+.unified-toggle-slider .form-toggle-handle {
+  width: 12px;
+  height: 12px;
   background: var(--form-text-primary);
   border-radius: 50%;
   position: absolute;
@@ -1511,13 +1848,18 @@
   transition: var(--form-transition);
 }
 
-.form-time-mode-toggle .form-toggle--solar .form-toggle-handle {
-  transform: translateX(20px);
+.unified-toggle-slider .form-toggle-handle--active {
+  transform: translateX(16px);
 }
 
-.form-time-mode-toggle .form-toggle-label {
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  user-select: none;
+.unified-section-title {
+  margin: 0 0 6px 0;
+  color: var(--form-text-accent);
+  font-weight: 700;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 } 

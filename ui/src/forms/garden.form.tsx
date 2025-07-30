@@ -72,6 +72,66 @@ export default function SmartPlacementForm({
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [saveMessage, setSaveMessage] = useState('');
 
+  // Custom scrollbar functionality
+  useEffect(() => {
+    const container = formRef.current;
+    const scrollableContent = container?.querySelector('.form-scrollable-content') as HTMLElement;
+    if (!container || !scrollableContent) return;
+
+    const updateScrollbar = () => {
+      const scrollTop = scrollableContent.scrollTop;
+      const scrollHeight = scrollableContent.scrollHeight;
+      const clientHeight = scrollableContent.clientHeight;
+      
+      console.log('Scrollbar update:', { scrollTop, scrollHeight, clientHeight });
+      
+      // Only show scrollbar if content is scrollable
+      if (scrollHeight <= clientHeight) {
+        container.style.setProperty('--scrollbar-opacity', '0');
+        console.log('Content fits, hiding scrollbar');
+        return;
+      }
+
+      // Show scrollbar
+      container.style.setProperty('--scrollbar-opacity', '0.6');
+      
+      // Calculate thumb position and size
+      const trackHeight = clientHeight - 60; // Account for top/bottom offsets (30px top + 30px bottom)
+      const thumbHeight = Math.max(20, (clientHeight / scrollHeight) * trackHeight);
+      
+      // Calculate scroll percentage and thumb position
+      const maxScrollTop = scrollHeight - clientHeight;
+      const scrollPercentage = maxScrollTop > 0 ? scrollTop / maxScrollTop : 0;
+      const maxThumbTop = trackHeight - thumbHeight;
+      const thumbTop = 30 + scrollPercentage * maxThumbTop;
+      
+      console.log('Scrollbar calculations:', { 
+        trackHeight, 
+        thumbHeight, 
+        scrollPercentage, 
+        thumbTop 
+      });
+      
+      container.style.setProperty('--scrollbar-thumb-height', `${thumbHeight}px`);
+      container.style.setProperty('--scrollbar-thumb-top', `${thumbTop}px`);
+    };
+
+    // Add event listeners to the scrollable content
+    scrollableContent.addEventListener('scroll', updateScrollbar, { passive: true });
+    
+    // Use ResizeObserver to update when content changes
+    const resizeObserver = new ResizeObserver(updateScrollbar);
+    resizeObserver.observe(scrollableContent);
+    
+    // Initial update
+    updateScrollbar();
+
+    return () => {
+      scrollableContent.removeEventListener('scroll', updateScrollbar);
+      resizeObserver.disconnect();
+    };
+  }, [loading, plantData, recommendations, zones, locations]);
+
   // Function to resolve zone period codes
   const resolveZonePeriod = (period: string, cycles?: number): string => {
     if (!period) return 'Unknown';
@@ -325,466 +385,468 @@ export default function SmartPlacementForm({
         data-modal="true"
         className="form-container"
       >
-        <h3 className="form-header form-header--h3">
-          Smart Placement: {plantData.common_name}
-          {!isTopLayer && (
-            <span className="form-text-muted form-ml-8">
-              (Hidden - Not Top Layer)
-            </span>
+        <div className="form-scrollable-content">
+          <h3 className="form-header form-header--h3">
+            Smart Placement: {plantData.common_name}
+            {!isTopLayer && (
+              <span className="form-text-muted form-ml-8">
+                (Hidden - Not Top Layer)
+              </span>
+            )}
+          </h3>
+          
+          {recommendations.length === 0 && (
+            <div className="form-alert form-alert--error">
+              <span>⚠️</span>
+              <span>
+                No compatible zones found for this plant. Check deactivated zones below for auto-creation options.
+              </span>
+            </div>
           )}
-        </h3>
-        
-        {recommendations.length === 0 && (
-          <div className="form-alert form-alert--error">
-            <span>⚠️</span>
-            <span>
-              No compatible zones found for this plant. Check deactivated zones below for auto-creation options.
-            </span>
-          </div>
-        )}
 
-        <div className="form-section">
-          <div className="form-flex form-gap-12 form-justify-between form-items-center form-mb-12">
-            <p className="form-section-title">
-              🎯 {recommendations.length > 0 ? 'Compatible zones found! Select your preferred zone:' : 'Available zones:'}
-            </p>
-            <div className="form-flex form-gap-8 form-items-center">
-              <span className={`form-toggle-label ${zoneSelectionMode === 'smart' ? 'form-toggle-label--active' : 'form-toggle-label--inactive'}`}>
-                Smart
-              </span>
-              <div 
-                className={`form-toggle ${systemMode === 'manual' ? 'form-toggle--locked' : ''}`}
-                onClick={() => {
-                  if (systemMode === 'smart') {
-                    setZoneSelectionMode(zoneSelectionMode === 'smart' ? 'manual' : 'smart');
-                  }
-                }}
-              >
-                <div className={`form-toggle-handle ${zoneSelectionMode === 'smart' ? 'form-toggle-handle--active' : 'form-toggle-handle--inactive'}`} />
-              </div>
-              <span className={`form-toggle-label ${zoneSelectionMode === 'manual' ? 'form-toggle-label--active' : 'form-toggle-label--inactive'}`}>
-                Manual
-              </span>
-              {systemMode === 'manual' && (
-                <span className="form-toggle-label form-toggle-label--locked">
-                  (Locked)
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="form-flex form-flex-column form-gap-8">
-            {(zoneSelectionMode === 'smart' ? recommendations.slice(0, 3) : zones).map((rec: any, index: number) => {
-              const isSmartMode = zoneSelectionMode === 'smart';
-              const zoneId = isSmartMode ? rec.zone_id : rec.zone_id;
-              const isSelected = modalData.zoneId === zoneId.toString();
-              const isDisabled = !isSmartMode && rec.mode === 'disabled';
-              const isSmartRecommended = isSmartMode && index === 0; // First recommendation is best match
-              
-              return (
-                <div key={zoneId} 
-                  className={`form-zone-button ${isSelected ? 'form-zone-button--selected' : isDisabled ? 'form-zone-button--disabled' : 'form-zone-button--active'} ${isSmartRecommended ? 'form-zone-button--smart-recommended' : ''}`}
-                  onClick={() => {
-                    if (isDisabled) {
-                      // Handle disabled zone selection - show zone configuration form
-                      console.log('Disabled zone selected for configuration:', zoneId);
-                      
-                      // Set up zone form data and show it
-                      setZoneFormData({
-                        zone_id: zoneId,
-                        mode: 'active', // Default to active/enabled mode since user wants to bring zone online
-                        period: rec.period || 'W', // Use zone's period or default
-                        cycles: getZoneCycles(zoneId) || 1, // Use zone's cycles or default
-                        comment: rec.comment || ''
-                      });
-                      setShowZoneForm(true);
-                      return;
-                    }
-                    
-                    // Find locations that have this zone
-                    const locationsWithZone = locations.filter(loc => loc.zones.includes(zoneId));
-                    console.log('Zone selection debug:', {
-                      zoneId,
-                      zoneIdType: typeof zoneId,
-                      locations,
-                      locationsWithZone,
-                      locationsWithZoneLength: locationsWithZone.length
-                    });
-                    if (locationsWithZone.length > 0) {
-                      setModalData({
-                        ...modalData,
-                        zoneId: zoneId.toString(),
-                        locationId: locationsWithZone[0].location_id.toString() // Auto-select first location
-                      });
-                    } else {
-                      // Just set the zone if no locations support it
-                      setModalData({
-                        ...modalData,
-                        zoneId: zoneId.toString(),
-                        locationId: '' // Clear location since none support this zone
-                      });
-                    }
-                  }}
-                >
-                  <div className="form-flex form-justify-between form-items-center">
-                    <div>
-                      <strong>Zone {zoneId}</strong>
-                      <div className="form-text-muted form-text-muted--small">
-                        {isSmartMode ? rec.comment : (isDisabled ? 'Disabled Zone' : rec.comment)}
-                        {/* Debug cycles data */}
-                        {console.log('Zone cycles data:', { 
-                          zoneId, 
-                          isSmartMode, 
-                          cycles: getZoneCycles(zoneId), 
-                          zonesLength: zones.length,
-                          zoneFound: zones.find(z => z.zone_id === zoneId),
-                          fullRec: rec 
-                        })}
-                        {!isDisabled && getZoneCycles(zoneId) && (
-                          <span className="form-zone-details">
-                            • {getZoneCycles(zoneId)} cycle{getZoneCycles(zoneId) !== 1 ? 's' : ''} - {resolveZonePeriod(isSmartMode ? rec.period : rec.period, getZoneCycles(zoneId))}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {isSmartMode && (
-                      <div className={`form-btn form-btn--small form-zone-match-badge ${isSelected ? 'form-zone-match-badge--selected' : ''}`}>
-                        {Math.round(rec.score * 100)}% match
-                      </div>
-                    )}
-                    {!isSmartMode && (
-                      <div className={`form-btn form-btn--small form-zone-match-badge ${isSelected ? 'form-zone-match-badge--selected' : ''} ${isDisabled ? 'form-zone-match-badge--disabled' : 'form-zone-match-badge--manual'}`}>
-                        {isDisabled ? 'Disabled' : 'Manual'}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        
-        {/* Deactivated Zones Section - Only show in smart mode when no compatible zones found */}
-        {zoneSelectionMode === 'smart' && recommendations.length === 0 && zones.filter(z => z.mode === 'disabled').length > 0 && (
           <div className="form-section">
             <div className="form-flex form-gap-12 form-justify-between form-items-center form-mb-12">
               <p className="form-section-title">
-                🎯 Available zones:
-              </p>
-            </div>
-            <div className="form-flex form-flex-column form-gap-8">
-              {zones.filter(z => z.mode === 'disabled').map((zone: any) => (
-                <div key={zone.zone_id} className="form-zone-button form-zone-button--disabled">
-                  <div className="form-flex form-justify-between form-items-center">
-                    <div>
-                      <strong>Zone {zone.zone_id}</strong>
-                      <div className="form-text-muted form-text-muted--small">
-                        Disabled Zone
-                      </div>
-                    </div>
-                    <div className="form-zone-button-action">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          console.log('Auto-create clicked for zone:', zone.zone_id);
-                          console.log('Plant data from modal:', plantData);
-                          console.log('Book file:', library_book);
-                          
-                          // Set up zone form data and show it
-                          setZoneFormData({
-                            zone_id: zone.zone_id,
-                            mode: 'active', // Default to active/enabled mode for auto-creation
-                            period: zone.period || 'W', // Use zone's period or default to Weekly
-                            cycles: getZoneCycles(zone.zone_id) || 1, // Use zone's cycles or default
-                            comment: zone.comment || ''
-                          });
-                          setShowZoneForm(true);
-                        }}
-                        className="form-btn form-btn--primary form-btn--small"
-                      >
-                        Auto-Create
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <form className="form-flex form-flex-column form-gap-16" onSubmit={async (e) => { 
-          e.preventDefault(); 
-          if (modalData.zoneId && modalData.locationId && modalData.quantity && modalData.emitterSize) {
-            // Handle form submission
-            const formData = {
-              plant_id,
-              library_book: library_book.replace('.json', ''), // Remove .json extension
-              zone_id: parseInt(modalData.zoneId),
-              location_id: parseInt(modalData.locationId),
-              quantity: parseInt(modalData.quantity),
-              emitter_size: parseFloat(modalData.emitterSize),
-              comments: modalData.comments,
-              smart_overrides: {
-                zone_selection: zoneSelectionMode, // Use the actual slider state
-                emitter_sizing: emitterSizingMode  // Use the actual slider state
-              }
-            };
-            
-            try {
-              setSaveStatus('saving');
-              setSaveMessage('Placing plant...');
-              
-              // Send to plant manager API to update map.json
-              const response = await fetch('/api/map/save', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-              });
-              
-              if (response.ok) {
-                const result = await response.json();
-                setSaveStatus('success');
-                setSaveMessage('Plant placed successfully!');
-                
-                // Auto-hide success message and close form after 2 seconds
-                setTimeout(() => {
-                  setSaveStatus('idle');
-                  setSaveMessage('');
-                  onSuccess?.(formData);
-                }, 2000);
-              } else {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Failed to place plant');
-              }
-            } catch (err) {
-              console.error('Error placing plant:', err);
-              setSaveStatus('error');
-              setSaveMessage(err instanceof Error ? err.message : 'Failed to place plant');
-              
-              // Auto-hide error message after 4 seconds
-              setTimeout(() => {
-                setSaveStatus('idle');
-                setSaveMessage('');
-              }, 4000);
-            }
-          }
-        }}>
-          <div className="form-section">
-            <p className="form-section-title">
-              📊 Select quantity:
-            </p>
-            <div className="form-button-grid">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 18, 20, 25, 30].map(num => (
-                <div
-                  key={num}
-                  onClick={() => {
-                    setModalData({ ...modalData, quantity: num.toString() });
-                    setCustomQuantity(''); // Clear custom value when selecting predefined
-                  }}
-                  className={`form-select-button form-quantity-button ${modalData.quantity === num.toString() ? 'form-select-button--selected' : ''}`}
-                >
-                  {num}
-                </div>
-              ))}
-            </div>
-            <div className="form-flex form-gap-8 form-items-center">
-              <span className="form-label">Custom:</span>
-              <input
-                type="number"
-                min="1"
-                max="99"
-                placeholder="Enter quantity"
-                value={customQuantity}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (value === '' || (parseInt(value) >= 1 && parseInt(value) <= 99)) {
-                    setCustomQuantity(value);
-                    if (value) {
-                      setModalData({ ...modalData, quantity: value });
-                    }
-                  }
-                }}
-                onFocus={() => {
-                  setModalData({ ...modalData, quantity: '' }); // Clear selected value when focusing on custom
-                }}
-                className="form-input form-input--custom"
-              />
-            </div>
-          </div>
-          <div className="form-section">
-            <div className="form-flex form-gap-12 form-justify-between form-items-center form-mb-12">
-              <p className="form-section-title">
-                💧 Emitter Size (GPH):
-                {/* Smart emitter analysis would be fetched here */}
-                <span className="form-text-success form-text-success--inline">
-                  (Smart: 4.0 GPH)
-                </span>
+                🎯 {recommendations.length > 0 ? 'Compatible zones found! Select your preferred zone:' : 'Available zones:'}
               </p>
               <div className="form-flex form-gap-8 form-items-center">
-                <span className={`form-toggle-label ${emitterSizingMode === 'smart' ? 'form-toggle-label--active' : 'form-toggle-label--inactive'}`}>
+                <span className={`form-toggle-label ${zoneSelectionMode === 'smart' ? 'form-toggle-label--active' : 'form-toggle-label--inactive'}`}>
                   Smart
                 </span>
                 <div 
-                  className="form-toggle"
+                  className={`form-toggle ${systemMode === 'manual' ? 'form-toggle--locked' : ''}`}
                   onClick={() => {
-                    const newMode = emitterSizingMode === 'smart' ? 'manual' : 'smart';
-                    setEmitterSizingMode(newMode);
-                    
-                    // If switching to smart mode, auto-select the smart recommendation
-                    if (newMode === 'smart') {
-                      const smartRecommendation = '4'; // Use normalized format (no decimal for whole numbers)
-                      setModalData(prev => ({ ...prev, emitterSize: smartRecommendation }));
-                      setCustomEmitterSize(''); // Clear any custom value
+                    if (systemMode === 'smart') {
+                      setZoneSelectionMode(zoneSelectionMode === 'smart' ? 'manual' : 'smart');
                     }
                   }}
                 >
-                  <div className={`form-toggle-handle ${emitterSizingMode === 'smart' ? 'form-toggle-handle--active' : 'form-toggle-handle--inactive'}`} />
+                  <div className={`form-toggle-handle ${zoneSelectionMode === 'smart' ? 'form-toggle-handle--active' : 'form-toggle-handle--inactive'}`} />
                 </div>
-                <span className={`form-toggle-label ${emitterSizingMode === 'manual' ? 'form-toggle-label--active' : 'form-toggle-label--inactive'}`}>
+                <span className={`form-toggle-label ${zoneSelectionMode === 'manual' ? 'form-toggle-label--active' : 'form-toggle-label--inactive'}`}>
                   Manual
                 </span>
+                {systemMode === 'manual' && (
+                  <span className="form-toggle-label form-toggle-label--locked">
+                    (Locked)
+                  </span>
+                )}
               </div>
             </div>
-            <div className="form-button-grid">
-              {[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0].map(size => {
-                // Normalize the size to match the format used in modalData
-                const normalizedSize = size % 1 === 0 ? size.toString() : size.toFixed(1);
-                const isSelected = modalData.emitterSize === normalizedSize;
-                const isSmartRecommended = size === 4.0; // Placeholder for smart analysis
-                const isSmartMode = emitterSizingMode === 'smart';
-                const isSmartRecommendedAndSelected = isSmartRecommended && isSmartMode && isSelected;
+            <div className="form-flex form-flex-column form-gap-8">
+              {(zoneSelectionMode === 'smart' ? recommendations.slice(0, 3) : zones).map((rec: any, index: number) => {
+                const isSmartMode = zoneSelectionMode === 'smart';
+                const zoneId = isSmartMode ? rec.zone_id : rec.zone_id;
+                const isSelected = modalData.zoneId === zoneId.toString();
+                const isDisabled = !isSmartMode && rec.mode === 'disabled';
+                const isSmartRecommended = isSmartMode && index === 0; // First recommendation is best match
                 
                 return (
-                  <div
-                    key={size}
+                  <div key={zoneId} 
+                    className={`form-zone-button ${isSelected ? 'form-zone-button--selected' : isDisabled ? 'form-zone-button--disabled' : 'form-zone-button--active'} ${isSmartRecommended ? 'form-zone-button--smart-recommended' : ''}`}
                     onClick={() => {
-                      setModalData({ ...modalData, emitterSize: normalizedSize });
-                      setCustomEmitterSize(''); // Clear custom value when selecting predefined
+                      if (isDisabled) {
+                        // Handle disabled zone selection - show zone configuration form
+                        console.log('Disabled zone selected for configuration:', zoneId);
+                        
+                        // Set up zone form data and show it
+                        setZoneFormData({
+                          zone_id: zoneId,
+                          mode: 'active', // Default to active/enabled mode since user wants to bring zone online
+                          period: rec.period || 'W', // Use zone's period or default
+                          cycles: getZoneCycles(zoneId) || 1, // Use zone's cycles or default
+                          comment: rec.comment || ''
+                        });
+                        setShowZoneForm(true);
+                        return;
+                      }
                       
-                      // If user manually selects something other than smart recommendation, switch to manual mode
-                      if (isSmartMode && !isSmartRecommended) {
-                        setEmitterSizingMode('manual');
+                      // Find locations that have this zone
+                      const locationsWithZone = locations.filter(loc => loc.zones.includes(zoneId));
+                      console.log('Zone selection debug:', {
+                        zoneId,
+                        zoneIdType: typeof zoneId,
+                        locations,
+                        locationsWithZone,
+                        locationsWithZoneLength: locationsWithZone.length
+                      });
+                      if (locationsWithZone.length > 0) {
+                        setModalData({
+                          ...modalData,
+                          zoneId: zoneId.toString(),
+                          locationId: locationsWithZone[0].location_id.toString() // Auto-select first location
+                        });
+                      } else {
+                        // Just set the zone if no locations support it
+                        setModalData({
+                          ...modalData,
+                          zoneId: zoneId.toString(),
+                          locationId: '' // Clear location since none support this zone
+                        });
                       }
                     }}
-                    className={`form-select-button form-emitter-button ${isSelected ? 'form-select-button--selected' : ''} ${isSmartRecommendedAndSelected ? 'form-emitter-button--smart-recommended' : ''}`}
                   >
-                    {size} GPH
-                    {isSmartRecommendedAndSelected && (
-                      <div className="form-emitter-button--smart-recommended-indicator">
-                        ✓
+                    <div className="form-flex form-justify-between form-items-center">
+                      <div>
+                        <strong>Zone {zoneId}</strong>
+                        <div className="form-text-muted form-text-muted--small">
+                          {isSmartMode ? rec.comment : (isDisabled ? 'Disabled Zone' : rec.comment)}
+                          {/* Debug cycles data */}
+                          {console.log('Zone cycles data:', { 
+                            zoneId, 
+                            isSmartMode, 
+                            cycles: getZoneCycles(zoneId), 
+                            zonesLength: zones.length,
+                            zoneFound: zones.find(z => z.zone_id === zoneId),
+                            fullRec: rec 
+                          })}
+                          {!isDisabled && getZoneCycles(zoneId) && (
+                            <span className="form-zone-details">
+                              • {getZoneCycles(zoneId)} cycle{getZoneCycles(zoneId) !== 1 ? 's' : ''} - {resolveZonePeriod(isSmartMode ? rec.period : rec.period, getZoneCycles(zoneId))}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    )}
+                      {isSmartMode && (
+                        <div className={`form-btn form-btn--small form-zone-match-badge ${isSelected ? 'form-zone-match-badge--selected' : ''}`}>
+                          {Math.round(rec.score * 100)}% match
+                        </div>
+                      )}
+                      {!isSmartMode && (
+                        <div className={`form-btn form-btn--small form-zone-match-badge ${isSelected ? 'form-zone-match-badge--selected' : ''} ${isDisabled ? 'form-zone-match-badge--disabled' : 'form-zone-match-badge--manual'}`}>
+                          {isDisabled ? 'Disabled' : 'Manual'}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}
             </div>
-            <div className="form-flex form-gap-8 form-items-center">
-              <span className="form-label">Custom:</span>
-              <input
-                type="number"
-                min="0.1"
-                max="50"
-                step="0.1"
-                placeholder="Enter GPH"
-                value={customEmitterSize}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (value === '' || (parseFloat(value) >= 0.1 && parseFloat(value) <= 50)) {
-                    setCustomEmitterSize(value);
-                    if (value) {
-                      setModalData({ ...modalData, emitterSize: value });
-                    }
-                  }
-                }}
-                onFocus={() => {
-                  setModalData({ ...modalData, emitterSize: '' }); // Clear selected value when focusing on custom
-                }}
-                className="form-input form-input--custom"
-              />
-            </div>
           </div>
-
-          <div className="form-section">
-            <p className="form-section-title">
-              📍 Select location:
-            </p>
-            <div className="form-button-grid">
-              {(() => {
-                console.log('Location selection debug:', {
-                  modalDataZoneId: modalData.zoneId,
-                  modalDataZoneIdType: typeof modalData.zoneId,
-                  locations: locations,
-                  filteredLocations: locations.filter(loc => loc.zones.includes(parseInt(modalData.zoneId)))
-                });
-                return null;
-              })()}
-              {locations
-                .filter(loc => loc.zones.includes(parseInt(modalData.zoneId)))
-                .map(loc => (
-                  <div
-                    key={loc.location_id}
-                    onClick={() => setModalData({ ...modalData, locationId: loc.location_id.toString() })}
-                    className={`form-select-button form-location-button ${modalData.locationId === loc.location_id.toString() ? 'form-select-button--selected' : ''}`}
-                  >
-                    {loc.name}
+        
+          {/* Deactivated Zones Section - Only show in smart mode when no compatible zones found */}
+          {zoneSelectionMode === 'smart' && recommendations.length === 0 && zones.filter(z => z.mode === 'disabled').length > 0 && (
+            <div className="form-section">
+              <div className="form-flex form-gap-12 form-justify-between form-items-center form-mb-12">
+                <p className="form-section-title">
+                  🎯 Available zones:
+                </p>
+              </div>
+              <div className="form-flex form-flex-column form-gap-8">
+                {zones.filter(z => z.mode === 'disabled').map((zone: any) => (
+                  <div key={zone.zone_id} className="form-zone-button form-zone-button--disabled">
+                    <div className="form-flex form-justify-between form-items-center">
+                      <div>
+                        <strong>Zone {zone.zone_id}</strong>
+                        <div className="form-text-muted form-text-muted--small">
+                          Disabled Zone
+                        </div>
+                      </div>
+                      <div className="form-zone-button-action">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            console.log('Auto-create clicked for zone:', zone.zone_id);
+                            console.log('Plant data from modal:', plantData);
+                            console.log('Book file:', library_book);
+                            
+                            // Set up zone form data and show it
+                            setZoneFormData({
+                              zone_id: zone.zone_id,
+                              mode: 'active', // Default to active/enabled mode for auto-creation
+                              period: zone.period || 'W', // Use zone's period or default to Weekly
+                              cycles: getZoneCycles(zone.zone_id) || 1, // Use zone's cycles or default
+                              comment: zone.comment || ''
+                            });
+                            setShowZoneForm(true);
+                          }}
+                          className="form-btn form-btn--primary form-btn--small"
+                        >
+                          Auto-Create
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 ))}
-              {locations.filter(loc => loc.zones.includes(parseInt(modalData.zoneId))).length === 0 && (
-                <div className="form-text-muted form-text-muted--italic">
-                  No locations support this zone
-                </div>
-              )}
-            </div>
-            <div className="form-flex form-justify-start form-mt-8">
-              <button
-                type="button"
-                onClick={() => {
-                  // Handle add location (placeholder for now)
-                  console.log('Add new location clicked');
-                }}
-                className="form-btn form-btn--outline"
-              >
-                + Add New Location
-              </button>
-            </div>
-          </div>
-          <div className="form-flex form-flex-column form-gap-8">
-            <label className="form-label">Comments (optional):</label>
-            <input
-              type="text"
-              name="comments"
-              value={modalData.comments}
-              onChange={(e) => setModalData({ ...modalData, comments: e.target.value })}
-              className="form-input form-input--full-width"
-              placeholder="Any additional notes..."
-            />
-          </div>
-          {/* Success/Error Message Display */}
-          {saveStatus !== 'idle' && (
-            <div className={`form-alert ${saveStatus === 'success' ? 'form-alert--success' : 'form-alert--error'}`}>
-              {saveMessage}
+              </div>
             </div>
           )}
-          
-          <div className="form-actions form-actions--end">
-            <button
-              type="button"
-              onClick={() => { 
-                onCancel?.();
-                setModalData({ quantity: '', emitterSize: '', zoneId: '', locationId: '', comments: '' });
-              }}
-              className="form-btn form-btn--secondary form-btn--flex"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={!modalData.zoneId || !modalData.locationId || !modalData.quantity || !modalData.emitterSize || saveStatus === 'saving'}
-              className="form-btn form-btn--primary form-btn--flex"
-            >
-              {saveStatus === 'saving' ? 'Placing...' : 'Place Plant'}
-            </button>
-          </div>
-        </form>
+
+          <form className="form-flex form-flex-column form-gap-16" onSubmit={async (e) => { 
+            e.preventDefault(); 
+            if (modalData.zoneId && modalData.locationId && modalData.quantity && modalData.emitterSize) {
+              // Handle form submission
+              const formData = {
+                plant_id,
+                library_book: library_book.replace('.json', ''), // Remove .json extension
+                zone_id: parseInt(modalData.zoneId),
+                location_id: parseInt(modalData.locationId),
+                quantity: parseInt(modalData.quantity),
+                emitter_size: parseFloat(modalData.emitterSize),
+                comments: modalData.comments,
+                smart_overrides: {
+                  zone_selection: zoneSelectionMode, // Use the actual slider state
+                  emitter_sizing: emitterSizingMode  // Use the actual slider state
+                }
+              };
+              
+              try {
+                setSaveStatus('saving');
+                setSaveMessage('Placing plant...');
+                
+                // Send to plant manager API to update map.json
+                const response = await fetch('/api/map/save', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(formData)
+                });
+                
+                if (response.ok) {
+                  const result = await response.json();
+                  setSaveStatus('success');
+                  setSaveMessage('Plant placed successfully!');
+                  
+                  // Auto-hide success message and close form after 2 seconds
+                  setTimeout(() => {
+                    setSaveStatus('idle');
+                    setSaveMessage('');
+                    onSuccess?.(formData);
+                  }, 2000);
+                } else {
+                  const errorData = await response.json().catch(() => ({}));
+                  throw new Error(errorData.message || 'Failed to place plant');
+                }
+              } catch (err) {
+                console.error('Error placing plant:', err);
+                setSaveStatus('error');
+                setSaveMessage(err instanceof Error ? err.message : 'Failed to place plant');
+                
+                // Auto-hide error message after 4 seconds
+                setTimeout(() => {
+                  setSaveStatus('idle');
+                  setSaveMessage('');
+                }, 4000);
+              }
+            }
+          }}>
+            <div className="form-section">
+              <p className="form-section-title">
+                📊 Select quantity:
+              </p>
+              <div className="form-button-grid">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 18, 20, 25, 30].map(num => (
+                  <div
+                    key={num}
+                    onClick={() => {
+                      setModalData({ ...modalData, quantity: num.toString() });
+                      setCustomQuantity(''); // Clear custom value when selecting predefined
+                    }}
+                    className={`form-select-button form-quantity-button ${modalData.quantity === num.toString() ? 'form-select-button--selected' : ''}`}
+                  >
+                    {num}
+                  </div>
+                ))}
+              </div>
+              <div className="form-flex form-gap-8 form-items-center">
+                <span className="form-label">Custom:</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="99"
+                  placeholder="Enter quantity"
+                  value={customQuantity}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '' || (parseInt(value) >= 1 && parseInt(value) <= 99)) {
+                      setCustomQuantity(value);
+                      if (value) {
+                        setModalData({ ...modalData, quantity: value });
+                      }
+                    }
+                  }}
+                  onFocus={() => {
+                    setModalData({ ...modalData, quantity: '' }); // Clear selected value when focusing on custom
+                  }}
+                  className="form-input form-input--custom"
+                />
+              </div>
+            </div>
+            <div className="form-section">
+              <div className="form-flex form-gap-12 form-justify-between form-items-center form-mb-12">
+                <p className="form-section-title">
+                  💧 Emitter Size (GPH):
+                  {/* Smart emitter analysis would be fetched here */}
+                  <span className="form-text-success form-text-success--inline">
+                    (Smart: 4.0 GPH)
+                  </span>
+                </p>
+                <div className="form-flex form-gap-8 form-items-center">
+                  <span className={`form-toggle-label ${emitterSizingMode === 'smart' ? 'form-toggle-label--active' : 'form-toggle-label--inactive'}`}>
+                    Smart
+                  </span>
+                  <div 
+                    className="form-toggle"
+                    onClick={() => {
+                      const newMode = emitterSizingMode === 'smart' ? 'manual' : 'smart';
+                      setEmitterSizingMode(newMode);
+                      
+                      // If switching to smart mode, auto-select the smart recommendation
+                      if (newMode === 'smart') {
+                        const smartRecommendation = '4'; // Use normalized format (no decimal for whole numbers)
+                        setModalData(prev => ({ ...prev, emitterSize: smartRecommendation }));
+                        setCustomEmitterSize(''); // Clear any custom value
+                      }
+                    }}
+                  >
+                    <div className={`form-toggle-handle ${emitterSizingMode === 'smart' ? 'form-toggle-handle--active' : 'form-toggle-handle--inactive'}`} />
+                  </div>
+                  <span className={`form-toggle-label ${emitterSizingMode === 'manual' ? 'form-toggle-label--active' : 'form-toggle-label--inactive'}`}>
+                    Manual
+                  </span>
+                </div>
+              </div>
+              <div className="form-button-grid">
+                {[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0].map(size => {
+                  // Normalize the size to match the format used in modalData
+                  const normalizedSize = size % 1 === 0 ? size.toString() : size.toFixed(1);
+                  const isSelected = modalData.emitterSize === normalizedSize;
+                  const isSmartRecommended = size === 4.0; // Placeholder for smart analysis
+                  const isSmartMode = emitterSizingMode === 'smart';
+                  const isSmartRecommendedAndSelected = isSmartRecommended && isSmartMode && isSelected;
+                  
+                  return (
+                    <div
+                      key={size}
+                      onClick={() => {
+                        setModalData({ ...modalData, emitterSize: normalizedSize });
+                        setCustomEmitterSize(''); // Clear custom value when selecting predefined
+                        
+                        // If user manually selects something other than smart recommendation, switch to manual mode
+                        if (isSmartMode && !isSmartRecommended) {
+                          setEmitterSizingMode('manual');
+                        }
+                      }}
+                      className={`form-select-button form-emitter-button ${isSelected ? 'form-select-button--selected' : ''} ${isSmartRecommendedAndSelected ? 'form-emitter-button--smart-recommended' : ''}`}
+                    >
+                      {size} GPH
+                      {isSmartRecommendedAndSelected && (
+                        <div className="form-emitter-button--smart-recommended-indicator">
+                          ✓
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="form-flex form-gap-8 form-items-center">
+                <span className="form-label">Custom:</span>
+                <input
+                  type="number"
+                  min="0.1"
+                  max="50"
+                  step="0.1"
+                  placeholder="Enter GPH"
+                  value={customEmitterSize}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '' || (parseFloat(value) >= 0.1 && parseFloat(value) <= 50)) {
+                      setCustomEmitterSize(value);
+                      if (value) {
+                        setModalData({ ...modalData, emitterSize: value });
+                      }
+                    }
+                  }}
+                  onFocus={() => {
+                    setModalData({ ...modalData, emitterSize: '' }); // Clear selected value when focusing on custom
+                  }}
+                  className="form-input form-input--custom"
+                />
+              </div>
+            </div>
+
+            <div className="form-section">
+              <p className="form-section-title">
+                📍 Select location:
+              </p>
+              <div className="form-button-grid">
+                {(() => {
+                  console.log('Location selection debug:', {
+                    modalDataZoneId: modalData.zoneId,
+                    modalDataZoneIdType: typeof modalData.zoneId,
+                    locations: locations,
+                    filteredLocations: locations.filter(loc => loc.zones.includes(parseInt(modalData.zoneId)))
+                  });
+                  return null;
+                })()}
+                {locations
+                  .filter(loc => loc.zones.includes(parseInt(modalData.zoneId)))
+                  .map(loc => (
+                    <div
+                      key={loc.location_id}
+                      onClick={() => setModalData({ ...modalData, locationId: loc.location_id.toString() })}
+                      className={`form-select-button form-location-button ${modalData.locationId === loc.location_id.toString() ? 'form-select-button--selected' : ''}`}
+                    >
+                      {loc.name}
+                    </div>
+                  ))}
+                {locations.filter(loc => loc.zones.includes(parseInt(modalData.zoneId))).length === 0 && (
+                  <div className="form-text-muted form-text-muted--italic">
+                    No locations support this zone
+                  </div>
+                )}
+              </div>
+              <div className="form-flex form-justify-start form-mt-8">
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Handle add location (placeholder for now)
+                    console.log('Add new location clicked');
+                  }}
+                  className="form-btn form-btn--outline"
+                >
+                  + Add New Location
+                </button>
+              </div>
+            </div>
+            <div className="form-flex form-flex-column form-gap-8">
+              <label className="form-label">Comments (optional):</label>
+              <input
+                type="text"
+                name="comments"
+                value={modalData.comments}
+                onChange={(e) => setModalData({ ...modalData, comments: e.target.value })}
+                className="form-input form-input--full-width"
+                placeholder="Any additional notes..."
+              />
+            </div>
+            {/* Success/Error Message Display */}
+            {saveStatus !== 'idle' && (
+              <div className={`form-alert ${saveStatus === 'success' ? 'form-alert--success' : 'form-alert--error'}`}>
+                {saveMessage}
+              </div>
+            )}
+            
+            <div className="form-actions form-actions--end">
+              <button
+                type="button"
+                onClick={() => { 
+                  onCancel?.();
+                  setModalData({ quantity: '', emitterSize: '', zoneId: '', locationId: '', comments: '' });
+                }}
+                className="form-btn form-btn--secondary form-btn--flex"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={!modalData.zoneId || !modalData.locationId || !modalData.quantity || !modalData.emitterSize || saveStatus === 'saving'}
+                className="form-btn form-btn--primary form-btn--flex"
+              >
+                {saveStatus === 'saving' ? 'Placing...' : 'Place Plant'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
       
       {/* Zone Form Overlay */}

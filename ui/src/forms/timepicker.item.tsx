@@ -70,27 +70,27 @@ const TimePicker: React.FC<TimePickerProps> = ({
 
   return (
     <div ref={timePickerRef} className="form-time-picker-modal form-time-picker--compact">
-      {/* Time Mode Toggle */}
-      <div className="form-time-mode-toggle">
-        <div
-          className={`form-toggle ${solarMode ? 'form-toggle--solar' : ''}`}
-          onClick={() => {
-            setSolarMode(!solarMode);
-            setSelectedSolarTime(null);
-          }}
-        >
-          <div className="form-toggle-slider"></div>
-        </div>
-        <span className="form-toggle-label">
-          {solarMode ? 'Solar' : 'Clock'}
-        </span>
-      </div>
-
       {solarMode ? (
         <>
-          {/* Solar Time Selection */}
-          <div className="form-text-accent form-text-center form-font-600 form-text-12">
-            Select Solar Time
+          {/* Solar Time Selection Header */}
+          <div className="form-flex form-gap-12 form-justify-between form-items-center form-mb-12">
+            <p className="form-section-title">
+              Select Solar Time
+            </p>
+            <div className="form-flex form-gap-8 form-items-center">
+              <div
+                className={`form-toggle ${solarMode ? 'form-toggle--solar' : ''}`}
+                onClick={() => {
+                  setSolarMode(!solarMode);
+                  setSelectedSolarTime(null);
+                }}
+              >
+                <div className={`form-toggle-handle ${solarMode ? 'form-toggle-handle--active' : 'form-toggle-handle--inactive'}`} />
+              </div>
+              <span className="form-toggle-label">
+                {solarMode ? 'Solar' : 'Clock'}
+              </span>
+            </div>
           </div>
           
           <div className="form-solar-time-container">
@@ -142,14 +142,15 @@ const TimePicker: React.FC<TimePickerProps> = ({
                 </div>
 
                 {/* Custom Offset Input */}
-                <div className="form-flex form-justify-center">
+                <div className="form-data-field">
+                  <label className="form-section-title">Custom Offset (minutes)</label>
                   <input
                     type="number"
-                    placeholder="Custom ±min"
+                    placeholder="±120"
                     min="-120"
                     max="120"
-                    className="form-input form-input--custom"
-                    style={{ width: '120px' }}
+                    className="form-data-input"
+                    style={{ width: '80px' }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         const offset = e.currentTarget.value;
@@ -163,10 +164,10 @@ const TimePicker: React.FC<TimePickerProps> = ({
                 </div>
                 
                 {/* Action Buttons */}
-                <div className="form-flex form-justify-center form-gap-4">
+                <div className="form-time-picker-buttons">
                   <button
                     onClick={handleCancel}
-                    className="form-btn form-btn--cancel form-btn--small form-btn--equal-width"
+                    className="btn-cancel"
                   >
                     Cancel
                   </button>
@@ -179,7 +180,7 @@ const TimePicker: React.FC<TimePickerProps> = ({
                         handleSolarDone(`${sign}${offset}`);
                       }
                     }}
-                    className="form-btn form-btn--outline form-btn--small form-btn--equal-width"
+                    className="btn-done"
                   >
                     Done
                   </button>
@@ -190,9 +191,25 @@ const TimePicker: React.FC<TimePickerProps> = ({
         </>
       ) : (
         <>
-          {/* Clock Time Selection */}
-          <div className="form-text-accent form-text-center form-font-600 form-text-12">
-            Clock Time
+          {/* Clock Time Selection Header */}
+          <div className="form-flex form-gap-12 form-justify-between form-items-center form-mb-12">
+            <p className="form-section-title">
+              Clock Time
+            </p>
+            <div className="form-flex form-gap-8 form-items-center">
+              <div
+                className={`form-toggle ${solarMode ? 'form-toggle--solar' : ''}`}
+                onClick={() => {
+                  setSolarMode(!solarMode);
+                  setSelectedSolarTime(null);
+                }}
+              >
+                <div className={`form-toggle-handle ${solarMode ? 'form-toggle-handle--active' : 'form-toggle-handle--inactive'}`} />
+              </div>
+              <span className="form-toggle-label">
+                {solarMode ? 'Solar' : 'Clock'}
+              </span>
+            </div>
           </div>
           
           <div className="form-flex form-gap-4 form-justify-center">
@@ -236,16 +253,16 @@ const TimePicker: React.FC<TimePickerProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="form-flex form-justify-center form-done-button form-gap-4">
+          <div className="form-time-picker-buttons">
             <button
               onClick={handleCancel}
-              className="form-btn form-btn--cancel form-btn--small form-btn--equal-width"
+              className="btn-cancel"
             >
               Cancel
             </button>
             <button
               onClick={handleClockDone}
-              className="form-btn form-btn--outline form-btn--small form-btn--equal-width"
+              className="btn-done"
             >
               Done
             </button>

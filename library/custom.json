@@ -2,33 +2,62 @@
   "Book Name": "Custom Plants",
   "plants": [
     {
-      "alternative_name": "Williams",
-      "common_name": "Bartlett Pear",
-      "compatible_watering_frequencies": [
-        "W2"
-      ],
-      "compatible_watering_times": [
-        "SUNRISE"
-      ],
-      "fruiting_period": "Late August to September",
-      "growth_type": "Perennial",
-      "latin_name": "Pyrus communis 'Bartlett'",
-      "planting_time": "Early Spring or Fall",
-      "preferred_time": [
-        "SUNRISE+30"
-      ],
-      "root_area_sqft": 26,
-      "soil_preference": "Well-drained, loamy, pH 6.0-7.0",
-      "spacing_inches": 144,
-      "sun_exposure": "Full Sun",
-      "tolerance_max_in_week": 2.7,
-      "tolerance_min_in_week": 0.95,
-      "usda_zones": "5-8",
-      "water_optimal_in_week": 1.6,
+      "plant_id": 1,
+      "common_name": "Blackberry",
+      "alternative_name": "",
+      "latin_name": "Rubus fruticosus",
       "watering_frequency": [
         "W1"
       ],
-      "plant_id": 1
+      "compatible_watering_frequencies": [
+        "W2"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 4.05,
+      "water_optimal_in_week": 1,
+      "tolerance_min_in_week": 0.7,
+      "tolerance_max_in_week": 1.3,
+      "usda_zones": "5-9",
+      "soil_preference": "Loam, pH 5.5-6.5",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Jul-Aug",
+      "planting_time": "Early Spring",
+      "spacing_inches": 36,
+      "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 2,
+      "common_name": "Blueberry, Highbush",
+      "alternative_name": "",
+      "latin_name": "Vaccinium corymbosum",
+      "watering_frequency": [
+        "W2"
+      ],
+      "compatible_watering_frequencies": [
+        "W3"
+      ],
+      "preferred_time": [
+        "SUNRISE+30"
+      ],
+      "compatible_watering_times": [
+        "SUNSET-60"
+      ],
+      "root_area_sqft": 7.2,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.05,
+      "tolerance_max_in_week": 1.95,
+      "usda_zones": "4-7",
+      "soil_preference": "Acidic, pH 4-5.5",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "Jun-Aug",
+      "planting_time": "Early Spring",
+      "spacing_inches": 48,
+      "growth_type": "Perennial"
     }
   ]
 }

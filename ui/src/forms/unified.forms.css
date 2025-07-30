@@ -1,0 +1,241 @@
+/* ========================================
+   UNIFIED FORMS CSS - Human-Readable Design System
+   ========================================
+   
+   AGENT INSTRUCTIONS:
+   This file contains a complete, self-contained form design system.
+   Every class name is human-readable and describes exactly what it does.
+   Each class includes complete documentation for usage and behavior.
+   
+   NAMING PHILOSOPHY:
+   - "red-cancel-button" instead of "btn-red" 
+   - "blue-section-title" instead of "title-accent"
+   - "main-form-container" instead of "container-primary"
+   
+   KEY PRINCIPLES:
+   1. SELF-CONTAINED: Each class includes all needed styles
+   2. NO DEPENDENCIES: Classes don't reference other CSS files
+   3. HUMAN-READABLE: Names describe function, not implementation
+   4. WELL-DOCUMENTED: Every class explains usage, behavior, and examples
+   
+   USAGE PATTERN:
+   1. Read the section headers to find what you need
+   2. Read the class documentation to understand usage
+   3. Copy the exact class name from the documentation
+   4. No need to combine classes - each is complete
+   
+   JAVASCRIPT INTEGRATION:
+   Some classes require JavaScript (marked with JAVASCRIPT: in comments)
+   - main-form-container: Needs scrollbar position updates
+   - smart-manual-toggle: Needs 'toggle-handle-active' class management
+   
+   ======================================== */
+
+/* ========================================
+   CONTAINERS & LAYOUT
+   ======================================== */
+
+/* Main Form Container - Complete self-contained modal box
+   USAGE: Wrap entire form content - <div class="main-form-container">
+   FEATURES: Rounded corners, shadow, custom scrollbar, responsive sizing
+   REPLACES: form-container, form-container--small
+   JAVASCRIPT: Requires scrollbar update script for thumb positioning */
+.main-form-container {
+  background: var(--form-bg-primary);
+  border-radius: 16px;
+  padding: 24px;
+  min-width: 500px;
+  max-width: 700px;
+  max-height: 80vh;
+  color: var(--form-text-primary);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  
+  /* Hide default scrollbar */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+/* SCROLLBAR SYSTEM - Custom scrollbar that respects rounded corners
+   PROBLEM SOLVED: Browser scrollbars clip rounded corners and look inconsistent
+   HOW IT WORKS: Hide default scrollbar, create custom one with pseudo-elements */
+
+/* Hide webkit scrollbar - Cross-browser compatibility */
+.main-form-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Custom scrollbar track - Background rail for the scrollbar
+   USAGE: Automatically appears when content overflows container height
+   POSITION: Right side, inset 12px from edge, respects 30px rounded corner offset
+   APPEARANCE: Subtle transparent white background */
+.main-form-container::before {
+  content: '';
+  position: absolute;
+  top: 30px;      /* Offset from rounded corner */
+  right: 12px;    /* Inset from container edge */
+  bottom: 30px;   /* Offset from rounded corner */
+  width: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Custom scrollbar thumb - Moving indicator showing scroll position
+   USAGE: JavaScript controls position and size based on scroll state
+   POSITION: Dynamically updated via CSS custom properties
+   VARIABLES: 
+     --scrollbar-thumb-top: Vertical position (calculated by JS)
+     --scrollbar-thumb-height: Height based on content ratio (calculated by JS)
+     --scrollbar-opacity: 0 when not needed, 0.6 when scrollable */
+.main-form-container::after {
+  content: '';
+  position: absolute;
+  top: var(--scrollbar-thumb-top, 30px);
+  right: 12px;
+  width: 4px;
+  height: var(--scrollbar-thumb-height, 40px);
+  background: var(--form-text-muted);
+  border-radius: 2px;
+  opacity: var(--scrollbar-opacity, 0);
+  transition: opacity 0.2s;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.main-form-container:hover::after {
+  opacity: var(--scrollbar-opacity, 0);
+}
+
+/* ========================================
+   BUTTONS & INTERACTIVE ELEMENTS
+   ======================================== */
+
+/* Red Cancel Button - Self-contained dismiss/cancel action
+   USAGE: <button class="red-cancel-button">Cancel</button>
+   BEHAVIOR: Transparent with red border → Red fill on hover, border disappears
+   VISUAL: Matches red theme, shrink effect on hover for tactile feedback
+   REPLACES: form-btn--secondary, btn-cancel, unified-btn-red */
+.red-cancel-button {
+  /* Base button styles */
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 600;
+  flex: 0 0 auto;
+  outline: none;
+  
+  /* Secondary button styles (red) */
+  background: var(--form-btn-secondary-bg);
+  color: var(--form-btn-secondary-text);
+  border: 2px solid var(--form-btn-secondary-text);
+}
+
+.red-cancel-button:hover {
+  background: var(--form-btn-secondary-text);
+  color: var(--form-text-secondary);
+}
+
+.red-cancel-button:focus {
+  outline: none;
+}
+
+/* Blue Primary Button - Self-contained primary action
+   USAGE: <button class="blue-primary-button">Save</button>
+   BEHAVIOR: Blue fill → Darker blue on hover, grayed out when disabled
+   VISUAL: Prominent blue color for main actions, clear disabled state
+   REPLACES: form-btn--primary, btn-done, unified-btn-blue */
+.blue-primary-button {
+  /* Base button styles */
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 600;
+  flex: 0 0 auto;
+  outline: none;
+  
+  /* Primary button styles (blue) */
+  background: var(--form-btn-primary-bg);
+  color: var(--form-btn-primary-text);
+  border: none;
+}
+
+.blue-primary-button:hover:not(:disabled) {
+  background: var(--form-btn-primary-hover);
+}
+
+.blue-primary-button:disabled {
+  background: var(--form-btn-disabled-bg);
+  color: var(--form-btn-disabled-text);
+  cursor: not-allowed;
+}
+
+.blue-primary-button:focus {
+  outline: none;
+}
+
+/* ========================================
+   FORM CONTROLS & INPUTS
+   ======================================== */
+
+/* Smart Manual Toggle Slider - Self-contained on/off switch
+   USAGE: <div class="smart-manual-toggle"><div class="toggle-handle"></div></div>
+   BEHAVIOR: Handle slides left (off) or right (on) with smooth animation
+   JAVASCRIPT: Add 'toggle-handle-active' class to handle for right position
+   VISUAL: Gray background, white circular handle, smooth transitions
+   REPLACES: form-toggle, form-toggle-handle, unified-toggle-slider */
+.smart-manual-toggle {
+  width: 32px;
+  height: 16px;
+  background: var(--form-bg-tertiary);
+  border: 1px solid var(--form-border-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  position: relative;
+  transition: var(--form-transition);
+}
+
+.smart-manual-toggle .toggle-handle {
+  width: 12px;
+  height: 12px;
+  background: var(--form-text-primary);
+  border-radius: 50%;
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  transition: var(--form-transition);
+}
+
+.smart-manual-toggle .toggle-handle-active {
+  transform: translateX(16px);
+}
+
+/* ========================================
+   TYPOGRAPHY & TEXT ELEMENTS
+   ======================================== */
+
+/* Blue Section Title - Self-contained section header
+   USAGE: <h3 class="blue-section-title">Select Quantity:</h3>
+   APPEARANCE: Blue accent color, bold weight, uppercase, small size with letter spacing
+   VISUAL: Creates consistent section breaks, matches blue theme
+   REPLACES: form-section-title, unified-section-title */
+.blue-section-title {
+  margin: 0 0 6px 0;
+  color: var(--form-text-accent);
+  font-weight: 700;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+} 

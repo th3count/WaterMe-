@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ZoneForm, LocationForm, SmartPlacementForm, LibraryForm } from './forms';
+import TimePicker from './forms/timepicker.item';
+import DurationPicker from './forms/durationpicker.item';
 
 interface FormInfo {
   name: string;
@@ -41,12 +43,42 @@ const FORMS_LIST = [
   }
 ];
 
+// Picker components list
+const PICKERS_LIST = [
+  {
+    name: 'Time Picker',
+    file: 'timepicker.item.tsx',
+    description: 'Time picker component for selecting watering times',
+    component: TimePicker,
+    defaultProps: { 
+      isVisible: true,
+      onTimeSelect: (time: string) => console.log('Time selected:', time),
+      onCancel: () => console.log('Time picker cancelled'),
+      initialSolarMode: true
+    }
+  },
+  {
+    name: 'Duration Picker',
+    file: 'durationpicker.item.tsx',
+    description: 'Duration picker component for selecting watering duration',
+    component: DurationPicker,
+    defaultProps: { 
+      value: '00:20:00',
+      onChange: (duration: string) => console.log('Duration changed:', duration),
+      onClose: () => console.log('Duration picker closed'),
+      isVisible: true
+    }
+  }
+];
+
 // Form component mapping
 const FORM_COMPONENTS: Record<string, React.ComponentType<any>> = {
   'zones.form.tsx': ZoneForm,
   'locations.addlocation.tsx': LocationForm,
   'garden.form.tsx': SmartPlacementForm,
-  'library.form.tsx': LibraryForm
+  'library.form.tsx': LibraryForm,
+  'timepicker.item.tsx': TimePicker,
+  'durationpicker.item.tsx': DurationPicker
 };
 
 // Default props for each form
@@ -84,8 +116,20 @@ const FORM_DEFAULT_PROPS: Record<string, any> = {
     },
   'library.form.tsx': {
     plant_id: 1,
-    library_book: 'vegetables',
+    library_book: 'fruitbushes.json',
     onClose: () => { console.log('Demo close - Library Form'); }
+  },
+  'timepicker.item.tsx': {
+    isVisible: true,
+    onTimeSelect: (time: string) => console.log('Time selected:', time),
+    onCancel: () => console.log('Time picker cancelled'),
+    initialSolarMode: true
+  },
+  'durationpicker.item.tsx': {
+    value: '00:20:00',
+    onChange: (duration: string) => console.log('Duration changed:', duration),
+    onClose: () => console.log('Duration picker closed'),
+    isVisible: true
   }
 };
 
@@ -94,7 +138,9 @@ const FORM_DESCRIPTIONS: Record<string, string> = {
       'zones.form.tsx': 'Form for configuring irrigation zones',
   'locations.addlocation.tsx': 'Form for adding/editing garden locations',
   'garden.form.tsx': 'Form for placing plants from library into garden zones',
-  'library.form.tsx': 'Form for viewing and editing plant details from library'
+  'library.form.tsx': 'Form for viewing and editing plant details from library',
+  'timepicker.item.tsx': 'Time picker component for selecting watering times',
+  'durationpicker.item.tsx': 'Duration picker component for selecting watering duration'
 };
 
 // Form display names
@@ -102,7 +148,9 @@ const FORM_NAMES: Record<string, string> = {
       'zones.form.tsx': 'Zone Configuration Form',
   'locations.addlocation.tsx': 'Location Form',
   'garden.form.tsx': 'Smart Placement Form',
-  'library.form.tsx': 'Library Plant Form'
+  'library.form.tsx': 'Library Plant Form',
+  'timepicker.item.tsx': 'Time Picker',
+  'durationpicker.item.tsx': 'Duration Picker'
 };
 
 export default function FormsUI() {
@@ -113,7 +161,8 @@ export default function FormsUI() {
   // Generate forms list dynamically
   useEffect(() => {
     const generateFormsList = (): FormInfo[] => {
-      return FORMS_LIST.map(form => ({
+      const allForms = [...FORMS_LIST, ...PICKERS_LIST];
+      return allForms.map(form => ({
         name: FORM_NAMES[form.file] || form.name,
         file: form.file,
         description: FORM_DESCRIPTIONS[form.file] || form.description,
@@ -157,18 +206,18 @@ export default function FormsUI() {
           margin: '0 0 8px 0',
           fontSize: '28px'
         }}>
-          📝 Forms Manager
+          📝 Forms & Pickers Manager
         </h1>
         <p style={{
           color: '#bdbdbd',
           margin: 0,
           fontSize: '16px'
         }}>
-          View and test all popup forms used throughout the application
+          View and test all popup forms and picker components used throughout the application
         </p>
       </div>
 
-      {/* Forms List */}
+      {/* Forms & Pickers List */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
@@ -283,7 +332,7 @@ export default function FormsUI() {
           margin: '0 0 16px 0',
           fontSize: '18px'
         }}>
-          📚 Form Usage Guide
+          📚 Forms & Pickers Usage Guide
         </h3>
         <div style={{
           display: 'grid',
@@ -297,7 +346,7 @@ export default function FormsUI() {
               fontSize: '14px',
               fontWeight: 600
             }}>
-              🎯 Where Forms Are Used:
+              🎯 Where Forms & Pickers Are Used:
             </h4>
             <ul style={{
               color: '#bdbdbd',
@@ -309,6 +358,8 @@ export default function FormsUI() {
               <li><strong>locations.addlocation.tsx</strong> - Locations page "Add Location"</li>
               <li><strong>garden.form.tsx</strong> - Garden page, select plant from library</li>
               <li><strong>library.form.tsx</strong> - Library page, click on any plant</li>
+              <li><strong>timepicker.item.tsx</strong> - Used in zones and library forms for time selection</li>
+              <li><strong>durationpicker.item.tsx</strong> - Used in zones form for duration selection</li>
             </ul>
           </div>
           <div>
@@ -391,6 +442,39 @@ export default function FormsUI() {
             {(() => {
               try {
                 console.log('Attempting to render form:', selectedForm.name, selectedForm.component);
+                
+                // Special handling for picker components
+                if (selectedForm.file.includes('picker')) {
+                  return (
+                    <div style={{
+                      position: 'relative',
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'var(--form-bg-primary)',
+                      padding: '40px'
+                    }}>
+                      <div style={{
+                        position: 'relative',
+                        background: 'var(--form-bg-secondary)',
+                        border: '1px solid var(--form-border-primary)',
+                        borderRadius: '8px',
+                        padding: '20px',
+                        minWidth: '300px',
+                        minHeight: '200px'
+                      }}>
+                        {React.createElement(selectedForm.component, {
+                          ...selectedForm.defaultProps,
+                          onCancel: handleClosePreview
+                        })}
+                      </div>
+                    </div>
+                  );
+                }
+                
+                // Regular form components
                 return React.createElement(selectedForm.component, {
                   ...selectedForm.defaultProps,
                   onCancel: handleClosePreview

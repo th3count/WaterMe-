@@ -26,18 +26,5 @@
       "zone_selection": "smart",
       "emitter_sizing": "smart"
     }
-  },
-  "3": {
-    "plant_id": 1,
-    "library_book": "fruitbushes",
-    "zone_id": 2,
-    "location_id": 2,
-    "quantity": 1,
-    "emitter_size": 4,
-    "comments": "",
-    "smart_overrides": {
-      "zone_selection": "smart",
-      "emitter_sizing": "smart"
-    }
   }
 }

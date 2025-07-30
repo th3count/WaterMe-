@@ -75,8 +75,20 @@ else:
 app = Flask(__name__)
 CORS(app, resources={
     r"/api/*": {
-        "origins": "*",
+        "origins": ["http://192.168.0.100:3000", "http://localhost:3000"],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Connection", "Authorization"],
+        "supports_credentials": False
+    },
+    r"/config/*": {
+        "origins": ["http://192.168.0.100:3000", "http://localhost:3000"],
+        "methods": ["GET", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Connection", "Authorization"],
+        "supports_credentials": False
+    },
+    r"/library/*": {
+        "origins": ["http://192.168.0.100:3000", "http://localhost:3000"],
+        "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type", "Connection", "Authorization"],
         "supports_credentials": False
     }
@@ -85,9 +97,8 @@ CORS(app, resources={
 @app.after_request
 def after_request(response):
     """Add CORS headers to all responses"""
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Connection, Authorization')
+    # Flask-CORS is already handling CORS headers, so we don't need to add them manually
+    # This prevents duplicate headers that cause CORS errors
     return response
 
 SETTINGS_PATH = os.path.join(os.path.dirname(__file__), "config", "settings.cfg")
@@ -1217,6 +1228,46 @@ def add_to_custom_library():
             
     except Exception as e:
         log_event(error_logger, 'ERROR', f'Custom plant addition exception', error=str(e))
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/library/custom/update/<int:plant_id>', methods=['PUT'])
+def update_custom_plant(plant_id):
+    from core.library import update_plant_in_custom_library
+    
+    try:
+        plant_data = request.json
+        
+        if not plant_data:
+            log_event(user_logger, 'WARN', f'Custom plant update failed - invalid data', plant_id=plant_id)
+            return jsonify({'error': 'Invalid plant data'}), 400
+        
+        result = update_plant_in_custom_library(plant_id, plant_data)
+        
+        if 'error' in result:
+            return jsonify(result), 500
+        else:
+            return jsonify(result)
+            
+    except Exception as e:
+        log_event(error_logger, 'ERROR', f'Custom plant update exception', plant_id=plant_id, error=str(e))
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/library/custom/delete/<int:plant_id>', methods=['DELETE'])
+def delete_custom_plant(plant_id):
+    from core.library import delete_plant_from_custom_library
+    
+    try:
+        result = delete_plant_from_custom_library(plant_id)
+        
+        if 'error' in result:
+            log_event(user_logger, 'WARN', f'Custom plant deletion failed', plant_id=plant_id, error=result['error'])
+            return jsonify(result), 500
+        else:
+            log_event(user_logger, 'INFO', f'Custom plant deleted', plant_id=plant_id)
+            return jsonify(result)
+            
+    except Exception as e:
+        log_event(error_logger, 'ERROR', f'Custom plant deletion exception', plant_id=plant_id, error=str(e))
         return jsonify({'error': str(e)}), 500
 
 @app.route('/library/custom.json', methods=['POST'])

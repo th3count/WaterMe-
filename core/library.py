@@ -118,6 +118,50 @@ def update_custom_library(custom_data: Dict[str, Any]) -> bool:
     """Update the entire custom library"""
     return save_json_file(CUSTOM_LIBRARY_PATH, custom_data)
 
+def update_plant_in_custom_library(plant_id: int, plant_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Update a specific plant in the custom library
+    
+    Args:
+        plant_id: ID of the plant to update
+        plant_data: Updated plant data
+        
+    Returns:
+        Dict with status and message
+    """
+    try:
+        custom_data = get_custom_library()
+        
+        # Find and update the plant
+        plant_found = False
+        for i, plant in enumerate(custom_data['plants']):
+            if plant.get('plant_id') == plant_id:
+                # Update the plant data while preserving the plant_id
+                plant_data['plant_id'] = plant_id  # Ensure plant_id doesn't change
+                custom_data['plants'][i] = plant_data
+                plant_found = True
+                break
+        
+        if not plant_found:
+            log_event(user_logger, 'WARN', f'Custom plant update failed - plant not found', plant_id=plant_id)
+            return {'error': 'Plant not found'}
+        
+        # Save the updated custom library
+        if save_json_file(CUSTOM_LIBRARY_PATH, custom_data):
+            log_event(user_logger, 'INFO', f'Custom plant updated', 
+                     plant_id=plant_id, 
+                     common_name=plant_data.get('common_name', ''))
+            return {'status': 'success', 'message': 'Plant updated successfully'}
+        else:
+            log_event(error_logger, 'ERROR', f'Custom plant update failed - save error', 
+                     plant_id=plant_id, 
+                     common_name=plant_data.get('common_name', ''))
+            return {'error': 'Failed to save custom library'}
+            
+    except Exception as e:
+        log_event(error_logger, 'ERROR', f'Custom plant update exception', plant_id=plant_id, error=str(e))
+        return {'error': str(e)}
+
 def delete_plant_from_custom_library(plant_id: int) -> Dict[str, Any]:
     """
     Delete a plant from the custom library

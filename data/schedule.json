@@ -13,18 +13,7 @@
     ]
   },
   "2": {
-    "mode": "smart",
-    "period": "W",
-    "cycles": 2,
-    "times": [
-      {
-        "start_time": "06:00",
-        "duration": "00:06:18",
-        "value": "06:00"
-      }
-    ],
-    "startDay": "2025-07-28",
-    "comment": ""
+    "mode": "disabled"
   },
   "3": {
     "mode": "disabled"
