@@ -2585,3 +2585,21 @@
 [2025-07-28 12:30:46] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=True optimal_zone=1
 [2025-07-28 12:30:46] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruitbushes.json common_name=None
 [2025-07-28 12:30:46] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=True optimal_zone=1
+[2025-07-28 12:37:35] [INFO] [PLANTS] Plant map loaded | instance_count=3
+[2025-07-28 12:37:35] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-07-28 12:37:35] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-07-28 12:37:35] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-07-28 12:37:35] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=1
+[2025-07-28 12:37:35] [INFO] [PLANTS] Plant library loaded | total_plants=91
+[2025-07-28 12:37:35] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-07-28 12:37:38] [INFO] [PLANTS] Zone duration calculated | zone_id=1 total_plants=2 total_seconds=2018.52 average_seconds=1009.26 calculated_duration=00:16:49 plant_count=2
+[2025-07-28 12:37:38] [INFO] [PLANTS] Zone duration calculated | zone_id=2 total_plants=1 total_seconds=378.4725 average_seconds=378.4725 calculated_duration=00:06:18 plant_count=1
+[2025-07-29 20:13:04] [INFO] [PLANTS] Plant map loaded | instance_count=3
+[2025-07-29 20:13:04] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-07-29 20:13:04] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-07-29 20:13:04] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-07-29 20:13:04] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=1
+[2025-07-29 20:13:04] [INFO] [PLANTS] Plant library loaded | total_plants=91
+[2025-07-29 20:13:04] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-07-29 20:13:09] [INFO] [PLANTS] Zone duration calculated | zone_id=1 total_plants=2 total_seconds=2018.52 average_seconds=1009.26 calculated_duration=00:16:49 plant_count=2
+[2025-07-29 20:13:09] [INFO] [PLANTS] Zone duration calculated | zone_id=2 total_plants=1 total_seconds=378.4725 average_seconds=378.4725 calculated_duration=00:06:18 plant_count=1
