@@ -6,13 +6,15 @@ interface DurationPickerProps {
   onChange: (duration: string) => void;
   onClose: () => void;
   isVisible: boolean;
+  isModal?: boolean;
 }
 
 const DurationPicker: React.FC<DurationPickerProps> = ({
   value,
   onChange,
   onClose,
-  isVisible
+  isVisible,
+  isModal = false
 }) => {
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(20);
@@ -59,26 +61,37 @@ const DurationPicker: React.FC<DurationPickerProps> = ({
 
   const handleHoursChange = (newHours: number) => {
     setHours(newHours);
-    const newDuration = `${newHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    onChange(newDuration);
   };
 
   const handleMinutesChange = (newMinutes: number) => {
     setMinutes(newMinutes);
-    const newDuration = `${hours.toString().padStart(2, '0')}:${newMinutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    onChange(newDuration);
   };
 
   const handleSecondsChange = (newSeconds: number) => {
     setSeconds(newSeconds);
-    const newDuration = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${newSeconds.toString().padStart(2, '0')}`;
+  };
+
+  const handleDone = () => {
+    const newDuration = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     onChange(newDuration);
+    onClose();
   };
 
   if (!isVisible) return null;
 
   return (
-    <div ref={durationPickerRef} className="form-duration-picker-modal">
+    <div 
+      ref={durationPickerRef} 
+      className={`form-duration-picker-modal ${isModal ? 'form-duration-picker--modal' : ''}`}
+      style={isModal ? {
+        position: 'static',
+        top: 'auto',
+        right: 'auto',
+        zIndex: 'auto',
+        width: '100%',
+        maxWidth: 'none'
+      } : {}}
+    >
       <div className="form-text-accent form-text-center form-font-600 form-mb-12 form-text-14">
         Set Duration
       </div>
@@ -136,10 +149,16 @@ const DurationPicker: React.FC<DurationPickerProps> = ({
         </div>
       </div>
       
-      <div className="form-flex form-justify-center form-done-button">
+      <div className="form-flex form-gap-8 form-justify-center form-done-button">
         <button
           onClick={onClose}
-          className="form-btn form-btn--outline form-btn--small"
+          className="btn-cancel"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleDone}
+          className="btn-done"
         >
           Done
         </button>

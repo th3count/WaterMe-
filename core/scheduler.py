@@ -1242,39 +1242,14 @@ class WateringScheduler:
             Dict with calculation results
         """
         try:
-            print(f"Scheduler: Starting duration calculation for zone {zone_id}")
+            print(f"Scheduler: Starting smart duration calculation for zone {zone_id}")
             
-            # Import plant manager for duration calculation
-            from .plant_manager import plant_manager
-            print("Scheduler: Plant manager imported successfully")
-            
-            # Calculate the optimal duration
-            result = plant_manager.calculate_optimal_zone_duration(zone_id)
-            print(f"Scheduler: Plant manager calculation result: {result}")
-            
-            if result.get('success') and result.get('calculated_duration'):
-                # Update the schedule with the new duration
-                self._update_zone_duration_in_schedule(zone_id, result['calculated_duration'])
-                
-                # Reload the schedule to reflect changes
-                self.reload_schedule()
-                
-                log_event(self.watering_logger, 'INFO', 'Zone duration updated with smart calculation', 
-                         zone_id=zone_id, 
-                         new_duration=result['calculated_duration'],
-                         total_plants=result.get('total_plants', 0))
+            # Use the new smart duration calculation method (not mock mode - will update schedule)
+            result = self.calculate_smart_zone_duration(zone_id, mock_mode=False)
+            print(f"Scheduler: Smart calculation result: {result}")
             
             return result
             
-        except ImportError as e:
-            print(f"Scheduler: Import error in calculate_and_update_zone_duration: {e}")
-            log_event(self.error_logger, 'ERROR', 'Import error in zone duration calculation', 
-                     zone_id=zone_id, error=str(e))
-            return {
-                'success': False,
-                'error': f'Import error: {str(e)}',
-                'calculated_duration': '00:20:00'  # Default 20 minutes
-            }
         except Exception as e:
             import traceback
             print(f"Scheduler: Error in calculate_and_update_zone_duration: {e}")
@@ -1888,6 +1863,663 @@ class WateringScheduler:
                         pass
         
         return False 
+    
+    def calculate_smart_zone_duration(self, zone_id: int, mock_mode: bool = False) -> Dict[str, Any]:
+        """
+        Calculate optimal watering duration for a zone based on installed plants
+        
+        Args:
+            zone_id: The zone ID to calculate duration for
+            mock_mode: If True, only calculate without updating schedule
+            
+        Returns:
+            Dict with calculation results and new duration
+        """
+        try:
+            # Debug logging
+            self._setup_logging()
+            log_event(self.watering_logger, 'DEBUG', 'Starting smart zone duration calculation', 
+                     zone_id=zone_id, mock_mode=mock_mode)
+            
+            # Check if zone is in smart mode
+            zone_mode = self._get_zone_mode_from_schedule(zone_id)
+            if zone_mode != 'smart':
+                log_event(self.watering_logger, 'WARNING', 'Zone is not in smart mode, skipping duration calculation', 
+                         zone_id=zone_id, zone_mode=zone_mode)
+                return {
+                    'success': False,
+                    'error': f'Zone is in {zone_mode} mode, smart calculation not applicable',
+                    'calculated_duration': '00:20:00'  # Default 20 minutes
+                }
+            
+            # Get all plants in this zone from map.json
+            zone_plants = self._get_zone_plants_from_map(zone_id)
+            log_event(self.watering_logger, 'DEBUG', 'Found plants in zone', 
+                     zone_id=zone_id, plant_count=len(zone_plants))
+            
+            if not zone_plants:
+                log_event(self.watering_logger, 'WARNING', 'No plants found in zone for duration calculation', zone_id=zone_id)
+                return {
+                    'success': False,
+                    'error': 'No plants found in zone',
+                    'calculated_duration': '00:20:00'  # Default 20 minutes
+                }
+            
+            total_seconds = 0
+            total_plants = 0
+            plant_calculations = []
+            
+            for plant_instance in zone_plants:
+                instance_id = plant_instance['instance_id']
+                plant_id = plant_instance['plant_id']
+                library_book = plant_instance['library_book']
+                emitter_size = plant_instance.get('emitter_size', 4.0)  # Default 4 GPH
+                quantity = plant_instance.get('quantity', 1)
+                
+                # Get plant library data
+                plant_library_data = self._get_plant_library_data(plant_id, library_book)
+                if not plant_library_data:
+                    log_event(self.watering_logger, 'WARNING', 'Plant not found in library for duration calculation', 
+                             instance_id=instance_id, plant_id=plant_id, library_book=library_book)
+                    continue
+                
+                # Debug logging for plant data
+                log_event(self.watering_logger, 'DEBUG', 'Processing plant for duration calculation', 
+                         instance_id=instance_id, plant_id=plant_id, library_book=library_book,
+                         plant_name=plant_library_data.get('common_name', 'Unknown'))
+                
+                # Get plant water requirements
+                water_optimal_in_week = plant_library_data.get('water_optimal_in_week', 0)
+                root_area_sqft = plant_library_data.get('root_area_sqft', 0)
+                
+                if water_optimal_in_week <= 0 or root_area_sqft <= 0:
+                    log_event(self.watering_logger, 'WARNING', 'Invalid plant water requirements for duration calculation', 
+                             instance_id=instance_id, plant_id=plant_id, 
+                             water_optimal_in_week=water_optimal_in_week, root_area_sqft=root_area_sqft)
+                    continue
+                
+                # Debug logging for water requirements
+                log_event(self.watering_logger, 'DEBUG', 'Plant water requirements', 
+                         instance_id=instance_id, plant_id=plant_id,
+                         water_optimal_in_week=water_optimal_in_week, root_area_sqft=root_area_sqft,
+                         emitter_size=emitter_size, quantity=quantity)
+                
+                # Calculate volume needed per plant (gallons)
+                volume_per_plant = water_optimal_in_week * root_area_sqft * 0.623
+                
+                # Calculate time needed per plant (seconds)
+                time_per_plant_seconds = (volume_per_plant / emitter_size) * 3600
+                
+                # Total time for all plants of this type
+                total_time_for_type = time_per_plant_seconds * quantity
+                
+                total_seconds += total_time_for_type
+                total_plants += quantity
+                
+                plant_calculations.append({
+                    'instance_id': instance_id,
+                    'plant_name': plant_library_data.get('common_name', 'Unknown'),
+                    'quantity': quantity,
+                    'emitter_size': emitter_size,
+                    'volume_per_plant': volume_per_plant,
+                    'time_per_plant_seconds': time_per_plant_seconds,
+                    'total_time_for_type': total_time_for_type
+                })
+            
+            if total_plants == 0:
+                log_event(self.watering_logger, 'WARNING', 'No valid plants found for duration calculation', 
+                         zone_id=zone_id, plant_count=len(zone_plants))
+                return {
+                    'success': False,
+                    'error': 'No valid plants found for duration calculation',
+                    'calculated_duration': '00:20:00'  # Default 20 minutes
+                }
+            
+            # Debug logging for final calculation
+            log_event(self.watering_logger, 'DEBUG', 'Duration calculation summary', 
+                     zone_id=zone_id, total_seconds=total_seconds, total_plants=total_plants)
+            
+            # Calculate average seconds per plant
+            average_seconds = total_seconds / total_plants
+            
+            # Convert to HH:mm:ss format
+            hours = int(average_seconds // 3600)
+            minutes = int((average_seconds % 3600) // 60)
+            seconds = int(average_seconds % 60)
+            
+            calculated_duration = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+            
+            # Update schedule if not in mock mode
+            if not mock_mode:
+                self._update_zone_duration_in_schedule(zone_id, calculated_duration)
+                self.reload_schedule()
+            
+            log_event(self.watering_logger, 'INFO', 'Smart zone duration calculated', 
+                     zone_id=zone_id, 
+                     total_plants=total_plants,
+                     total_seconds=total_seconds,
+                     average_seconds=average_seconds,
+                     calculated_duration=calculated_duration,
+                     plant_count=len(plant_calculations),
+                     mock_mode=mock_mode)
+            
+            return {
+                'success': True,
+                'calculated_duration': calculated_duration,
+                'total_seconds': total_seconds,
+                'average_seconds': average_seconds,
+                'total_plants': total_plants,
+                'plant_calculations': plant_calculations,
+                'mock_mode': mock_mode
+            }
+            
+        except Exception as e:
+            import traceback
+            self._setup_logging()
+            log_event(self.error_logger, 'ERROR', 'Failed to calculate smart zone duration', 
+                     zone_id=zone_id, error=str(e), traceback=traceback.format_exc())
+            return {
+                'success': False,
+                'error': f'Calculation failed: {str(e)}',
+                'calculated_duration': '00:20:00'  # Default 20 minutes
+            }
+    
+    def _get_zone_mode_from_schedule(self, zone_id: int) -> str:
+        """Get the current mode of a zone from schedule data"""
+        try:
+            if hasattr(self, 'schedule') and self.schedule:
+                zone_key = str(zone_id)
+                if zone_key in self.schedule:
+                    return self.schedule[zone_key].get('mode', 'disabled')
+            
+            # Fallback: Load schedule data directly
+            if os.path.exists(self.schedule_file):
+                with open(self.schedule_file, 'r') as f:
+                    schedule_data = json.load(f)
+                
+                zone_key = str(zone_id)
+                if zone_key in schedule_data:
+                    return schedule_data[zone_key].get('mode', 'disabled')
+            
+            return 'disabled'  # Default if zone not found
+        except Exception as e:
+            self._setup_logging()
+            log_event(self.error_logger, 'ERROR', 'Failed to get zone mode', 
+                     zone_id=zone_id, error=str(e))
+            return 'disabled'
+    
+    def _get_zone_plants_from_map(self, zone_id: int) -> List[Dict[str, Any]]:
+        """Get all plants in a specific zone from map.json"""
+        try:
+            map_file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "map.json")
+            zone_plants = []
+            
+            if os.path.exists(map_file_path):
+                with open(map_file_path, 'r', encoding='utf-8') as f:
+                    map_data = json.load(f)
+                
+                for instance_id, plant_data in map_data.items():
+                    if plant_data.get('zone_id') == zone_id:
+                        zone_plants.append({
+                            'instance_id': instance_id,
+                            **plant_data
+                        })
+            
+            return zone_plants
+        except Exception as e:
+            self._setup_logging()
+            log_event(self.error_logger, 'ERROR', 'Failed to get zone plants from map', 
+                     zone_id=zone_id, error=str(e))
+            return []
+    
+    def _get_plant_library_data(self, plant_id: int, library_book: str) -> Optional[Dict[str, Any]]:
+        """Get plant library data by plant_id and library_book"""
+        try:
+            library_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "library")
+            library_file = f"{library_book}.json" if not library_book.endswith('.json') else library_book
+            library_path = os.path.join(library_dir, library_file)
+            
+            if os.path.exists(library_path):
+                with open(library_path, 'r', encoding='utf-8') as f:
+                    library_data = json.load(f)
+                
+                if 'plants' in library_data:
+                    for plant in library_data['plants']:
+                        if plant.get('plant_id') == plant_id:
+                            return plant
+            
+            return None
+        except Exception as e:
+            self._setup_logging()
+            log_event(self.error_logger, 'ERROR', 'Failed to get plant library data', 
+                     plant_id=plant_id, library_book=library_book, error=str(e))
+            return None
+    
+    def calculate_smart_zone_start_times(self, zone_id: int, mock_mode: bool = False, target_date: datetime = None) -> Dict[str, Any]:
+        """
+        Calculate optimal watering start times for a zone based on plant time preferences
+        
+        Args:
+            zone_id: The zone ID to calculate start times for
+            mock_mode: If True, only calculate without updating schedule
+            target_date: Date to calculate solar times for (defaults to tomorrow)
+            
+        Returns:
+            Dict with calculation results and optimal start times
+        """
+        try:
+            # Setup logging
+            self._setup_logging()
+            log_event(self.watering_logger, 'DEBUG', 'Starting smart zone start time calculation', 
+                     zone_id=zone_id, mock_mode=mock_mode)
+            
+            # Check if zone is in smart mode
+            zone_mode = self._get_zone_mode_from_schedule(zone_id)
+            if zone_mode != 'smart':
+                log_event(self.watering_logger, 'WARNING', 'Zone is not in smart mode, skipping start time calculation', 
+                         zone_id=zone_id, zone_mode=zone_mode)
+                return {
+                    'success': False,
+                    'error': f'Zone is in {zone_mode} mode, smart calculation not applicable',
+                    'calculated_times': [{'start_time': '06:00'}]  # Default morning time
+                }
+            
+            # Get zone cycle count for multi-cycle logic
+            zone_cycles = self._get_zone_cycles(zone_id)
+            log_event(self.watering_logger, 'DEBUG', 'Zone cycle count', zone_id=zone_id, cycles=zone_cycles)
+            
+            # Use target date or tomorrow for solar calculations
+            if target_date is None:
+                target_date = self.get_current_time() + timedelta(days=1)
+            
+            # Get solar times for the target date
+            solar_times = self._get_solar_times(target_date)
+            if not solar_times:
+                log_event(self.watering_logger, 'ERROR', 'Failed to get solar times for start time calculation', 
+                         zone_id=zone_id, target_date=target_date.isoformat())
+                return {
+                    'success': False,
+                    'error': 'Failed to calculate solar times',
+                    'calculated_times': [{'start_time': '06:00'}]
+                }
+            
+            # Get plants in this zone
+            zone_plants = self._get_zone_plants_from_map(zone_id)
+            if not zone_plants:
+                log_event(self.watering_logger, 'WARNING', 'No plants found in zone for start time calculation', zone_id=zone_id)
+                return {
+                    'success': False,
+                    'error': 'No plants found in zone',
+                    'calculated_times': [{'start_time': '06:00'}]
+                }
+            
+            # Define solar periods
+            solar_periods = self._define_solar_periods(solar_times)
+            
+            # Collect and resolve plant time preferences
+            plant_time_data = []
+            for plant_instance in zone_plants:
+                plant_data = self._collect_plant_time_preferences(plant_instance, solar_times, target_date)
+                if plant_data:
+                    plant_time_data.append(plant_data)
+            
+            if not plant_time_data:
+                log_event(self.watering_logger, 'WARNING', 'No valid plant time preferences found', zone_id=zone_id)
+                return {
+                    'success': False,
+                    'error': 'No valid plant time preferences found',
+                    'calculated_times': [{'start_time': '06:00'}]
+                }
+            
+            # Classify times into solar periods and calculate weights
+            period_scores = self._calculate_period_scores(plant_time_data, solar_periods)
+            
+            # Apply late night penalty
+            period_scores = self._apply_period_penalties(period_scores)
+            
+            # Calculate optimal start times based on cycle count
+            calculated_times = self._calculate_optimal_start_times(period_scores, solar_periods, zone_cycles)
+            
+            # Update schedule if not in mock mode
+            if not mock_mode:
+                self._update_zone_start_times_in_schedule(zone_id, calculated_times)
+                self.reload_schedule()
+            
+            log_event(self.watering_logger, 'INFO', 'Smart zone start times calculated', 
+                     zone_id=zone_id, 
+                     calculated_times=calculated_times,
+                     total_plants=len(plant_time_data),
+                     mock_mode=mock_mode)
+            
+            return {
+                'success': True,
+                'calculated_times': calculated_times,
+                'period_scores': period_scores,
+                'solar_periods': solar_periods,
+                'plant_count': len(plant_time_data),
+                'zone_cycles': zone_cycles,
+                'mock_mode': mock_mode
+            }
+            
+        except Exception as e:
+            import traceback
+            self._setup_logging()
+            log_event(self.error_logger, 'ERROR', 'Failed to calculate smart zone start times', 
+                     zone_id=zone_id, error=str(e), traceback=traceback.format_exc())
+            return {
+                'success': False,
+                'error': f'Start time calculation failed: {str(e)}',
+                'calculated_times': [{'start_time': '06:00'}]
+            }
+    
+    def _define_solar_periods(self, solar_times: dict) -> Dict[str, tuple]:
+        """Define the 5 solar periods based on solar times"""
+        sunrise = solar_times.get('sunrise')
+        sunset = solar_times.get('sunset') 
+        zenith = solar_times.get('noon')  # This is actually zenith/solar noon
+        
+        if not all([sunrise, sunset, zenith]):
+            raise ValueError("Missing required solar times")
+        
+        periods = {
+            'early_morning': (
+                sunrise - timedelta(hours=2),  # 2 hours before sunrise
+                sunrise + timedelta(hours=4)   # 4 hours after sunrise
+            ),
+            'late_morning': (
+                sunrise + timedelta(hours=4),  # 4 hours after sunrise  
+                zenith                         # until zenith
+            ),
+            'afternoon': (
+                zenith,                        # zenith
+                sunset - timedelta(hours=2)    # until 2 hours before sunset
+            ),
+            'evening': (
+                sunset - timedelta(hours=2),   # 2 hours before sunset
+                sunset + timedelta(hours=2)    # until 2 hours after sunset
+            ),
+            'late_night': (
+                sunset + timedelta(hours=2),   # 2 hours after sunset
+                sunrise - timedelta(hours=2)   # until 2 hours before sunrise (next day)
+            )
+        }
+        
+        return periods
+    
+    def _collect_plant_time_preferences(self, plant_instance: Dict, solar_times: dict, target_date: datetime) -> Optional[Dict]:
+        """Collect and resolve time preferences for a single plant instance"""
+        try:
+            plant_id = plant_instance['plant_id']
+            library_book = plant_instance['library_book']
+            quantity = plant_instance.get('quantity', 1)
+            
+            # Get plant library data
+            plant_library_data = self._get_plant_library_data(plant_id, library_book)
+            if not plant_library_data:
+                return None
+            
+            # Get raw time preferences
+            preferred_times = plant_library_data.get('preferred_time', [])
+            compatible_times = plant_library_data.get('compatible_watering_times', [])
+            
+            # Ensure they are lists
+            if not isinstance(preferred_times, list):
+                preferred_times = [preferred_times] if preferred_times else []
+            if not isinstance(compatible_times, list):
+                compatible_times = [compatible_times] if compatible_times else []
+            
+            # Resolve all times to actual datetime objects
+            resolved_preferred = []
+            for time_str in preferred_times:
+                resolved_time = self._resolve_event_time(time_str, solar_times, target_date)
+                if resolved_time:
+                    resolved_preferred.append(resolved_time)
+            
+            resolved_compatible = []
+            for time_str in compatible_times:
+                resolved_time = self._resolve_event_time(time_str, solar_times, target_date)
+                if resolved_time:
+                    resolved_compatible.append(resolved_time)
+            
+            if not resolved_preferred and not resolved_compatible:
+                return None
+            
+            return {
+                'instance_id': plant_instance['instance_id'],
+                'plant_name': plant_library_data.get('common_name', 'Unknown'),
+                'quantity': quantity,
+                'raw_preferred_times': preferred_times,
+                'raw_compatible_times': compatible_times,
+                'resolved_preferred_times': resolved_preferred,
+                'resolved_compatible_times': resolved_compatible
+            }
+            
+        except Exception as e:
+            log_event(self.watering_logger, 'WARNING', 'Failed to collect plant time preferences', 
+                     plant_id=plant_instance.get('plant_id'), error=str(e))
+            return None
+    
+    def _calculate_period_scores(self, plant_time_data: List[Dict], solar_periods: Dict[str, tuple]) -> Dict[str, Dict]:
+        """Calculate weighted scores for each solar period"""
+        period_scores = {
+            'early_morning': {'score': 0, 'plants': [], 'preferred_count': 0, 'compatible_count': 0},
+            'late_morning': {'score': 0, 'plants': [], 'preferred_count': 0, 'compatible_count': 0},
+            'afternoon': {'score': 0, 'plants': [], 'preferred_count': 0, 'compatible_count': 0},
+            'evening': {'score': 0, 'plants': [], 'preferred_count': 0, 'compatible_count': 0},
+            'late_night': {'score': 0, 'plants': [], 'preferred_count': 0, 'compatible_count': 0}
+        }
+        
+        # Weighting constants
+        WEIGHT_PREFERRED = 10.0
+        WEIGHT_COMPATIBLE = 3.0
+        
+        for plant_data in plant_time_data:
+            quantity = plant_data['quantity']
+            
+            # Process preferred times
+            for resolved_time in plant_data['resolved_preferred_times']:
+                period = self._classify_time_to_period(resolved_time, solar_periods)
+                if period:
+                    period_scores[period]['score'] += WEIGHT_PREFERRED * quantity
+                    period_scores[period]['preferred_count'] += quantity
+                    period_scores[period]['plants'].append({
+                        'plant_name': plant_data['plant_name'],
+                        'type': 'preferred',
+                        'time': resolved_time,
+                        'weight': WEIGHT_PREFERRED * quantity
+                    })
+            
+            # Process compatible times
+            for resolved_time in plant_data['resolved_compatible_times']:
+                period = self._classify_time_to_period(resolved_time, solar_periods)
+                if period:
+                    period_scores[period]['score'] += WEIGHT_COMPATIBLE * quantity
+                    period_scores[period]['compatible_count'] += quantity
+                    period_scores[period]['plants'].append({
+                        'plant_name': plant_data['plant_name'],
+                        'type': 'compatible',
+                        'time': resolved_time,
+                        'weight': WEIGHT_COMPATIBLE * quantity
+                    })
+        
+        return period_scores
+    
+    def _classify_time_to_period(self, time_obj: datetime, solar_periods: Dict[str, tuple]) -> Optional[str]:
+        """Classify a resolved time into its solar period"""
+        time_only = time_obj.time()
+        
+        for period_name, (start_time, end_time) in solar_periods.items():
+            start_only = start_time.time()
+            end_only = end_time.time()
+            
+            # Handle periods that cross midnight (like late_night)
+            if start_only > end_only:  # Crosses midnight
+                if time_only >= start_only or time_only <= end_only:
+                    return period_name
+            else:  # Normal period within same day
+                if start_only <= time_only <= end_only:
+                    return period_name
+        
+        return None
+    
+    def _apply_period_penalties(self, period_scores: Dict[str, Dict]) -> Dict[str, Dict]:
+        """Apply penalty multipliers to period scores"""
+        penalties = {
+            'early_morning': 1.0,   # No penalty
+            'late_morning': 1.0,    # No penalty  
+            'afternoon': 0.8,       # Slight penalty
+            'evening': 1.0,         # No penalty
+            'late_night': 0.2       # Severe penalty
+        }
+        
+        for period_name, penalty in penalties.items():
+            if period_name in period_scores:
+                period_scores[period_name]['score'] *= penalty
+                period_scores[period_name]['penalty_applied'] = penalty
+        
+        return period_scores
+    
+    def _calculate_optimal_start_times(self, period_scores: Dict, solar_periods: Dict, zone_cycles: int) -> List[Dict]:
+        """Calculate optimal start times based on period scores and cycle count"""
+        
+        if zone_cycles == 1:
+            # Single cycle - find highest scoring period
+            best_period = max(period_scores.keys(), key=lambda p: period_scores[p]['score'])
+            optimal_time = self._calculate_period_average_time(best_period, period_scores[best_period], solar_periods)
+            return [{'start_time': optimal_time}]
+        
+        elif zone_cycles >= 2:
+            # Multi-cycle - group compatible periods and find early/late events
+            
+            # Group compatible periods
+            early_group_score = period_scores['early_morning']['score'] + period_scores['late_morning']['score']
+            late_group_score = period_scores['evening']['score'] + period_scores['late_night']['score']
+            afternoon_score = period_scores['afternoon']['score']
+            
+            calculated_times = []
+            
+            # Always prioritize early and late groups for D2+
+            if early_group_score > 0:
+                # Determine best time within early group
+                if period_scores['early_morning']['score'] >= period_scores['late_morning']['score']:
+                    early_time = self._calculate_period_average_time('early_morning', period_scores['early_morning'], solar_periods)
+                else:
+                    early_time = self._calculate_period_average_time('late_morning', period_scores['late_morning'], solar_periods)
+                calculated_times.append({'start_time': early_time})
+            
+            if late_group_score > 0 and len(calculated_times) < zone_cycles:
+                # Determine best time within late group
+                if period_scores['evening']['score'] >= period_scores['late_night']['score']:
+                    late_time = self._calculate_period_average_time('evening', period_scores['evening'], solar_periods)
+                else:
+                    late_time = self._calculate_period_average_time('late_night', period_scores['late_night'], solar_periods)
+                calculated_times.append({'start_time': late_time})
+            
+            # Fill remaining cycles with afternoon if needed (D3+)
+            if len(calculated_times) < zone_cycles and afternoon_score > 0:
+                afternoon_time = self._calculate_period_average_time('afternoon', period_scores['afternoon'], solar_periods)
+                calculated_times.append({'start_time': afternoon_time})
+            
+            # Ensure we have the right number of cycles (pad with defaults if needed)
+            while len(calculated_times) < zone_cycles:
+                calculated_times.append({'start_time': '06:00'})  # Default morning time
+            
+            return calculated_times[:zone_cycles]  # Limit to requested cycles
+        
+        # Fallback
+        return [{'start_time': '06:00'}]
+    
+    def _calculate_period_average_time(self, period_name: str, period_data: Dict, solar_periods: Dict) -> str:
+        """Calculate the average time for plants within a solar period"""
+        if not period_data['plants']:
+            # Use middle of period as fallback
+            start_time, end_time = solar_periods[period_name]
+            middle_seconds = (start_time.hour * 3600 + start_time.minute * 60 + 
+                            end_time.hour * 3600 + end_time.minute * 60) / 2
+            hours = int(middle_seconds // 3600)
+            minutes = int((middle_seconds % 3600) // 60)
+            return f"{hours:02d}:{minutes:02d}"
+        
+        # Calculate weighted average of actual plant times
+        total_weight = 0
+        weighted_seconds = 0
+        
+        for plant in period_data['plants']:
+            time_obj = plant['time']
+            weight = plant['weight']
+            seconds = time_obj.hour * 3600 + time_obj.minute * 60 + time_obj.second
+            
+            weighted_seconds += seconds * weight
+            total_weight += weight
+        
+        if total_weight > 0:
+            average_seconds = weighted_seconds / total_weight
+            hours = int(average_seconds // 3600)
+            minutes = int((average_seconds % 3600) // 60)
+            return f"{hours:02d}:{minutes:02d}"
+        
+        return "06:00"  # Fallback
+    
+    def _get_zone_cycles(self, zone_id: int) -> int:
+        """Get the cycle count for a zone from schedule data"""
+        try:
+            if hasattr(self, 'schedule') and self.schedule:
+                zone_key = str(zone_id)
+                if zone_key in self.schedule:
+                    return self.schedule[zone_key].get('cycles', 1)
+            
+            # Fallback: Load schedule data directly
+            if os.path.exists(self.schedule_file):
+                with open(self.schedule_file, 'r') as f:
+                    schedule_data = json.load(f)
+                
+                zone_key = str(zone_id)
+                if zone_key in schedule_data:
+                    return schedule_data[zone_key].get('cycles', 1)
+            
+            return 1  # Default single cycle
+        except Exception as e:
+            self._setup_logging()
+            log_event(self.error_logger, 'ERROR', 'Failed to get zone cycles', 
+                     zone_id=zone_id, error=str(e))
+            return 1
+    
+    def _update_zone_start_times_in_schedule(self, zone_id: int, calculated_times: List[Dict]):
+        """Update zone start times in the schedule file"""
+        try:
+            # Load current schedule
+            if os.path.exists(self.schedule_file):
+                with open(self.schedule_file, 'r') as f:
+                    schedule_data = json.load(f)
+            else:
+                schedule_data = {}
+            
+            zone_key = str(zone_id)
+            if zone_key in schedule_data:
+                zone_data = schedule_data[zone_key]
+                
+                # Update times array with new start times
+                if 'times' in zone_data and isinstance(zone_data['times'], list):
+                    # Ensure we have the right number of time slots
+                    while len(zone_data['times']) < len(calculated_times):
+                        zone_data['times'].append({'start_time': '06:00', 'duration': '00:20:00'})
+                    
+                    # Update start times
+                    for i, calc_time in enumerate(calculated_times):
+                        if i < len(zone_data['times']):
+                            zone_data['times'][i]['start_time'] = calc_time['start_time']
+                
+                # Save the updated schedule
+                with open(self.schedule_file, 'w') as f:
+                    json.dump(schedule_data, f, indent=2)
+                
+                print(f"Updated zone {zone_id} start times: {[t['start_time'] for t in calculated_times]}")
+            else:
+                print(f"Zone {zone_id} not found in schedule")
+                
+        except Exception as e:
+            print(f"Error updating zone start times in schedule: {e}")
+            raise
 
 # Global scheduler instance
 scheduler = WateringScheduler()

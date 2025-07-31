@@ -360,3 +360,15 @@ ed
 [2025-07-30 15:15:29] [INFO] [USER] Custom plant deleted | plant_id=1
 [2025-07-30 15:17:46] [INFO] [USER] Manual timer started | zone_id=1 duration=10
 [2025-07-30 18:08:04] [INFO] [user] Zone updated and caches reloaded | zone_id=2 mode=disabled period=W times_count=1
+[2025-07-31 14:22:20] [INFO] [USER] Manual timer started | zone_id=1 duration=60
+[2025-07-31 14:44:49] [INFO] [USER] Manual timer started | zone_id=1 duration=1200
+[2025-07-31 14:45:27] [INFO] [USER] Manual timer stopped | zone_id=1
+[2025-07-31 14:46:13] [INFO] [USER] Manual timer started | zone_id=1 duration=1200
+[2025-07-31 14:46:21] [INFO] [USER] Manual timer stopped | zone_id=1
+[2025-07-31 15:17:07] [INFO] [USER] Manual timer started | zone_id=1 duration=1200
+[2025-07-31 15:22:50] [INFO] [USER] Manual timer stopped | zone_id=1
+[2025-07-31 15:22:53] [INFO] [USER] Manual timer stopped | zone_id=1
+[2025-07-31 15:25:08] [INFO] [USER] Manual timer started | zone_id=1 duration=1200
+[2025-07-31 15:27:37] [INFO] [USER] Manual timer stopped | zone_id=1
+[2025-07-31 15:27:42] [INFO] [USER] Manual timer started | zone_id=1 duration=1200
+[2025-07-31 16:50:00] [INFO] [user] Zone updated and caches reloaded | zone_id=2 mode=smart period=W times_count=2

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ZoneForm, LocationForm, SmartPlacementForm, LibraryForm } from './forms';
+import { ZoneForm, LocationForm, SmartPlacementForm, LibraryForm, DetailedPlantForm } from './forms';
 import TimePicker from './forms/timepicker.item';
 import DurationPicker from './forms/durationpicker.item';
 
@@ -40,6 +40,13 @@ const FORMS_LIST = [
     description: 'Form for viewing and editing plant details from library',
     component: LibraryForm,
     defaultProps: { plant_id: 1, library_book: 'vegetables' }
+  },
+  {
+    name: 'Detailed Plant Form',
+    file: 'detailedplant.form.tsx',
+    description: 'Form for viewing detailed information about a specific plant instance in the garden',
+    component: DetailedPlantForm,
+    defaultProps: { instance_id: '1' }
   }
 ];
 
@@ -77,6 +84,7 @@ const FORM_COMPONENTS: Record<string, React.ComponentType<any>> = {
   'locations.addlocation.tsx': LocationForm,
   'garden.form.tsx': SmartPlacementForm,
   'library.form.tsx': LibraryForm,
+  'detailedplant.form.tsx': DetailedPlantForm,
   'timepicker.item.tsx': TimePicker,
   'durationpicker.item.tsx': DurationPicker
 };
@@ -119,17 +127,23 @@ const FORM_DEFAULT_PROPS: Record<string, any> = {
     library_book: 'fruitbushes.json',
     onClose: () => { console.log('Demo close - Library Form'); }
   },
+  'detailedplant.form.tsx': {
+    instance_id: '1',
+    onClose: () => { console.log('Demo close - Detailed Plant Form'); }
+  },
   'timepicker.item.tsx': {
     isVisible: true,
     onTimeSelect: (time: string) => console.log('Time selected:', time),
     onCancel: () => console.log('Time picker cancelled'),
-    initialSolarMode: true
+    initialSolarMode: true,
+    isModal: true
   },
   'durationpicker.item.tsx': {
     value: '00:20:00',
     onChange: (duration: string) => console.log('Duration changed:', duration),
     onClose: () => console.log('Duration picker closed'),
-    isVisible: true
+    isVisible: true,
+    isModal: false
   }
 };
 
@@ -139,6 +153,7 @@ const FORM_DESCRIPTIONS: Record<string, string> = {
   'locations.addlocation.tsx': 'Form for adding/editing garden locations',
   'garden.form.tsx': 'Form for placing plants from library into garden zones',
   'library.form.tsx': 'Form for viewing and editing plant details from library',
+  'detailedplant.form.tsx': 'Form for viewing detailed information about a specific plant instance in the garden',
   'timepicker.item.tsx': 'Time picker component for selecting watering times',
   'durationpicker.item.tsx': 'Duration picker component for selecting watering duration'
 };
@@ -149,6 +164,7 @@ const FORM_NAMES: Record<string, string> = {
   'locations.addlocation.tsx': 'Location Form',
   'garden.form.tsx': 'Smart Placement Form',
   'library.form.tsx': 'Library Plant Form',
+  'detailedplant.form.tsx': 'Detailed Plant Form',
   'timepicker.item.tsx': 'Time Picker',
   'durationpicker.item.tsx': 'Duration Picker'
 };

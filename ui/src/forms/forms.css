@@ -1862,4 +1862,32 @@
   gap: 4px;
   text-transform: uppercase;
   letter-spacing: 0.3px;
+}
+
+/* Modal version of time picker */
+.form-time-picker--modal {
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  z-index: auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/* Modal version of duration picker */
+.form-duration-picker--modal {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  z-index: auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
 } 

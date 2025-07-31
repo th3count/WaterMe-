@@ -1599,8 +1599,39 @@ def deactivate_gpio_channel(channel):
 @app.route('/api/gpio/status/<int:channel>', methods=['GET'])
 def get_gpio_channel_status(channel):
     """Get status of a specific GPIO channel"""
-    status = get_channel_status(channel)
-    return jsonify({'channel': channel, 'status': status})
+    try:
+        from core.scheduler import scheduler
+        from core.gpio import get_zone_state
+        
+        print(f"DEBUG: Getting status for channel {channel}")
+        
+        # Get the actual hardware state from GPIO
+        hardware_active = get_zone_state(channel)
+        print(f"DEBUG: Hardware active for channel {channel}: {hardware_active}")
+        
+        # Get scheduler state for additional info
+        scheduler_state = scheduler.get_zone_status(channel)
+        print(f"DEBUG: Scheduler state for channel {channel}: {scheduler_state}")
+        
+        response = {
+            'active': hardware_active,  # Frontend expects 'active' field
+            'remaining': scheduler_state.get('remaining', 0),
+            'type': scheduler_state.get('type'),
+            'channel': channel,
+            'status': "HIGH" if hardware_active else "LOW"  # Keep for compatibility
+        }
+        
+        print(f"DEBUG: Returning response for channel {channel}: {response}")
+        return jsonify(response)
+    except Exception as e:
+        print(f"Error getting status for channel {channel}: {e}")
+        return jsonify({
+            'active': False,
+            'remaining': 0,
+            'type': None,
+            'channel': channel,
+            'status': "UNKNOWN"
+        })
 
 @app.route('/api/gpio/status', methods=['GET'])
 def get_all_gpio_status():

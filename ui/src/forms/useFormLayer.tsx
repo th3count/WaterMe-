@@ -7,24 +7,24 @@ interface UseFormLayerOptions {
 }
 
 export function useFormLayerManager({ formId, onClose }: UseFormLayerOptions) {
-  const { pushLayer, popLayer, isTopLayer, getLayerDepth } = useFormLayer();
+  const { registerForm, unregisterForm, isTopForm, getLayerDepth } = useFormLayer();
   const formRef = useRef<HTMLDivElement>(null);
 
   // Register this form as a layer when it mounts
   useEffect(() => {
-    pushLayer(formId);
+    registerForm(formId);
 
     return () => {
-      popLayer(formId);
+      unregisterForm(formId);
     };
-  }, [formId, pushLayer, popLayer]);
+  }, [formId, registerForm, unregisterForm]);
 
   const closeForm = useCallback(() => {
-    popLayer(formId);
+    unregisterForm(formId);
     onClose?.();
-  }, [popLayer, onClose, formId]);
+  }, [unregisterForm, onClose, formId]);
 
-  const isActive = isTopLayer ? isTopLayer : false;
+  const isActive = isTopForm(formId);
   const depth = getLayerDepth(formId);
 
   return {

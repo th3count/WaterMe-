@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getFormLayerStyle, getFormOverlayClassName, useClickOutside } from './utils';
 import { useFormLayer } from './FormLayerManager';
 import { getApiBaseUrl } from '../utils';
+import TimePicker from './timepicker.item';
 import './forms.css';
 
 interface Plant {
@@ -55,8 +56,6 @@ const LibraryForm: React.FC<LibraryFormProps> = ({
   
   // State for timepicker functionality
   const [showTimePicker, setShowTimePicker] = useState<{ field: string; index: number } | null>(null);
-  const [solarMode, setSolarMode] = useState(false);
-  const [selectedSolarTime, setSelectedSolarTime] = useState<string | null>(null);
   
   // State for save/delete status messages
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
@@ -64,8 +63,7 @@ const LibraryForm: React.FC<LibraryFormProps> = ({
   const [deleteStatus, setDeleteStatus] = useState<'idle' | 'deleting' | 'success' | 'error'>('idle');
   const [deleteMessage, setDeleteMessage] = useState<string>('');
   
-  // Refs for click outside detection
-  const timePickerRef = useRef<HTMLDivElement>(null);
+
 
   // Load plant data
   const loadPlantData = async () => {
@@ -105,11 +103,6 @@ const LibraryForm: React.FC<LibraryFormProps> = ({
   // Handle click outside to close form (only when it's the top layer)
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
-      // Don't close the form if the timepicker modal is showing and the click is inside it
-      if (showTimePicker && timePickerRef.current && timePickerRef.current.contains(event.target as Node)) {
-        return;
-      }
-      
       if (isTopLayer && formRef.current && !formRef.current.contains(event.target as Node)) {
         onClose();
       }
@@ -117,7 +110,7 @@ const LibraryForm: React.FC<LibraryFormProps> = ({
 
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [isTopLayer, onClose, showTimePicker]);
+  }, [isTopLayer, onClose]);
 
   // Prevent background scrolling when form is open, but allow scrolling inside form
   useEffect(() => {
@@ -135,14 +128,7 @@ const LibraryForm: React.FC<LibraryFormProps> = ({
     }
   }, [isTopLayer]);
 
-  // Click outside handler for timepicker - DISABLED (using modal overlay click instead)
-  // useClickOutside(timePickerRef, () => {
-  //   if (showTimePicker !== null) {
-  //     setShowTimePicker(null);
-  //     setSolarMode(false);
-  //     setSelectedSolarTime(null);
-  //   }
-  // }, showTimePicker !== null);
+
 
   // Helper functions for managing time arrays
   const addTimeToField = (field: 'preferred_time' | 'compatible_watering_times') => {
@@ -988,7 +974,7 @@ const LibraryForm: React.FC<LibraryFormProps> = ({
         </div>
       </div>
 
-      {/* Time Picker Modal - Proper overlay */}
+      {/* Time Picker Modal */}
       {showTimePicker && (
         <div 
           className="form-overlay form-overlay--background"
@@ -1004,17 +990,8 @@ const LibraryForm: React.FC<LibraryFormProps> = ({
             alignItems: 'center',
             justifyContent: 'center'
           }}
-          onClick={(e) => {
-            // Close modal if clicking on the background overlay
-            if (e.target === e.currentTarget) {
-              setShowTimePicker(null);
-              setSolarMode(false);
-              setSelectedSolarTime(null);
-            }
-          }}
         >
           <div 
-            ref={timePickerRef} 
             className="form-container form-container--compact"
             style={{
               maxWidth: '500px',
@@ -1022,227 +999,17 @@ const LibraryForm: React.FC<LibraryFormProps> = ({
               position: 'relative',
               zIndex: 10000
             }}
-            onClick={(e) => {
-              // Prevent clicks inside the modal from bubbling up to the background
-              e.stopPropagation();
-            }}
           >
-            <div className="form-header">
-              <div className="form-title">Select Time</div>
-            </div>
-            
-            <div className="form-content">
-              {/* Solar Time Selection */}
-              <div className="form-text-accent form-text-center form-font-600 form-mb-8 form-text-14">
-                Select Solar Time
-              </div>
-              
-              <div className="form-flex form-gap-4 form-justify-center form-mb-12">
-                {['SUNRISE', 'SUNSET', 'ZENITH'].map((solarTime) => (
-                  <button
-                    key={solarTime}
-                    onClick={() => {
-                      const isCurrentlySelected = selectedSolarTime === solarTime && solarMode;
-                      if (isCurrentlySelected) {
-                        setSelectedSolarTime(null);
-                        setSolarMode(false);
-                      } else {
-                        setSelectedSolarTime(solarTime);
-                        setSolarMode(true);
-                      }
-                    }}
-                    className={`form-select-button form-select-button--solar ${selectedSolarTime === solarTime && solarMode ? 'form-select-button--selected' : ''}`}
-                  >
-                    <span>{solarTime === 'SUNRISE' ? '🌅' : 
-                     solarTime === 'SUNSET' ? '🌇' : '☀️'}</span>
-                    <span>{solarTime}</span>
-                  </button>
-                ))}
-              </div>
-              
-              {/* Offset Options - Only show when solar time is selected */}
-              {solarMode && selectedSolarTime && (
-                <div className="form-flex form-flex-column form-gap-6">
-                  <div className="form-text-accent form-text-center form-font-600 form-text-12">
-                    Offset Options
-                  </div>
-                  
-                  {/* Exact Time Button */}
-                  <button
-                    onClick={() => {
-                      updateTimeInField(showTimePicker.field as 'preferred_time' | 'compatible_watering_times', showTimePicker.index, selectedSolarTime || '');
-                      setShowTimePicker(null);
-                      setSelectedSolarTime(null);
-                      setSolarMode(false);
-                    }}
-                    className="form-select-button form-select-button--offset"
-                  >
-                    Exact {selectedSolarTime}
-                  </button>
-                  
-                  {/* Offset Presets */}
-                  <div className="form-button-grid">
-                    {[-60, -30, -15, -5, 5, 15, 30, 60].map(offset => (
-                      <button
-                        key={offset}
-                        onClick={() => {
-                          const sign = offset > 0 ? '+' : '';
-                          updateTimeInField(showTimePicker.field as 'preferred_time' | 'compatible_watering_times', showTimePicker.index, `${selectedSolarTime}${sign}${offset}`);
-                          setShowTimePicker(null);
-                          setSelectedSolarTime(null);
-                          setSolarMode(false);
-                        }}
-                        className="form-select-button form-select-button--offset form-select-button--small"
-                      >
-                        {offset > 0 ? '+' : ''}{offset}m
-                      </button>
-                    ))}
-                  </div>
-                  
-                  {/* Custom Offset Input */}
-                  <div className="form-flex form-gap-4 form-items-center form-justify-center">
-                    <input
-                      type="number"
-                      placeholder="Custom ±min"
-                      min="-120"
-                      max="120"
-                      className="form-input form-input--custom"
-                      style={{ width: '120px' }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          const offset = e.currentTarget.value;
-                          if (offset && offset !== '0') {
-                            const sign = parseInt(offset) > 0 ? '+' : '';
-                            updateTimeInField(showTimePicker.field as 'preferred_time' | 'compatible_watering_times', showTimePicker.index, `${selectedSolarTime}${sign}${offset}`);
-                            setShowTimePicker(null);
-                            setSelectedSolarTime(null);
-                            setSolarMode(false);
-                          }
-                        }
-                      }}
-                    />
-                    <button
-                      onClick={(e) => {
-                        const offsetInput = e.currentTarget.previousElementSibling as HTMLInputElement;
-                        const offset = offsetInput.value;
-                        if (offset && offset !== '0') {
-                          const sign = parseInt(offset) > 0 ? '+' : '';
-                          updateTimeInField(showTimePicker.field as 'preferred_time' | 'compatible_watering_times', showTimePicker.index, `${selectedSolarTime}${sign}${offset}`);
-                          setShowTimePicker(null);
-                          setSelectedSolarTime(null);
-                          setSolarMode(false);
-                        }
-                      }}
-                      className="form-btn form-btn--outline form-btn--small"
-                    >
-                      Apply
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              {/* Clock Time Selection - Only show when no solar time is selected */}
-              {!solarMode && (
-                <div className="form-flex form-flex-column form-gap-6">
-                  <div className="form-text-accent form-text-center form-font-600 form-text-12">
-                    Clock Time
-                  </div>
-                  
-                  <div className="form-flex form-gap-4 form-justify-center">
-                    {/* Hours */}
-                    <div className="form-flex form-flex-column form-items-center form-gap-2">
-                      <div className="form-text-muted form-font-600 form-text-12">
-                        Hour
-                      </div>
-                      <select
-                        value={(() => {
-                          const timeArray = showTimePicker.field === 'preferred_time' 
-                            ? editablePlant?.preferred_time 
-                            : editablePlant?.compatible_watering_times;
-                          const currentTime = timeArray?.[showTimePicker.index];
-                          // Only parse if it's in HH:MM format, default to 6 for solar times
-                          if (currentTime && currentTime.includes(':') && !currentTime.includes('SUNRISE') && !currentTime.includes('SUNSET') && !currentTime.includes('ZENITH')) {
-                            return parseInt(currentTime.split(':')[0]);
-                          }
-                          return 6;
-                        })()}
-                        onChange={(e) => {
-                          const hours = e.target.value.padStart(2, '0');
-                          const timeArray = showTimePicker.field === 'preferred_time' 
-                            ? editablePlant?.preferred_time 
-                            : editablePlant?.compatible_watering_times;
-                          const currentTime = timeArray?.[showTimePicker.index] || '06:00';
-                          const minutes = currentTime.split(':')[1] || '00';
-                          const newTime = `${hours}:${minutes}`;
-                          updateTimeInField(showTimePicker.field as 'preferred_time' | 'compatible_watering_times', showTimePicker.index, newTime);
-                        }}
-                        className="form-select"
-                        style={{ width: '80px' }}
-                      >
-                        {Array.from({ length: 24 }, (_, i) => (
-                          <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    {/* Minutes */}
-                    <div className="form-flex form-flex-column form-items-center form-gap-2">
-                      <div className="form-text-muted form-font-600 form-text-12">
-                        Minute
-                      </div>
-                      <select
-                        value={(() => {
-                          const timeArray = showTimePicker.field === 'preferred_time' 
-                            ? editablePlant?.preferred_time 
-                            : editablePlant?.compatible_watering_times;
-                          const currentTime = timeArray?.[showTimePicker.index];
-                          // Only parse if it's in HH:MM format, default to 0 for solar times
-                          if (currentTime && currentTime.includes(':') && !currentTime.includes('SUNRISE') && !currentTime.includes('SUNSET') && !currentTime.includes('ZENITH')) {
-                            return parseInt(currentTime.split(':')[1]);
-                          }
-                          return 0;
-                        })()}
-                        onChange={(e) => {
-                          const timeArray = showTimePicker.field === 'preferred_time' 
-                            ? editablePlant?.preferred_time 
-                            : editablePlant?.compatible_watering_times;
-                          const currentTime = timeArray?.[showTimePicker.index] || '06:00';
-                          const hours = currentTime.split(':')[0] || '06';
-                          const minutes = e.target.value.padStart(2, '0');
-                          const newTime = `${hours}:${minutes}`;
-                          updateTimeInField(showTimePicker.field as 'preferred_time' | 'compatible_watering_times', showTimePicker.index, newTime);
-                        }}
-                        className="form-select"
-                        style={{ width: '80px' }}
-                      >
-                        {Array.from({ length: 60 }, (_, i) => (
-                          <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            <div className="form-footer">
-              <div className="form-actions">
-                <button
-                  onClick={() => setShowTimePicker(null)}
-                  className="form-btn form-btn--outline"
-                >
-                  Cancel
-                </button>
-                {!solarMode && (
-                  <button
-                    onClick={() => setShowTimePicker(null)}
-                    className="form-btn form-btn--primary"
-                  >
-                    Done
-                  </button>
-                )}
-              </div>
-            </div>
+            <TimePicker
+              isVisible={true}
+              onTimeSelect={(time) => {
+                updateTimeInField(showTimePicker.field as 'preferred_time' | 'compatible_watering_times', showTimePicker.index, time);
+                setShowTimePicker(null);
+              }}
+              onCancel={() => setShowTimePicker(null)}
+              initialSolarMode={true}
+              isModal={true}
+            />
           </div>
         </div>
       )}

@@ -26,5 +26,83 @@
       "zone_selection": "smart",
       "emitter_sizing": "smart"
     }
+  },
+  "3": {
+    "plant_id": 3,
+    "library_book": "fruittrees",
+    "zone_id": 2,
+    "location_id": 2,
+    "quantity": 1,
+    "emitter_size": 4,
+    "comments": "",
+    "smart_overrides": {
+      "zone_selection": "smart",
+      "emitter_sizing": "smart"
+    }
+  },
+  "4": {
+    "plant_id": 8,
+    "library_book": "fruittrees",
+    "zone_id": 2,
+    "location_id": 2,
+    "quantity": 1,
+    "emitter_size": 4,
+    "comments": "",
+    "smart_overrides": {
+      "zone_selection": "smart",
+      "emitter_sizing": "smart"
+    }
+  },
+  "5": {
+    "plant_id": 12,
+    "library_book": "fruitbushes",
+    "zone_id": 1,
+    "location_id": 2,
+    "quantity": 1,
+    "emitter_size": 4,
+    "comments": "",
+    "smart_overrides": {
+      "zone_selection": "smart",
+      "emitter_sizing": "smart"
+    }
+  },
+  "6": {
+    "plant_id": 3,
+    "library_book": "fruitbushes",
+    "zone_id": 1,
+    "location_id": 2,
+    "quantity": 1,
+    "emitter_size": 4,
+    "comments": "",
+    "smart_overrides": {
+      "zone_selection": "smart",
+      "emitter_sizing": "smart"
+    }
+  },
+  "7": {
+    "plant_id": 19,
+    "library_book": "fruitbushes",
+    "zone_id": 1,
+    "location_id": 2,
+    "quantity": 1,
+    "emitter_size": 4,
+    "comments": "",
+    "smart_overrides": {
+      "zone_selection": "smart",
+      "emitter_sizing": "smart"
+    }
+  },
+  "8": {
+    "plant_id": 8,
+    "library_book": "fruittrees",
+    "zone_id": 2,
+    "location_id": 2,
+    "quantity": 1,
+    "emitter_size": 4,
+    "comments": "",
+    "smart_overrides": {
+      "zone_selection": "smart",
+      "emitter_sizing": "smart"
+    }
   }
 }

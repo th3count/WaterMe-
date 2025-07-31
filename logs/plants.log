@@ -2802,3 +2802,125 @@
 [2025-07-30 18:09:33] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=True optimal_zone=1
 [2025-07-30 18:09:33] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruitbushes.json common_name=None
 [2025-07-30 18:09:33] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=True optimal_zone=1
+[2025-07-30 21:33:29] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-07-30 21:33:29] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-07-30 21:33:29] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-07-30 21:33:29] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-07-30 21:33:29] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=2
+[2025-07-30 21:33:29] [INFO] [PLANTS] Plant library loaded | total_plants=92
+[2025-07-30 21:33:29] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-07-30 21:33:32] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruitbushes.json common_name=None
+[2025-07-30 21:33:32] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=True optimal_zone=1
+[2025-07-30 21:33:32] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruitbushes.json common_name=None
+[2025-07-30 21:33:32] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=True optimal_zone=1
+[2025-07-30 21:33:32] [INFO] [PLANTS] Zone duration calculated | zone_id=1 total_plants=2 total_seconds=2018.52 average_seconds=1009.26 calculated_duration=00:16:49 plant_count=2
+[2025-07-30 21:33:47] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruitbushes.json common_name=None
+[2025-07-30 21:33:47] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=True optimal_zone=1
+[2025-07-30 21:33:47] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruitbushes.json common_name=None
+[2025-07-30 21:33:47] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=True optimal_zone=1
+[2025-07-31 14:13:51] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-07-31 14:13:51] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-07-31 14:13:51] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-07-31 14:13:51] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-07-31 14:13:51] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=2
+[2025-07-31 14:13:51] [INFO] [PLANTS] Plant library loaded | total_plants=92
+[2025-07-31 14:13:51] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-07-31 14:13:55] [INFO] [PLANTS] Zone duration calculated | zone_id=1 total_plants=2 total_seconds=2018.52 average_seconds=1009.26 calculated_duration=00:16:49 plant_count=2
+[2025-07-31 15:27:23] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-07-31 15:27:23] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-07-31 15:27:23] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-07-31 15:27:23] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-07-31 15:27:23] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-07-31 15:27:23] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-07-31 15:27:23] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-07-31 15:27:33] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-07-31 15:27:33] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-07-31 15:27:33] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-07-31 15:27:33] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-07-31 15:27:33] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-07-31 15:27:33] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-07-31 15:27:33] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-07-31 15:27:36] [INFO] [PLANTS] Zone duration calculated | zone_id=1 total_plants=2 total_seconds=2018.52 average_seconds=1009.26 calculated_duration=00:16:49 plant_count=2
+[2025-07-31 16:47:56] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-07-31 16:47:56] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-07-31 16:47:56] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-07-31 16:47:56] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-07-31 16:47:56] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-07-31 16:47:56] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-07-31 16:47:56] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-07-31 16:48:01] [INFO] [PLANTS] Zone duration calculated | zone_id=1 total_plants=2 total_seconds=2018.52 average_seconds=1009.26 calculated_duration=00:16:49 plant_count=2
+[2025-07-31 16:50:00] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-07-31 16:50:10] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruittrees common_name=Granny Smith Apple
+[2025-07-31 16:50:10] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Granny Smith Apple has_compatible_zones=True optimal_zone=2
+[2025-07-31 16:50:10] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruittrees.json common_name=None
+[2025-07-31 16:50:10] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Granny Smith Apple has_compatible_zones=True optimal_zone=2
+[2025-07-31 16:50:10] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruittrees.json common_name=None
+[2025-07-31 16:50:10] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Granny Smith Apple has_compatible_zones=True optimal_zone=2
+[2025-07-31 16:50:13] [INFO] [PLANTS] Plant instance added | instance_id=3 plant_id=3 location_id=2 zone=None quantity=1
+[2025-07-31 16:50:13] [INFO] [PLANTS] Plant change detected in smart zone - duration refresh needed | zone_id=2
+[2025-07-31 16:50:13] [INFO] [PLANTS] Zone duration calculated | zone_id=2 total_plants=1 total_seconds=13456.8 average_seconds=13456.8 calculated_duration=03:44:16 plant_count=1
+[2025-07-31 16:50:20] [INFO] [PLANTS] Plant placement analysis requested | plant_id=8 library_book=fruittrees common_name=Elberta Peach
+[2025-07-31 16:50:20] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Elberta Peach has_compatible_zones=True optimal_zone=2
+[2025-07-31 16:50:20] [INFO] [PLANTS] Plant placement analysis requested | plant_id=8 library_book=fruittrees.json common_name=None
+[2025-07-31 16:50:20] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Elberta Peach has_compatible_zones=True optimal_zone=2
+[2025-07-31 16:50:20] [INFO] [PLANTS] Plant placement analysis requested | plant_id=8 library_book=fruittrees.json common_name=None
+[2025-07-31 16:50:20] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Elberta Peach has_compatible_zones=True optimal_zone=2
+[2025-07-31 16:50:22] [INFO] [PLANTS] Plant instance added | instance_id=4 plant_id=8 location_id=2 zone=None quantity=1
+[2025-07-31 16:50:22] [INFO] [PLANTS] Plant change detected in smart zone - duration refresh needed | zone_id=2
+[2025-07-31 16:50:22] [INFO] [PLANTS] Zone duration calculated | zone_id=2 total_plants=2 total_seconds=34483.05 average_seconds=17241.525 calculated_duration=04:47:21 plant_count=2
+[2025-07-31 16:50:25] [INFO] [PLANTS] Plant placement analysis requested | plant_id=12 library_book=fruitbushes common_name=Lingonberry
+[2025-07-31 16:50:25] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Lingonberry has_compatible_zones=True optimal_zone=1
+[2025-07-31 16:50:25] [INFO] [PLANTS] Plant placement analysis requested | plant_id=12 library_book=fruitbushes.json common_name=None
+[2025-07-31 16:50:25] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Lingonberry has_compatible_zones=True optimal_zone=1
+[2025-07-31 16:50:25] [INFO] [PLANTS] Plant placement analysis requested | plant_id=12 library_book=fruitbushes.json common_name=None
+[2025-07-31 16:50:25] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Lingonberry has_compatible_zones=True optimal_zone=1
+[2025-07-31 16:50:27] [INFO] [PLANTS] Plant instance added | instance_id=5 plant_id=12 location_id=2 zone=None quantity=1
+[2025-07-31 16:50:27] [INFO] [PLANTS] Plant change detected in smart zone - duration refresh needed | zone_id=1
+[2025-07-31 16:50:27] [INFO] [PLANTS] Zone duration calculated | zone_id=1 total_plants=3 total_seconds=2584.827 average_seconds=861.609 calculated_duration=00:14:21 plant_count=3
+[2025-07-31 16:50:30] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruitbushes common_name=Blackberry
+[2025-07-31 16:50:30] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Blackberry has_compatible_zones=True optimal_zone=1
+[2025-07-31 16:50:30] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruitbushes.json common_name=None
+[2025-07-31 16:50:30] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Blackberry has_compatible_zones=True optimal_zone=1
+[2025-07-31 16:50:30] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruitbushes.json common_name=None
+[2025-07-31 16:50:30] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Blackberry has_compatible_zones=True optimal_zone=1
+[2025-07-31 16:50:32] [INFO] [PLANTS] Plant instance added | instance_id=6 plant_id=3 location_id=2 zone=None quantity=1
+[2025-07-31 16:50:32] [INFO] [PLANTS] Plant change detected in smart zone - duration refresh needed | zone_id=1
+[2025-07-31 16:50:32] [INFO] [PLANTS] Zone duration calculated | zone_id=1 total_plants=4 total_seconds=4855.662 average_seconds=1213.9155 calculated_duration=00:20:13 plant_count=4
+[2025-07-31 16:50:37] [INFO] [PLANTS] Plant placement analysis requested | plant_id=14 library_book=fruittrees common_name=Valencia Orange
+[2025-07-31 16:50:37] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Valencia Orange has_compatible_zones=False optimal_zone=None
+[2025-07-31 16:50:37] [INFO] [PLANTS] Plant placement analysis requested | plant_id=14 library_book=fruittrees.json common_name=None
+[2025-07-31 16:50:37] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Valencia Orange has_compatible_zones=False optimal_zone=None
+[2025-07-31 16:50:37] [INFO] [PLANTS] Plant placement analysis requested | plant_id=14 library_book=fruittrees.json common_name=None
+[2025-07-31 16:50:37] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Valencia Orange has_compatible_zones=False optimal_zone=None
+[2025-07-31 16:50:40] [INFO] [PLANTS] Plant placement analysis requested | plant_id=19 library_book=fruitbushes common_name=Wineberry
+[2025-07-31 16:50:40] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Wineberry has_compatible_zones=True optimal_zone=1
+[2025-07-31 16:50:40] [INFO] [PLANTS] Plant placement analysis requested | plant_id=19 library_book=fruitbushes.json common_name=None
+[2025-07-31 16:50:40] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Wineberry has_compatible_zones=True optimal_zone=1
+[2025-07-31 16:50:40] [INFO] [PLANTS] Plant placement analysis requested | plant_id=19 library_book=fruitbushes.json common_name=None
+[2025-07-31 16:50:40] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Wineberry has_compatible_zones=True optimal_zone=1
+[2025-07-31 16:50:41] [INFO] [PLANTS] Plant instance added | instance_id=7 plant_id=19 location_id=2 zone=None quantity=1
+[2025-07-31 16:50:41] [INFO] [PLANTS] Plant change detected in smart zone - duration refresh needed | zone_id=1
+[2025-07-31 16:50:41] [INFO] [PLANTS] Zone duration calculated | zone_id=1 total_plants=5 total_seconds=7126.496999999999 average_seconds=1425.2993999999999 calculated_duration=00:23:45 plant_count=5
+[2025-07-31 16:50:45] [INFO] [PLANTS] Plant placement analysis requested | plant_id=8 library_book=fruittrees common_name=Elberta Peach
+[2025-07-31 16:50:45] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Elberta Peach has_compatible_zones=True optimal_zone=2
+[2025-07-31 16:50:45] [INFO] [PLANTS] Plant placement analysis requested | plant_id=8 library_book=fruittrees.json common_name=None
+[2025-07-31 16:50:45] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Elberta Peach has_compatible_zones=True optimal_zone=2
+[2025-07-31 16:50:45] [INFO] [PLANTS] Plant placement analysis requested | plant_id=8 library_book=fruittrees.json common_name=None
+[2025-07-31 16:50:45] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Elberta Peach has_compatible_zones=True optimal_zone=2
+[2025-07-31 16:50:47] [INFO] [PLANTS] Plant instance added | instance_id=8 plant_id=8 location_id=2 zone=None quantity=1
+[2025-07-31 16:50:47] [INFO] [PLANTS] Plant change detected in smart zone - duration refresh needed | zone_id=2
+[2025-07-31 16:50:47] [INFO] [PLANTS] Zone duration calculated | zone_id=2 total_plants=3 total_seconds=55509.3 average_seconds=18503.100000000002 calculated_duration=05:08:23 plant_count=3
+[2025-07-31 18:10:23] [INFO] [PLANTS] Plant map loaded | instance_count=8
+[2025-07-31 18:10:23] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-07-31 18:10:23] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-07-31 18:10:23] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-07-31 18:10:23] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-07-31 18:10:23] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-07-31 18:10:23] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-07-31 18:10:47] [INFO] [PLANTS] Plant map loaded | instance_count=8
+[2025-07-31 18:10:47] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-07-31 18:10:47] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-07-31 18:10:47] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-07-31 18:10:47] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-07-31 18:10:47] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-07-31 18:10:47] [INFO] [PLANTS] Schedule data loaded | zone_count=8

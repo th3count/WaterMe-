@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getApiBaseUrl } from './utils';
 import SmartPlacementForm from './forms/garden.form';
+import DurationPicker from './forms/durationpicker.item';
 
 // Helper to format HHMMSS as human readable
 function formatDuration(d: string): string {
@@ -380,9 +381,9 @@ export default function GardenOverview() {
   
   // Manual timer state
   const [showManualControl, setShowManualControl] = useState<number | null>(null);
-  const [manualInput, setManualInput] = useState<Record<number, string>>({});
-  const [manualInputError, setManualInputError] = useState<Record<number, string>>({});
-  const [manualTimerModal, setManualTimerModal] = useState<{ zoneId: number; zoneName: string } | null>(null);
+  
+  // Duration picker state
+  const [showDurationPicker, setShowDurationPicker] = useState<{ zoneId: number; zoneName: string } | null>(null);
 
 
   const [scheduleMode, setScheduleMode] = useState<'manual' | 'smart'>('manual');
@@ -403,9 +404,7 @@ export default function GardenOverview() {
     })
     .then(response => {
       if (response.ok) {
-        // Clear input and hide control only on success
-        setManualInput(inp => ({ ...inp, [zone_id]: '' }));
-        setManualInputError(errs => ({ ...errs, [zone_id]: '' }));
+        // Hide control only on success
         setShowManualControl(null);
       } else {
         console.error(`Failed to start manual timer for zone ${zone_id}:`, response.status);
@@ -1996,7 +1995,7 @@ export default function GardenOverview() {
                     cursor: 'pointer',
                     transition: 'all 0.2s ease'
                   }}
-                  onClick={e => { e.stopPropagation(); setManualTimerModal({ zoneId: zone.zone_id, zoneName: `Zone ${zone.zone_id}` }); }}
+                                      onClick={e => { e.stopPropagation(); setShowDurationPicker({ zoneId: zone.zone_id, zoneName: `Zone ${zone.zone_id}` }); }}
                   title="Click to start/stop manual timer"
                   >
                     <div style={{
@@ -2045,223 +2044,9 @@ export default function GardenOverview() {
           </div>
         </div>
         
-        {/* Manual Timer Modal */}
-        {manualTimerModal && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.8)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000
-          }}>
-            <div 
-              data-modal="true"
-              style={{
-                background: '#232b3b',
-                borderRadius: '16px',
-                padding: '32px',
-                minWidth: '500px',
-                maxWidth: '700px',
-                maxHeight: '95vh',
-                color: '#f4f4f4',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                overflow: 'auto'
-              }}
-            >
-              <h3 style={{
-                        color: '#00bcd4',
-                        fontWeight: 700,
-                margin: '0 0 16px 0',
-                textAlign: 'left',
-                flexShrink: 0
-              }}>
-                Manual Timer: {manualTimerModal.zoneName}
-              </h3>
-              
-              {zoneStates[manualTimerModal.zoneId]?.active ? (
-                // Show stop timer controls when zone is active
-                <div style={{
-                  background: '#1a1f2a',
-                  borderRadius: '8px',
-                  padding: '16px',
-                  marginBottom: '20px',
-                  border: '1px solid #00bcd4'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '12px'
-                  }}>
-                    <p style={{ margin: 0, color: '#00bcd4', fontWeight: 600 }}>
-                      ⏱️ Manual timer is currently running
-                    </p>
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    gap: '12px',
-                    marginTop: '16px'
-                  }}>
-                    <button
-                    onClick={() => {
-                        stopManualTimer(manualTimerModal.zoneId);
-                        setManualTimerModal(null);
-                      }}
-                      style={{
-                        padding: '12px 24px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        background: '#ff512f',
-                        color: '#fff',
-                            fontWeight: 700,
-                            fontSize: '16px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Stop Timer
-                    </button>
-                    <button
-                      onClick={() => setManualTimerModal(null)}
-                      style={{
-                        padding: '12px 24px',
-                        borderRadius: '8px',
-                        border: '2px solid #666',
-                        background: 'transparent',
-                        color: '#666',
-                        fontWeight: 700,
-                        fontSize: '16px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Cancel
-                    </button>
-                    </div>
-                </div>
-              ) : (
-                // Show start timer controls when zone is inactive
-                      <div style={{
-                  background: '#1a1f2a',
-                        borderRadius: '8px',
-                  padding: '16px',
-                  marginBottom: '20px',
-                  border: '1px solid #00bcd4'
-                }}>
-                            <div style={{
-                              display: 'flex',
-                    justifyContent: 'space-between',
-                              alignItems: 'center',
-                    marginBottom: '12px'
-                  }}>
-                    <p style={{ margin: 0, color: '#00bcd4', fontWeight: 600 }}>
-                      ⏱️ Start manual timer
-                    </p>
-                  </div>
-                  <div style={{ 
-                    marginBottom: '16px',
-                    fontSize: '14px',
-                    color: '#bdbdbd'
-                  }}>
-                                            Enter time in HH:mm:ss format (e.g., 02:30:00 for 2 hours 30 minutes)
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '16px'
-                            }}>
-                              <input
-                                type="text"
-                      value={manualInput[manualTimerModal.zoneId] || ''}
-                                onChange={e => {
-                                  const val = e.target.value.replace(/[^0-9]/g, '');
-                        setManualInput(inp => ({ ...inp, [manualTimerModal.zoneId]: val }));
-                        setManualInputError(errs => ({ ...errs, [manualTimerModal.zoneId]: '' }));
-                                }}
-                                                    placeholder="HH:mm:ss"
-                                style={{
-                        width: '100%',
-                        padding: '12px 16px',
-                        borderRadius: '8px',
-                                  border: '1px solid #00bcd4',
-                        background: '#1a1f2a',
-                                  color: '#fff',
-                        fontSize: '16px',
-                                  textAlign: 'center'
-                                }}
-                      maxLength={6}
-                      autoFocus
-                    />
-                    {manualInputError[manualTimerModal.zoneId] && (
-                      <div style={{
-                        color: '#ff512f',
-                        fontSize: '14px',
-                        textAlign: 'center'
-                      }}>{manualInputError[manualTimerModal.zoneId]}</div>
-                    )}
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      gap: '12px'
-                    }}>
-                              <button
-                        onClick={() => {
-                          const val = manualInput[manualTimerModal.zoneId] || '';
-                  const parsed = parseManualTimeInput(val);
-                  
-                  if (!parsed.isValid) {
-                            setManualInputError(errs => ({ ...errs, [manualTimerModal.zoneId]: parsed.error }));
-                    return;
-                  }
-                  
-                          const totalSeconds = parsed.hours * 3600 + parsed.minutes * 60 + parsed.seconds;
-                          startManualTimer(manualTimerModal.zoneId, totalSeconds);
-                          setManualTimerModal(null);
-                }}
-                                style={{
-                          padding: '12px 24px',
-                          borderRadius: '8px',
-                                  border: 'none',
-                                  background: '#00bcd4',
-                                  color: '#181f2a',
-                                  fontWeight: 700,
-                          fontSize: '16px',
-                                  cursor: 'pointer'
-                                }}
-                        disabled={!manualInput[manualTimerModal.zoneId]}
-                              >
-                        Start Timer
-                              </button>
-                              <button
-                        onClick={() => {
-                          setManualTimerModal(null);
-                          setManualInput(inp => ({ ...inp, [manualTimerModal.zoneId]: '' }));
-                          setManualInputError(errs => ({ ...errs, [manualTimerModal.zoneId]: '' }));
-                                }}
-                                style={{
-                          padding: '12px 24px',
-                          borderRadius: '8px',
-                                  border: '2px solid #ff512f',
-                                  background: 'transparent',
-                                  color: '#ff512f',
-                                  fontWeight: 700,
-                          fontSize: '16px',
-                                  cursor: 'pointer'
-                                }}
-                              >
-                                Cancel
-                              </button>
-                            </div>
-            </div>
-          </div>
-              )}
-        </div>
-          </div>
-        )}
+        
+
+
         
 
 
@@ -2463,6 +2248,130 @@ export default function GardenOverview() {
               </form>
             </div>
           </div>
+        )}
+        
+        {/* Duration Picker Modal - Rendered at the end to ensure proper layering */}
+        {showDurationPicker && (
+          <>
+            {zoneStates[showDurationPicker.zoneId]?.active ? (
+              // Show stop timer controls when zone is active
+              <div 
+                data-modal="true"
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'rgba(0,0,0,0.8)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 10000
+                }}
+              >
+                <div style={{
+                  background: '#232b3b',
+                  borderRadius: '16px',
+                  padding: '32px',
+                  minWidth: '500px',
+                  maxWidth: '700px',
+                  maxHeight: '95vh',
+                  color: '#f4f4f4',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                  overflow: 'auto'
+                }}>
+                  <h3 style={{
+                    color: '#00bcd4',
+                    fontWeight: 700,
+                    margin: '0 0 16px 0',
+                    textAlign: 'left',
+                    flexShrink: 0
+                  }}>
+                    Stop Timer: {showDurationPicker.zoneName}
+                  </h3>
+                  <div style={{
+                    background: '#1a1f2a',
+                    borderRadius: '8px',
+                    padding: '16px',
+                    marginBottom: '20px',
+                    border: '1px solid #00bcd4'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '12px'
+                    }}>
+                      <p style={{ margin: 0, color: '#00bcd4', fontWeight: 600 }}>
+                        ⏱️ Manual timer is currently running
+                      </p>
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      gap: '12px',
+                      marginTop: '16px'
+                    }}>
+                      <button
+                        onClick={() => {
+                          stopManualTimer(showDurationPicker.zoneId);
+                          setShowDurationPicker(null);
+                        }}
+                        style={{
+                          padding: '12px 24px',
+                          borderRadius: '8px',
+                          border: 'none',
+                          background: '#ff512f',
+                          color: '#fff',
+                          fontWeight: 700,
+                          fontSize: '16px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Stop Timer
+                      </button>
+                      <button
+                        onClick={() => setShowDurationPicker(null)}
+                        style={{
+                          padding: '12px 24px',
+                          borderRadius: '8px',
+                          border: '2px solid #666',
+                          background: 'transparent',
+                          color: '#666',
+                          fontWeight: 700,
+                          fontSize: '16px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Show duration picker when zone is inactive - let it handle its own overlay
+              <DurationPicker
+                value="00:20:00"
+                onChange={(duration) => {
+                  // Parse duration string (HH:mm:ss) to seconds
+                  const parts = duration.split(':');
+                  if (parts.length === 3) {
+                    const hours = parseInt(parts[0]) || 0;
+                    const minutes = parseInt(parts[1]) || 0;
+                    const seconds = parseInt(parts[2]) || 0;
+                    const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+                    startManualTimer(showDurationPicker.zoneId, totalSeconds);
+                  }
+                  setShowDurationPicker(null);
+                }}
+                onClose={() => setShowDurationPicker(null)}
+                isVisible={true}
+                isModal={true}
+              />
+            )}
+          </>
         )}
         
       </div>

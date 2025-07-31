@@ -49,6 +49,7 @@ export function FormLayerProvider({ children }: FormLayerProviderProps) {
   }, []);
 
   const unregisterForm = useCallback((formId: string) => {
+    console.log('🔵 Unregistering form:', formId);
     setActiveForms(prev => prev.filter(id => id !== formId));
   }, []);
 

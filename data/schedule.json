@@ -7,13 +7,29 @@
     "startDay": "2025-07-27",
     "times": [
       {
-        "duration": "00:16:49",
+        "duration": "00:23:45",
         "start_time": "06:00"
       }
     ]
   },
   "2": {
-    "mode": "disabled"
+    "mode": "smart",
+    "period": "W",
+    "cycles": 2,
+    "times": [
+      {
+        "start_time": "06:00",
+        "duration": "05:08:23",
+        "value": "06:00"
+      },
+      {
+        "start_time": "06:00",
+        "duration": "05:08:23",
+        "value": "06:00"
+      }
+    ],
+    "startDay": "2025-08-01",
+    "comment": "2w"
   },
   "3": {
     "mode": "disabled"

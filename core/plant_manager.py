@@ -966,144 +966,31 @@ class PlantManager:
         """
         Calculate optimal watering duration for a zone based on installed plants
         
+        NOTE: This method now calls the scheduler's smart duration calculation
+        
         Returns:
             Dict with calculation results and new duration
         """
         try:
-            # Debug logging
-            log_event(plants_logger, 'DEBUG', 'Starting zone duration calculation', zone_id=zone_id)
+            # Import scheduler to call the new smart duration calculation method
+            from .scheduler import scheduler
             
-            # Check if zone is in smart mode
-            zone_mode = self._get_zone_mode(zone_id)
-            if zone_mode != 'smart':
-                log_event(plants_logger, 'WARNING', 'Zone is not in smart mode, skipping duration calculation', 
-                         zone_id=zone_id, zone_mode=zone_mode)
-                return {
-                    'success': False,
-                    'error': f'Zone is in {zone_mode} mode, smart calculation not applicable',
-                    'calculated_duration': '00:20:00'  # Default 20 minutes
-                }
+            log_event(plants_logger, 'DEBUG', 'Calling scheduler for smart zone duration calculation', zone_id=zone_id)
             
-            # Get all plants in this zone
-            zone_plants = self.get_zone_plants(zone_id)
-            log_event(plants_logger, 'DEBUG', 'Found plants in zone', 
-                     zone_id=zone_id, plant_count=len(zone_plants))
+            # Call the scheduler's smart duration calculation method
+            result = scheduler.calculate_smart_zone_duration(zone_id, mock_mode=True)
             
-            if not zone_plants:
-                log_event(plants_logger, 'WARNING', 'No plants found in zone for duration calculation', zone_id=zone_id)
-                return {
-                    'success': False,
-                    'error': 'No plants found in zone',
-                    'calculated_duration': '00:20:00'  # Default 20 minutes
-                }
+            log_event(plants_logger, 'DEBUG', 'Scheduler duration calculation result', 
+                     zone_id=zone_id, success=result.get('success'))
             
-            total_seconds = 0
-            total_plants = 0
-            plant_calculations = []
-            
-            for plant_instance in zone_plants:
-                instance_id = plant_instance['instance_id']
-                plant_id = plant_instance['plant_id']
-                library_book = plant_instance['library_book']
-                emitter_size = plant_instance.get('emitter_size', 4.0)  # Default 4 GPH
-                quantity = plant_instance.get('quantity', 1)
-                
-                # Get plant library data
-                plant_library_data = self.get_plant_data(plant_id, library_book)
-                if not plant_library_data:
-                    log_event(plants_logger, 'WARNING', 'Plant not found in library for duration calculation', 
-                             instance_id=instance_id, plant_id=plant_id, library_book=library_book)
-                    continue
-                
-                # Debug logging for plant data
-                log_event(plants_logger, 'DEBUG', 'Processing plant for duration calculation', 
-                         instance_id=instance_id, plant_id=plant_id, library_book=library_book,
-                         plant_name=plant_library_data.get('common_name', 'Unknown'))
-                
-                # Get plant water requirements
-                water_optimal_in_week = plant_library_data.get('water_optimal_in_week', 0)
-                root_area_sqft = plant_library_data.get('root_area_sqft', 0)
-                
-                if water_optimal_in_week <= 0 or root_area_sqft <= 0:
-                    log_event(plants_logger, 'WARNING', 'Invalid plant water requirements for duration calculation', 
-                             instance_id=instance_id, plant_id=plant_id, 
-                             water_optimal_in_week=water_optimal_in_week, root_area_sqft=root_area_sqft)
-                    continue
-                
-                # Debug logging for water requirements
-                log_event(plants_logger, 'DEBUG', 'Plant water requirements', 
-                         instance_id=instance_id, plant_id=plant_id,
-                         water_optimal_in_week=water_optimal_in_week, root_area_sqft=root_area_sqft,
-                         emitter_size=emitter_size, quantity=quantity)
-                
-                # Calculate volume needed per plant (gallons)
-                volume_per_plant = water_optimal_in_week * root_area_sqft * 0.623
-                
-                # Calculate time needed per plant (seconds)
-                time_per_plant_seconds = (volume_per_plant / emitter_size) * 3600
-                
-                # Total time for all plants of this type
-                total_time_for_type = time_per_plant_seconds * quantity
-                
-                total_seconds += total_time_for_type
-                total_plants += quantity
-                
-                plant_calculations.append({
-                    'instance_id': instance_id,
-                    'plant_name': plant_library_data.get('common_name', 'Unknown'),
-                    'quantity': quantity,
-                    'emitter_size': emitter_size,
-                    'volume_per_plant': volume_per_plant,
-                    'time_per_plant_seconds': time_per_plant_seconds,
-                    'total_time_for_type': total_time_for_type
-                })
-            
-            if total_plants == 0:
-                log_event(plants_logger, 'WARNING', 'No valid plants found for duration calculation', 
-                         zone_id=zone_id, plant_count=len(zone_plants))
-                return {
-                    'success': False,
-                    'error': 'No valid plants found for duration calculation',
-                    'calculated_duration': '00:20:00'  # Default 20 minutes
-                }
-            
-            # Debug logging for final calculation
-            log_event(plants_logger, 'DEBUG', 'Duration calculation summary', 
-                     zone_id=zone_id, total_seconds=total_seconds, total_plants=total_plants)
-            
-            # Calculate average seconds per plant
-            average_seconds = total_seconds / total_plants
-            
-            # Convert to HH:mm:ss format
-            hours = int(average_seconds // 3600)
-            minutes = int((average_seconds % 3600) // 60)
-            seconds = int(average_seconds % 60)
-            
-            calculated_duration = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-            
-            log_event(plants_logger, 'INFO', 'Zone duration calculated', 
-                     zone_id=zone_id, 
-                     total_plants=total_plants,
-                     total_seconds=total_seconds,
-                     average_seconds=average_seconds,
-                     calculated_duration=calculated_duration,
-                     plant_count=len(plant_calculations))
-            
-            return {
-                'success': True,
-                'calculated_duration': calculated_duration,
-                'total_seconds': total_seconds,
-                'average_seconds': average_seconds,
-                'total_plants': total_plants,
-                'plant_calculations': plant_calculations
-            }
+            return result
             
         except Exception as e:
-            log_event(plants_logger, 'ERROR', 'Failed to calculate zone duration', 
-                     zone_id=zone_id, error=str(e), traceback=str(e.__traceback__))
+            log_event(plants_logger, 'ERROR', 'Failed to call scheduler for duration calculation', 
+                     zone_id=zone_id, error=str(e))
             return {
                 'success': False,
-                'error': f'Calculation failed: {str(e)}',
+                'error': f'Scheduler call failed: {str(e)}',
                 'calculated_duration': '00:20:00'  # Default 20 minutes
             }
     
@@ -1131,24 +1018,7 @@ class PlantManager:
             log_event(plants_logger, 'ERROR', 'Failed to trigger smart duration refresh', 
                      zone_id=zone_id, error=str(e))
     
-    def _get_zone_mode(self, zone_id: int) -> str:
-        """Get the current mode of a zone"""
-        try:
-            # Load schedule data to check zone mode
-            schedule_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'schedule.json')
-            if os.path.exists(schedule_file):
-                with open(schedule_file, 'r') as f:
-                    schedule_data = json.load(f)
-                
-                zone_key = str(zone_id)
-                if zone_key in schedule_data:
-                    return schedule_data[zone_key].get('mode', 'disabled')
-            
-            return 'disabled'  # Default if zone not found
-        except Exception as e:
-            log_event(plants_logger, 'ERROR', 'Failed to get zone mode', 
-                     zone_id=zone_id, error=str(e))
-            return 'disabled'
+
     
     def debug_plant_map(self) -> Dict[str, Any]:
         """Debug method to show current plant map structure"""

@@ -3,6 +3,7 @@ export { default as ZoneForm } from './zones.form';
 export { default as LocationForm } from './locations.addlocation';
 export { default as SmartPlacementForm } from './garden.form';
 export { default as LibraryForm } from './library.form';
+export { default as DetailedPlantForm } from './detailedplant.form';
 export { default as TimePicker } from './timepicker.item';
 
 // Styles

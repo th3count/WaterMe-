@@ -58,6 +58,35 @@
       "planting_time": "Early Spring",
       "spacing_inches": 48,
       "growth_type": "Perennial"
+    },
+    {
+      "plant_id": 3,
+      "common_name": "Strawberry, Red",
+      "alternative_name": "",
+      "latin_name": "Fragaria × ananassa",
+      "watering_frequency": [
+        "W2"
+      ],
+      "compatible_watering_frequencies": [
+        "D1"
+      ],
+      "preferred_time": [
+        "06:00"
+      ],
+      "compatible_watering_times": [
+        "ZENITH"
+      ],
+      "root_area_sqft": 0.45,
+      "water_optimal_in_week": 1.5,
+      "tolerance_min_in_week": 1.05,
+      "tolerance_max_in_week": 1.95,
+      "usda_zones": "3-9",
+      "soil_preference": "Sandy loam, pH 5.5-6.5",
+      "sun_exposure": "Full Sun",
+      "fruiting_period": "June",
+      "planting_time": "Early Spring",
+      "spacing_inches": 12,
+      "growth_type": "Perennial"
     }
   ]
 }

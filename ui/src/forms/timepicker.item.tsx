@@ -6,13 +6,15 @@ interface TimePickerProps {
   onTimeSelect: (time: string) => void;
   onCancel: () => void;
   initialSolarMode?: boolean;
+  isModal?: boolean;
 }
 
 const TimePicker: React.FC<TimePickerProps> = ({
   isVisible,
   onTimeSelect,
   onCancel,
-  initialSolarMode = true
+  initialSolarMode = true,
+  isModal = false
 }) => {
   const [solarMode, setSolarMode] = useState(initialSolarMode);
   const [selectedSolarTime, setSelectedSolarTime] = useState<string | null>(null);
@@ -69,7 +71,18 @@ const TimePicker: React.FC<TimePickerProps> = ({
   if (!isVisible) return null;
 
   return (
-    <div ref={timePickerRef} className="form-time-picker-modal form-time-picker--compact">
+    <div 
+      ref={timePickerRef} 
+      className={`form-time-picker-modal form-time-picker--compact ${isModal ? 'form-time-picker--modal' : ''}`}
+      style={isModal ? {
+        position: 'static',
+        top: 'auto',
+        left: 'auto',
+        zIndex: 'auto',
+        width: '100%',
+        maxWidth: 'none'
+      } : {}}
+    >
       {solarMode ? (
         <>
           {/* Solar Time Selection Header */}
