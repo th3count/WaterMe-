@@ -6,6 +6,12 @@ Main Entry Point
 This is the primary entry point for the WaterMe! system.
 It handles system initialization, health checks, and launches all components.
 
+🤖 AI ASSISTANT: For complete system understanding, reference ~/rules/ documentation:
+📖 System Overview: ~/rules/system-overview.md
+🏗️ Project Structure: ~/rules/project-structure.md  
+🌐 API Patterns: ~/rules/api-patterns.md
+💻 Coding Standards: ~/rules/coding-standards.md
+
 Usage:
     python waterme.py                    # Start the system
     python waterme.py --status          # Check system status

@@ -1,4 +1,5 @@
 {
+  "_comment": "AI ASSISTANT: For complete system understanding, reference ~/rules/ documentation: System Overview: ~/rules/system-overview.md, Project Structure: ~/rules/project-structure.md, API Patterns: ~/rules/api-patterns.md, Coding Standards: ~/rules/coding-standards.md",
   "backend_port": 5000,
   "ui_port": 3000,
   "host": "0.0.0.0",

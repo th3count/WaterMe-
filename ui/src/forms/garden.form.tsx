@@ -1,7 +1,20 @@
-import { useState, useEffect, useRef } from 'react';
+/**
+ * garden.form.tsx - Smart plant placement wizard with zone recommendations
+ * 
+ * 🤖 AI ASSISTANT: For complete system understanding, reference ~/rules/ documentation:
+ * 📖 System Overview: ~/rules/system-overview.md
+ * 🏗️ Project Structure: ~/rules/project-structure.md
+ * 🎨 Layer System: ~/rules/layer-system.md
+ * 🌐 API Patterns: ~/rules/api-patterns.md
+ * 🎨 Form System: ~/rules/form-system.md
+ * 🎨 CSS Conventions: ~/rules/css-conventions.md
+ * 💻 Coding Standards: ~/rules/coding-standards.md
+ */
+
+import React, { useState, useEffect, useRef } from 'react';
 import ZoneForm from './zones.form';
 import { getFormLayerStyle, getFormOverlayClassName, useClickOutside } from './utils';
-import { useFormLayer } from './FormLayerManager';
+import { useFormLayer } from '../../../core/useFormLayer';
 import './forms.css';
 
 interface PlantEntry {
@@ -45,7 +58,7 @@ export default function SmartPlacementForm({
 }: SmartPlacementFormProps) {
   const FORM_ID = 'smart-placement-form';
   const formRef = useRef<HTMLDivElement>(null);
-  const { isAnyFormAbove, registerForm, unregisterForm } = useFormLayer();
+  const { addLayer, removeLayer, isAnyFormAbove } = useFormLayer();
 
   // Internal state
   const [plantData, setPlantData] = useState<PlantEntry | null>(null);
@@ -325,16 +338,7 @@ export default function SmartPlacementForm({
     fetchData();
   }, [plant_id, library_book]);
 
-  // Register this form when it mounts
-  useEffect(() => {
-    console.log('🟢 Garden form mounting, registering:', FORM_ID);
-    registerForm(FORM_ID);
-
-    return () => {
-      console.log('🟢 Garden form unmounting, unregistering:', FORM_ID);
-      unregisterForm(FORM_ID);
-    };
-  }, [registerForm, unregisterForm]);
+  // Form is now managed by the layer system - no manual registration needed
 
 
 

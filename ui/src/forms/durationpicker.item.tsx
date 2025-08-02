@@ -1,170 +1,206 @@
-import React, { useState, useRef, useEffect } from 'react';
+/**
+ * 🔗 SYSTEM DOCUMENTATION: See /rules/ directory for comprehensive guides
+ * 📖 Layer System: /rules/layer-system.md
+ * 🎨 CSS Conventions: /rules/css-conventions.md
+ * 
+ * DURATION PICKER COMPONENT
+ * =========================
+ * Reusable time duration selector for irrigation timers.
+ * Integrates with universal layer system - no manual positioning required.
+ */
+
+import React, { useState, useEffect, useRef } from 'react';
+import { getFormLayerStyle, getFormOverlayClassName, useClickOutside } from './utils';
+import { useFormLayer } from '../../../core/useFormLayer';
 import './forms.css';
 
 interface DurationPickerProps {
-  value: string;
-  onChange: (duration: string) => void;
-  onClose: () => void;
-  isVisible: boolean;
+  value?: string;
+  onChange?: (value: string) => void;
+  onClose?: () => void;
+  onStop?: () => void;
+  isVisible?: boolean;
   isModal?: boolean;
+  style?: React.CSSProperties;
+  zone_id?: number;
+  isRunning?: boolean;
 }
 
 const DurationPicker: React.FC<DurationPickerProps> = ({
-  value,
+  value = "00:20:00",
   onChange,
   onClose,
-  isVisible,
-  isModal = false
+  onStop,
+  isVisible = true,
+  isModal = false,
+  style = {},
+  zone_id = 1,
+  isRunning = false
 }) => {
+  const { removeLayer, isAnyFormAbove, isTopLayer } = useFormLayer();
+  const formRef = useRef<HTMLDivElement>(null);
+  const formId = `duration-picker-${zone_id}`;
+  
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(20);
   const [seconds, setSeconds] = useState(0);
-  const durationPickerRef = useRef<HTMLDivElement>(null);
 
-  // Parse initial value
+  // Handle click outside to close
+  useClickOutside(formRef, () => {
+    if (onClose) {
+      onClose();
+    }
+  });
+
   useEffect(() => {
     if (value) {
       const parts = value.split(':');
       if (parts.length === 3) {
         setHours(parseInt(parts[0]) || 0);
-        setMinutes(parseInt(parts[1]) || 20);
+        setMinutes(parseInt(parts[1]) || 0);
         setSeconds(parseInt(parts[2]) || 0);
       }
     }
   }, [value]);
 
-  // Handle click outside to close
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (durationPickerRef.current && !durationPickerRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    if (isVisible) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isVisible, onClose]);
-
-  const formatDuration = (duration: string): string => {
-    if (!duration) return '00:20:00';
-    const parts = duration.split(':');
-    if (parts.length === 3) {
-      return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}:${parts[2].padStart(2, '0')}`;
-    }
-    return '00:20:00';
-  };
-
-  const handleHoursChange = (newHours: number) => {
-    setHours(newHours);
-  };
-
-  const handleMinutesChange = (newMinutes: number) => {
-    setMinutes(newMinutes);
-  };
-
-  const handleSecondsChange = (newSeconds: number) => {
-    setSeconds(newSeconds);
-  };
-
   const handleDone = () => {
-    const newDuration = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    onChange(newDuration);
-    onClose();
+    const duration = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    if (onChange) {
+      onChange(duration);
+    }
   };
 
-  if (!isVisible) return null;
+  const handleStop = () => {
+    if (onStop) {
+      onStop();
+    }
+  };
+
+  const handleCancel = () => {
+    if (onClose) {
+      onClose();
+    }
+  };
+
+  if (!isVisible) {
+    return null;
+  }
 
   return (
-    <div 
-      ref={durationPickerRef} 
-      className={`form-duration-picker-modal ${isModal ? 'form-duration-picker--modal' : ''}`}
-      style={isModal ? {
-        position: 'static',
-        top: 'auto',
-        right: 'auto',
-        zIndex: 'auto',
-        width: '100%',
-        maxWidth: 'none'
-      } : {}}
-    >
-      <div className="form-text-accent form-text-center form-font-600 form-mb-12 form-text-14">
-        Set Duration
-      </div>
+    <div className={getFormOverlayClassName(isTopLayer)} style={getFormLayerStyle(isTopLayer)}>
+      <div 
+        ref={formRef}
+        className="form-container"
+        data-modal="true"
+        style={{
+          minWidth: '320px',
+          maxWidth: '400px',
+          minHeight: '200px'
+        }}
+      >
+        <div className="form-scrollable-content">
+          {/* Header */}
+          <div className="form-flex form-gap-12 form-justify-between form-items-center form-mb-20">
+            <h2 className="form-header form-header--h2">
+              {isRunning ? `Zone ${zone_id} - Timer Running` : `Set Duration for Zone ${zone_id}`}
+            </h2>
+            <button
+              onClick={onClose}
+              className="form-btn form-btn--cancel"
+              type="button"
+              aria-label="Close"
+            >
+              ×
+            </button>
+          </div>
       
-      <div className="form-flex form-gap-12 form-justify-center">
-        {/* Hours */}
-        <div className="form-flex form-flex-column form-items-center form-gap-4">
-          <div className="form-text-muted form-font-600 form-text-12">
-            Hours
-          </div>
-          <select
-            value={hours}
-            onChange={(e) => handleHoursChange(parseInt(e.target.value))}
-            className="form-select"
-            style={{ width: '80px' }}
-          >
-            {Array.from({ length: 24 }, (_, i) => (
-              <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
-            ))}
-          </select>
+          {isRunning ? (
+            <div className="form-section">
+              <div className="form-text-center">
+                <p className="form-text-accent form-mb-16">
+                  ⏱️ Manual timer is currently running for Zone {zone_id}
+                </p>
+                <div className="form-flex form-gap-8 form-justify-center">
+                  <button onClick={handleCancel} className="form-btn form-btn--cancel">
+                    Cancel
+                  </button>
+                  <button onClick={handleStop} className="form-btn form-btn--danger">
+                    Stop Timer
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="form-section">
+              {/* Time Selection */}
+              <div className="form-flex form-gap-12 form-justify-center form-items-center">
+                {/* Hours */}
+                <div className="form-flex form-flex-column form-items-center form-gap-4">
+                  <div className="form-text-muted form-font-600 form-text-12">
+                    Hours
+                  </div>
+                  <select
+                    value={hours}
+                    onChange={(e) => setHours(parseInt(e.target.value))}
+                    className="form-select"
+                    style={{ width: '80px' }}
+                  >
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                {/* Minutes */}
+                <div className="form-flex form-flex-column form-items-center form-gap-4">
+                  <div className="form-text-muted form-font-600 form-text-12">
+                    Minutes
+                  </div>
+                  <select
+                    value={minutes}
+                    onChange={(e) => setMinutes(parseInt(e.target.value))}
+                    className="form-select"
+                    style={{ width: '80px' }}
+                  >
+                    {Array.from({ length: 60 }, (_, i) => (
+                      <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                {/* Seconds */}
+                <div className="form-flex form-flex-column form-items-center form-gap-4">
+                  <div className="form-text-muted form-font-600 form-text-12">
+                    Seconds
+                  </div>
+                  <select
+                    value={seconds}
+                    onChange={(e) => setSeconds(parseInt(e.target.value))}
+                    className="form-select"
+                    style={{ width: '80px' }}
+                  >
+                    {Array.from({ length: 60 }, (_, i) => (
+                      <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="form-flex form-gap-8 form-justify-center form-mt-20">
+                <button onClick={handleCancel} className="form-btn form-btn--cancel">
+                  Cancel
+                </button>
+                <button onClick={handleDone} className="form-btn form-btn--primary">
+                  Start Timer
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-        
-        {/* Minutes */}
-        <div className="form-flex form-flex-column form-items-center form-gap-4">
-          <div className="form-text-muted form-font-600 form-text-12">
-            Minutes
-          </div>
-          <select
-            value={minutes}
-            onChange={(e) => handleMinutesChange(parseInt(e.target.value))}
-            className="form-select"
-            style={{ width: '80px' }}
-          >
-            {Array.from({ length: 60 }, (_, i) => (
-              <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
-            ))}
-          </select>
-        </div>
-        
-        {/* Seconds */}
-        <div className="form-flex form-flex-column form-items-center form-gap-4">
-          <div className="form-text-muted form-font-600 form-text-12">
-            Seconds
-          </div>
-          <select
-            value={seconds}
-            onChange={(e) => handleSecondsChange(parseInt(e.target.value))}
-            className="form-select"
-            style={{ width: '80px' }}
-          >
-            {Array.from({ length: 60 }, (_, i) => (
-              <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-      
-      <div className="form-flex form-gap-8 form-justify-center form-done-button">
-        <button
-          onClick={onClose}
-          className="btn-cancel"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleDone}
-          className="btn-done"
-        >
-          Done
-        </button>
       </div>
     </div>
   );
 };
 
-export default DurationPicker; 
+export default DurationPicker;

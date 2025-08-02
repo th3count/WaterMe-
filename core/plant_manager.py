@@ -1,5 +1,11 @@
 # plant_manager.py
 # Plant management and smart placement logic
+#
+# 🤖 AI ASSISTANT: For complete system understanding, reference ~/rules/ documentation:
+# 📖 System Overview: ~/rules/system-overview.md
+# 🏗️ Project Structure: ~/rules/project-structure.md  
+# 🌐 API Patterns: ~/rules/api-patterns.md
+# 💻 Coding Standards: ~/rules/coding-standards.md
 import os
 import json
 from typing import Dict, List, Optional, Tuple, Any
@@ -441,6 +447,62 @@ class PlantManager:
                      instance_id=instance_id, error=str(e))
             return False, f"Failed to reassign plant: {str(e)}"
     
+    def update_plant_instance(self, instance_id: str, updated_data: Dict[str, Any]) -> Tuple[bool, str]:
+        """
+        Update a plant instance with new data
+        
+        Args:
+            instance_id: The plant instance ID to update
+            updated_data: Dictionary containing fields to update
+        
+        Returns:
+            Tuple[bool, str]: (success, message)
+        """
+        if instance_id not in self.plant_map:
+            return False, "Plant instance not found"
+        
+        old_data = self.plant_map[instance_id].copy()
+        
+        # Update the fields
+        for key, value in updated_data.items():
+            if key != 'instance_id':  # Don't allow changing the instance ID
+                self.plant_map[instance_id][key] = value
+        
+        try:
+            # Save to file
+            with open(MAP_JSON_PATH, 'w', encoding='utf-8') as f:
+                json.dump(self.plant_map, f, indent=2)
+            
+            # Log the changes
+            changes = []
+            for key, new_value in updated_data.items():
+                if key in old_data and old_data[key] != new_value:
+                    changes.append(f"{key}: {old_data[key]} → {new_value}")
+                elif key not in old_data:
+                    changes.append(f"{key}: → {new_value}")
+            
+            log_event(plants_logger, 'INFO', 'Plant instance updated', 
+                     instance_id=instance_id,
+                     changes=', '.join(changes))
+            
+            # Trigger smart duration refresh if zone changed
+            old_zone_id = old_data.get('zone_id')
+            new_zone_id = updated_data.get('zone_id', old_zone_id)
+            
+            if old_zone_id and old_zone_id != new_zone_id:
+                self._trigger_zone_smart_refresh(old_zone_id)
+            if new_zone_id:
+                self._trigger_zone_smart_refresh(new_zone_id)
+            
+            return True, f"Plant instance {instance_id} updated successfully"
+            
+        except Exception as e:
+            # Restore original data on error
+            self.plant_map[instance_id] = old_data
+            log_event(plants_logger, 'ERROR', 'Failed to update plant instance', 
+                     instance_id=instance_id, error=str(e))
+            return False, f"Failed to update plant instance: {str(e)}"
+
     def delete_plant_instance(self, instance_id: str) -> Tuple[bool, str]:
         """
         Delete a plant instance

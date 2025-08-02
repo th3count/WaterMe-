@@ -1,3 +1,15 @@
+/**
+ * App.tsx - Main React application router and garden creation wizard
+ * 
+ * 🤖 AI ASSISTANT: For complete system understanding, reference ~/rules/ documentation:
+ * 📖 System Overview: ~/rules/system-overview.md
+ * 🏗️ Project Structure: ~/rules/project-structure.md
+ * 🎨 Layer System: ~/rules/layer-system.md
+ * 🌐 API Patterns: ~/rules/api-patterns.md
+ * 🎨 CSS Conventions: ~/rules/css-conventions.md
+ * 💻 Coding Standards: ~/rules/coding-standards.md
+ */
+
 import { Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { DateTime } from 'luxon';
@@ -10,7 +22,7 @@ import Settings from './settings.ui';
 import FormsUI from './forms.ui';
 import Sidebar from './Sidebar';
 import { getApiBaseUrl } from './utils';
-import { FormLayerProvider } from './forms/FormLayerManager';
+import { FormLayerProvider } from '../../core/FormLayerManager';
 
 const OPENCAGE_API_KEY = '2e52d2925b4a4575a786f4ba0ae2b6cc';
 

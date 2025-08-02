@@ -1,3 +1,12 @@
+# api.py
+# Flask REST API server with 80+ endpoints for WaterMe! irrigation system
+#
+# 🤖 AI ASSISTANT: For complete system understanding, reference ~/rules/ documentation:
+# 📖 System Overview: ~/rules/system-overview.md
+# 🏗️ Project Structure: ~/rules/project-structure.md  
+# 🌐 API Patterns: ~/rules/api-patterns.md
+# 💻 Coding Standards: ~/rules/coding-standards.md
+
 from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
 import json
@@ -1388,6 +1397,31 @@ def reassign_plant(instance_id):
             return jsonify({'error': message}), 404 if 'not found' in message.lower() else 500
     except Exception as e:
         log_event(error_logger, 'ERROR', f'Plant reassignment exception', 
+                 instance_id=instance_id, 
+                 error=str(e))
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/map/<instance_id>', methods=['PUT'])
+def update_plant_instance(instance_id):
+    """Update a plant instance with new data"""
+    try:
+        data = request.json
+        
+        if not data:
+            log_event(plants_logger, 'WARN', f'Plant instance update failed - invalid data', instance_id=instance_id)
+            return jsonify({'error': 'Invalid update data'}), 400
+        
+        # Use PlantManager to update plant instance
+        success, message = plant_manager.update_plant_instance(instance_id, data)
+        
+        if success:
+            return jsonify({'status': 'success', 'message': message})
+        else:
+            log_event(error_logger, 'ERROR', f'Plant instance update failed', 
+                     instance_id=instance_id, error=message)
+            return jsonify({'error': message}), 404 if 'not found' in message.lower() else 500
+    except Exception as e:
+        log_event(error_logger, 'ERROR', f'Plant instance update exception', 
                  instance_id=instance_id, 
                  error=str(e))
         return jsonify({'error': str(e)}), 500

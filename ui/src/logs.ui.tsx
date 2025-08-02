@@ -1,3 +1,15 @@
+/**
+ * logs.ui.tsx - Real-time log viewer with filtering
+ * 
+ * 🤖 AI ASSISTANT: For complete system understanding, reference ~/rules/ documentation:
+ * 📖 System Overview: ~/rules/system-overview.md
+ * 🏗️ Project Structure: ~/rules/project-structure.md
+ * 🎨 Layer System: ~/rules/layer-system.md
+ * 🌐 API Patterns: ~/rules/api-patterns.md
+ * 🎨 CSS Conventions: ~/rules/css-conventions.md
+ * 💻 Coding Standards: ~/rules/coding-standards.md
+ */
+
 import { useState, useEffect } from 'react';
 import { getApiBaseUrl } from './utils';
 

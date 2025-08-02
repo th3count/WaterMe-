@@ -1640,22 +1640,40 @@
 
 .btn-cancel {
   background: transparent;
-  border: 1px solid var(--form-btn-secondary-text);
-  color: var(--form-btn-secondary-text);
+  border: 2px solid #ff512f;
+  color: #ff512f;
   padding: 8px 16px;
   border-radius: 8px;
+  font-weight: 600;
   font-size: 12px;
   cursor: pointer;
-  transition: var(--form-transition);
-  font-weight: 600;
-  min-width: 70px;
-  text-align: center;
+  transition: all 0.2s;
 }
 
 .btn-cancel:hover {
-  background: var(--form-btn-secondary-text);
-  color: var(--form-text-secondary);
-  border: none;
+  background: #ff512f;
+  color: #181f2a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(255, 81, 47, 0.3);
+}
+
+.btn-stop {
+  background: #ff6b35;
+  border: 2px solid #ff6b35;
+  color: #181f2a;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-stop:hover {
+  background: #ff512f;
+  border-color: #ff512f;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(255, 107, 53, 0.3);
 }
 
 /* Prevent white border flashes during transition - only on hover */

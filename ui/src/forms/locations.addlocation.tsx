@@ -1,3 +1,16 @@
+/**
+ * locations.addlocation.tsx - Location creation and editing form
+ * 
+ * 🤖 AI ASSISTANT: For complete system understanding, reference ~/rules/ documentation:
+ * 📖 System Overview: ~/rules/system-overview.md
+ * 🏗️ Project Structure: ~/rules/project-structure.md
+ * 🎨 Layer System: ~/rules/layer-system.md
+ * 🌐 API Patterns: ~/rules/api-patterns.md
+ * 🎨 Form System: ~/rules/form-system.md
+ * 🎨 CSS Conventions: ~/rules/css-conventions.md
+ * 💻 Coding Standards: ~/rules/coding-standards.md
+ */
+
 import { useState, useEffect, useRef } from 'react';
 import type { Location, FormProps } from './types';
 import { validateRequired, hasValidationErrors, getFormLayerStyle, getFormOverlayClassName, useClickOutside } from './utils';

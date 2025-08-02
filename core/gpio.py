@@ -1,5 +1,11 @@
 # gpio.py
-# GPIO abstraction (simulator/real hardware) 
+# GPIO abstraction (simulator/real hardware)
+#
+# 🤖 AI ASSISTANT: For complete system understanding, reference ~/rules/ documentation:
+# 📖 System Overview: ~/rules/system-overview.md
+# 🏗️ Project Structure: ~/rules/project-structure.md  
+# 🌐 API Patterns: ~/rules/api-patterns.md
+# 💻 Coding Standards: ~/rules/coding-standards.md 
 import os
 import configparser
 import logging

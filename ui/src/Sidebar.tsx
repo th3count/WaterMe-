@@ -1,3 +1,15 @@
+/**
+ * Sidebar.tsx - Navigation sidebar with health status and system time
+ * 
+ * 🤖 AI ASSISTANT: For complete system understanding, reference ~/rules/ documentation:
+ * 📖 System Overview: ~/rules/system-overview.md
+ * 🏗️ Project Structure: ~/rules/project-structure.md
+ * 🎨 Layer System: ~/rules/layer-system.md
+ * 🌐 API Patterns: ~/rules/api-patterns.md
+ * 🎨 CSS Conventions: ~/rules/css-conventions.md
+ * 💻 Coding Standards: ~/rules/coding-standards.md
+ */
+
 import { NavLink } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { getApiBaseUrl } from './utils';

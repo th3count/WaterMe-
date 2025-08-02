@@ -1,5 +1,19 @@
+/**
+ * health.ui.tsx - System health monitoring and orphaned plant detection
+ * 
+ * 🤖 AI ASSISTANT: For complete system understanding, reference ~/rules/ documentation:
+ * 📖 System Overview: ~/rules/system-overview.md
+ * 🏗️ Project Structure: ~/rules/project-structure.md
+ * 🎨 Layer System: ~/rules/layer-system.md
+ * 🌐 API Patterns: ~/rules/api-patterns.md
+ * 🎨 CSS Conventions: ~/rules/css-conventions.md
+ * 💻 Coding Standards: ~/rules/coding-standards.md
+ */
+
 import React, { useEffect, useState } from 'react';
 import { getApiBaseUrl } from './utils';
+import { useFormLayer } from '../../core/useFormLayer';
+import LocationForm from './forms/locations.addlocation';
 
 // Health status icons component
 const HealthIcon = ({ status }: { status: 'good' | 'warning' | 'error' }) => {
@@ -83,7 +97,7 @@ export default function Health() {
     locationId: '',
     comments: ''
   });
-  const [showLocationForm, setShowLocationForm] = useState(false);
+  const { addLayer, removeLayer } = useFormLayer();
   const [locationName, setLocationName] = useState('');
   const [locationDescription, setLocationDescription] = useState('');
   const [selectedLocationZones, setSelectedLocationZones] = useState<number[]>([]);
@@ -269,7 +283,7 @@ export default function Health() {
 
       if (response.ok) {
         const newLocation = await response.json();
-        setShowLocationForm(false);
+        // Location form now handled by layer system
         setLocationName('');
         setLocationDescription('');
         setSelectedLocationZones([]);
@@ -1179,7 +1193,20 @@ export default function Health() {
                     <button
                       type="button"
                       onClick={() => {
-                        setShowLocationForm(true);
+                        const availableZones = zones.map((_, idx) => idx);
+                        addLayer('location-form', 'form', LocationForm, {
+                          availableZones: availableZones,
+                          onSave: async (locationData: any) => {
+                            console.log('Saving location from health:', locationData);
+                            removeLayer('location-form');
+                            // Reload data
+                            // Reload would happen here
+                          },
+                          onCancel: () => removeLayer('location-form'),
+                          loading: savingLocation,
+                          error: '',
+                          isTopLayer: true
+                        });
                       }}
                       style={{
                         background: 'transparent',
@@ -1246,7 +1273,7 @@ export default function Health() {
         )}
 
         {/* Location Creation Form */}
-        {showLocationForm && (
+        {false && (
           <div style={{
             position: 'fixed',
             top: 0,
@@ -1282,7 +1309,7 @@ export default function Health() {
                   Create New Location
                 </h2>
                 <button
-                  onClick={() => setShowLocationForm(false)}
+                  onClick={() => removeLayer('location-form')}
                   style={{
                     background: 'none',
                     border: 'none',
@@ -1404,7 +1431,7 @@ export default function Health() {
                 justifyContent: 'flex-end'
               }}>
                 <button
-                  onClick={() => setShowLocationForm(false)}
+                  onClick={() => removeLayer('location-form')}
                   style={{
                     padding: '12px 20px',
                     borderRadius: '8px',

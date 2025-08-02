@@ -1,8 +1,22 @@
-import { useEffect, useState } from 'react';
+/**
+ * garden.ui.tsx - Main plant management interface with location and zone views
+ * 
+ * 🤖 AI ASSISTANT: For complete system understanding, reference ~/rules/ documentation:
+ * 📖 System Overview: ~/rules/system-overview.md
+ * 🏗️ Project Structure: ~/rules/project-structure.md
+ * 🎨 Layer System: ~/rules/layer-system.md
+ * 🌐 API Patterns: ~/rules/api-patterns.md
+ * 🎨 CSS Conventions: ~/rules/css-conventions.md
+ * 💻 Coding Standards: ~/rules/coding-standards.md
+ */
+
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getApiBaseUrl } from './utils';
+import { useFormLayer } from '../../core/useFormLayer';
 import SmartPlacementForm from './forms/garden.form';
 import DurationPicker from './forms/durationpicker.item';
+import LibraryForm from './forms/library.form';
 
 // Helper to format HHMMSS as human readable
 function formatDuration(d: string): string {
@@ -381,23 +395,29 @@ export default function GardenOverview() {
   
   // Manual timer state
   const [showManualControl, setShowManualControl] = useState<number | null>(null);
-  
-  // Duration picker state
-  const [showDurationPicker, setShowDurationPicker] = useState<{ zoneId: number; zoneName: string } | null>(null);
-
-
-  const [scheduleMode, setScheduleMode] = useState<'manual' | 'smart'>('manual');
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  
+  // Layer system for forms
+  const { addLayer, removeLayer } = useFormLayer();
+  
+  // Form visibility states
+  const [showPlantDetail, setShowPlantDetail] = useState<{instance_id: string} | null>(null);
+
+
 
   function startManualTimer(zone_id: number, seconds: number) {
+    console.log('🔵 startManualTimer called with zone_id:', zone_id, 'seconds:', seconds);
     // Set expected state to ON and start transition timer
     setExpectedZoneStates(prev => ({ ...prev, [zone_id]: true }));
     setZoneTransitionTimestamps(prev => ({ ...prev, [zone_id]: Date.now() }));
     setZoneValidationStates(prev => ({ ...prev, [zone_id]: 'orange' }));
     
-    fetch(`${getApiBaseUrl()}/api/manual-timer/${zone_id}`, {
+    const apiUrl = `${getApiBaseUrl()}/api/manual-timer/${zone_id}`;
+    console.log('🔵 Making API call to:', apiUrl, 'with body:', { duration: seconds });
+    
+    fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ duration: seconds })
@@ -1429,13 +1449,13 @@ export default function GardenOverview() {
       overflowX: 'hidden',
       overflowY: 'auto'
     }}>
-      <div style={{
-        maxWidth: '1200px',
-        marginLeft: 0,
-        marginRight: 0,
-        padding: '20px 20px 20px 0',
-        overflow: 'visible'
-      }}>
+        <div style={{
+          maxWidth: '1200px',
+          marginLeft: 0,
+          marginRight: 0,
+          padding: '20px 20px 20px 0',
+          overflow: 'visible'
+        }}>
         <div style={{
           display: 'flex',
           justifyContent: 'flex-end',
@@ -1444,7 +1464,8 @@ export default function GardenOverview() {
           gap: '12px',
           height: '30px'
         }}>
-          {/* Invisible spacer to match Plants page layout */}
+
+
         </div>
         
         {/* Reassignment Message */}
@@ -1714,8 +1735,10 @@ export default function GardenOverview() {
                 display: 'flex',
                             justifyContent: 'space-between',
                 alignItems: 'center',
-                            position: 'relative'
+                            position: 'relative',
+                            cursor: 'pointer'
                           }}
+                          onClick={() => setShowPlantDetail({instance_id: ap.instanceId})}
                         >
                           <span style={{ fontWeight: 'bold' }}>
                             {ap.plant.common_name}
@@ -1995,7 +2018,47 @@ export default function GardenOverview() {
                     cursor: 'pointer',
                     transition: 'all 0.2s ease'
                   }}
-                                      onClick={e => { e.stopPropagation(); setShowDurationPicker({ zoneId: zone.zone_id, zoneName: `Zone ${zone.zone_id}` }); }}
+                                      onClick={e => { 
+                    e.stopPropagation(); 
+                    const mouseX = e.clientX;
+                    const mouseY = e.clientY;
+                    
+                    // Check if zone is currently running
+                    const zoneState = zoneStates[zone.zone_id] || { active: false };
+                    const isRunning = zoneState.active;
+                    
+                    // Show duration picker for this zone using layer system
+                    const layerId = `duration-picker-${zone.zone_id}`;
+                    addLayer(layerId, 'picker', DurationPicker, {
+                      value: "00:20:00",
+                      zone_id: zone.zone_id,
+                      isRunning: isRunning,
+                      onChange: (duration: string) => {
+                        console.log('🔵 Garden UI onChange called with duration:', duration);
+                        // Parse duration string (HH:mm:ss) to seconds
+                        const parts = duration.split(':');
+                        if (parts.length === 3) {
+                          const hours = parseInt(parts[0]) || 0;
+                          const minutes = parseInt(parts[1]) || 0;
+                          const seconds = parseInt(parts[2]) || 0;
+                          const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+                          console.log('🔵 Garden UI calling startManualTimer with zone_id:', zone.zone_id, 'totalSeconds:', totalSeconds);
+                          startManualTimer(zone.zone_id, totalSeconds);
+                        }
+                        removeLayer(layerId);
+                      },
+                      onClose: () => {
+                        removeLayer(layerId);
+                      },
+                      onStop: () => {
+                        console.log('🔵 Garden UI onStop called for zone_id:', zone.zone_id);
+                        stopManualTimer(zone.zone_id);
+                        removeLayer(layerId);
+                      },
+                      isVisible: true,
+                      isModal: true
+                    });
+                  }}
                   title="Click to start/stop manual timer"
                   >
                     <div style={{
@@ -2249,129 +2312,16 @@ export default function GardenOverview() {
             </div>
           </div>
         )}
-        
-        {/* Duration Picker Modal - Rendered at the end to ensure proper layering */}
-        {showDurationPicker && (
-          <>
-            {zoneStates[showDurationPicker.zoneId]?.active ? (
-              // Show stop timer controls when zone is active
-              <div 
-                data-modal="true"
-                style={{
-                  position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  background: 'rgba(0,0,0,0.8)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  zIndex: 10000
-                }}
-              >
-                <div style={{
-                  background: '#232b3b',
-                  borderRadius: '16px',
-                  padding: '32px',
-                  minWidth: '500px',
-                  maxWidth: '700px',
-                  maxHeight: '95vh',
-                  color: '#f4f4f4',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                  overflow: 'auto'
-                }}>
-                  <h3 style={{
-                    color: '#00bcd4',
-                    fontWeight: 700,
-                    margin: '0 0 16px 0',
-                    textAlign: 'left',
-                    flexShrink: 0
-                  }}>
-                    Stop Timer: {showDurationPicker.zoneName}
-                  </h3>
-                  <div style={{
-                    background: '#1a1f2a',
-                    borderRadius: '8px',
-                    padding: '16px',
-                    marginBottom: '20px',
-                    border: '1px solid #00bcd4'
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '12px'
-                    }}>
-                      <p style={{ margin: 0, color: '#00bcd4', fontWeight: 600 }}>
-                        ⏱️ Manual timer is currently running
-                      </p>
-                    </div>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      gap: '12px',
-                      marginTop: '16px'
-                    }}>
-                      <button
-                        onClick={() => {
-                          stopManualTimer(showDurationPicker.zoneId);
-                          setShowDurationPicker(null);
-                        }}
-                        style={{
-                          padding: '12px 24px',
-                          borderRadius: '8px',
-                          border: 'none',
-                          background: '#ff512f',
-                          color: '#fff',
-                          fontWeight: 700,
-                          fontSize: '16px',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Stop Timer
-                      </button>
-                      <button
-                        onClick={() => setShowDurationPicker(null)}
-                        style={{
-                          padding: '12px 24px',
-                          borderRadius: '8px',
-                          border: '2px solid #666',
-                          background: 'transparent',
-                          color: '#666',
-                          fontWeight: 700,
-                          fontSize: '16px',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              // Show duration picker when zone is inactive - let it handle its own overlay
-              <DurationPicker
-                value="00:20:00"
-                onChange={(duration) => {
-                  // Parse duration string (HH:mm:ss) to seconds
-                  const parts = duration.split(':');
-                  if (parts.length === 3) {
-                    const hours = parseInt(parts[0]) || 0;
-                    const minutes = parseInt(parts[1]) || 0;
-                    const seconds = parseInt(parts[2]) || 0;
-                    const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-                    startManualTimer(showDurationPicker.zoneId, totalSeconds);
-                  }
-                  setShowDurationPicker(null);
-                }}
-                onClose={() => setShowDurationPicker(null)}
-                isVisible={true}
-                isModal={true}
-              />
-            )}
-          </>
+
+
+
+        {/* Plant Detail Modal */}
+        {showPlantDetail && (
+          <LibraryForm
+            mode="garden"
+            instance_id={showPlantDetail.instance_id}
+            onClose={() => setShowPlantDetail(null)}
+          />
         )}
         
       </div>

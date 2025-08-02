@@ -1,3 +1,14 @@
+/**
+ * forms/utils.ts - Form utilities and validation functions
+ * 
+ * 🤖 AI ASSISTANT: For complete system understanding, reference ~/rules/ documentation:
+ * 📖 System Overview: ~/rules/system-overview.md
+ * 🏗️ Project Structure: ~/rules/project-structure.md
+ * 🎨 Form System: ~/rules/form-system.md
+ * 🌐 API Patterns: ~/rules/api-patterns.md
+ * 💻 Coding Standards: ~/rules/coding-standards.md
+ */
+
 import type { FormValidationErrors } from './types';
 import { useEffect } from 'react';
 

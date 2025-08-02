@@ -1,8 +1,21 @@
-import { useState, useEffect, useRef } from 'react';
+/**
+ * zones.form.tsx - Zone configuration editor with smart/manual modes
+ * 
+ * 🤖 AI ASSISTANT: For complete system understanding, reference ~/rules/ documentation:
+ * 📖 System Overview: ~/rules/system-overview.md
+ * 🏗️ Project Structure: ~/rules/project-structure.md
+ * 🎨 Layer System: ~/rules/layer-system.md
+ * 🌐 API Patterns: ~/rules/api-patterns.md
+ * 🎨 Form System: ~/rules/form-system.md
+ * 🎨 CSS Conventions: ~/rules/css-conventions.md
+ * 💻 Coding Standards: ~/rules/coding-standards.md
+ */
+
+import React, { useState, useEffect, useRef } from 'react';
 import type { Zone, FormProps } from './types';
 import { formatDuration, defaultTime, getTomorrow, getFormLayerStyle, getFormOverlayClassName, useClickOutside } from './utils';
 import { getApiBaseUrl } from '../utils';
-import { useFormLayer } from './FormLayerManager';
+import { useFormLayer } from '../../../core/useFormLayer';
 import './forms.css';
 
 interface ZoneFormProps extends FormProps {
@@ -39,7 +52,7 @@ export default function ZoneForm({
   const formRef = useRef<HTMLDivElement>(null);
   const timePickerRef = useRef<HTMLDivElement>(null);
   const durationPickerRef = useRef<HTMLDivElement>(null);
-  const { isAnyFormAbove, registerForm, unregisterForm } = useFormLayer();
+  const { addLayer, removeLayer, isAnyFormAbove } = useFormLayer();
   
   // Function to parse watering frequency from plant data
   const parseWateringFrequency = (frequency: string): { period: string; cycles: number } => {
@@ -113,16 +126,7 @@ export default function ZoneForm({
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [saveMessage, setSaveMessage] = useState<string>('');
 
-  // Register this form when it mounts
-  useEffect(() => {
-    console.log('🟡 Zone form mounting, registering:', FORM_ID);
-    registerForm(FORM_ID);
-
-    return () => {
-      console.log('🟡 Zone form unmounting, unregistering:', FORM_ID);
-      unregisterForm(FORM_ID);
-    };
-  }, [registerForm, unregisterForm]);
+  // Form is now managed by the layer system - no manual registration needed
 
   // Fetch and apply plant watering frequency when component mounts
   useEffect(() => {
@@ -167,7 +171,7 @@ export default function ZoneForm({
     if (onCancel) {
       onCancel();
     }
-  }, !isAnyFormAbove(FORM_ID)); // Only enable when this is the top layer
+  }, !isAnyFormAbove()); // Only enable when this is the top layer
 
   // Handle click outside time picker to close
   useClickOutside(timePickerRef, () => {
