@@ -1,0 +1,24 @@
+[2025-08-03 01:39:22] [INFO] [watering] Triggering initial smart duration refresh after initialization
+[2025-08-03 01:39:22] [INFO] [watering] Smart zone duration calculated | zone_id=1 total_plants=5 total_seconds=7126.496999999999 average_seconds=1425.2993999999999 calculated_duration=00:23:45 plant_count=5 mock_mode=False
+[2025-08-03 01:39:22] [INFO] [watering] Smart zone duration calculated | zone_id=2 total_plants=3 total_seconds=55509.3 average_seconds=18503.100000000002 calculated_duration=05:08:23 plant_count=3 mock_mode=False
+[2025-08-03 01:39:22] [INFO] [watering] Smart duration refresh completed | zones_updated=2 zones_skipped=6 total_zones_checked=8
+[2025-08-03 01:39:22] [INFO] [watering] Initial smart duration refresh completed | zones_updated=2
+[2025-08-03 01:47:32] [INFO] [watering] Triggering initial smart duration refresh after initialization
+[2025-08-03 01:47:32] [INFO] [watering] Smart zone duration calculated | zone_id=1 total_plants=5 total_seconds=7126.496999999999 average_seconds=1425.2993999999999 calculated_duration=00:23:45 plant_count=5 mock_mode=False
+[2025-08-03 01:47:32] [INFO] [watering] Smart zone duration calculated | zone_id=2 total_plants=3 total_seconds=55509.3 average_seconds=18503.100000000002 calculated_duration=05:08:23 plant_count=3 mock_mode=False
+[2025-08-03 01:47:32] [INFO] [watering] Smart duration refresh completed | zones_updated=2 zones_skipped=6 total_zones_checked=8
+[2025-08-03 01:47:32] [INFO] [watering] Initial smart duration refresh completed | zones_updated=2
+[2025-08-03 02:29:55] [INFO] [watering] Smart zone duration calculated | zone_id=1 total_plants=6 total_seconds=9397.331999999999 average_seconds=1566.2219999999998 calculated_duration=00:26:06 plant_count=6 mock_mode=False
+[2025-08-03 02:30:10] [INFO] [watering] Smart zone duration calculated | zone_id=1 total_plants=5 total_seconds=7126.496999999999 average_seconds=1425.2993999999999 calculated_duration=00:23:45 plant_count=5 mock_mode=False
+[2025-08-03 02:30:30] [INFO] [watering] Smart zone duration calculated | zone_id=2 total_plants=2 total_seconds=34483.05 average_seconds=17241.525 calculated_duration=04:47:21 plant_count=2 mock_mode=False
+[2025-08-03 02:30:40] [INFO] [watering] Smart zone duration calculated | zone_id=1 total_plants=4 total_seconds=4855.662 average_seconds=1213.9155 calculated_duration=00:20:13 plant_count=4 mock_mode=False
+[2025-08-03 02:30:47] [INFO] [watering] Smart zone duration calculated | zone_id=1 total_plants=3 total_seconds=2584.827 average_seconds=861.609 calculated_duration=00:14:21 plant_count=3 mock_mode=False
+[2025-08-03 02:30:50] [INFO] [watering] Smart zone duration calculated | zone_id=1 total_plants=2 total_seconds=2018.52 average_seconds=1009.26 calculated_duration=00:16:49 plant_count=2 mock_mode=False
+[2025-08-03 02:30:53] [INFO] [watering] Smart zone duration calculated | zone_id=1 total_plants=1 total_seconds=1009.26 average_seconds=1009.26 calculated_duration=00:16:49 plant_count=1 mock_mode=False
+[2025-08-03 02:31:09] [INFO] [watering] Smart zone duration calculated | zone_id=2 total_plants=1 total_seconds=13456.8 average_seconds=13456.8 calculated_duration=03:44:16 plant_count=1 mock_mode=False
+[2025-08-03 02:31:14] [INFO] [watering] Zone mode updated | zone_id=2 old_mode=None new_mode=disabled
+[2025-08-03 02:31:48] [INFO] [watering] Zone mode updated | zone_id=2 old_mode=None new_mode=disabled
+[2025-08-03 02:32:42] [INFO] [watering] Smart zone duration calculated | zone_id=3 total_plants=1 total_seconds=13456.8 average_seconds=13456.8 calculated_duration=03:44:16 plant_count=1 mock_mode=False
+[2025-08-03 02:33:34] [INFO] [watering] Zone mode updated | zone_id=3 old_mode=None new_mode=disabled
+[2025-08-03 02:33:50] [INFO] [watering] Zone mode updated | zone_id=1 old_mode=None new_mode=disabled
+[2025-08-03 02:34:30] [INFO] [watering] Smart zone duration calculated | zone_id=1 total_plants=2 total_seconds=1387.7325 average_seconds=693.86625 calculated_duration=00:11:33 plant_count=2 mock_mode=False

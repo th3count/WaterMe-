@@ -10,7 +10,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { getFormLayerStyle, getFormOverlayClassName, useClickOutside } from './utils';
+
 import { useFormLayer } from '../../../core/useFormLayer';
 import './forms.css';
 
@@ -37,7 +37,7 @@ const DurationPicker: React.FC<DurationPickerProps> = ({
   zone_id = 1,
   isRunning = false
 }) => {
-  const { removeLayer, isAnyFormAbove, isTopLayer } = useFormLayer();
+  const { removeLayer } = useFormLayer();
   const formRef = useRef<HTMLDivElement>(null);
   const formId = `duration-picker-${zone_id}`;
   
@@ -45,12 +45,7 @@ const DurationPicker: React.FC<DurationPickerProps> = ({
   const [minutes, setMinutes] = useState(20);
   const [seconds, setSeconds] = useState(0);
 
-  // Handle click outside to close
-  useClickOutside(formRef, () => {
-    if (onClose) {
-      onClose();
-    }
-  });
+
 
   useEffect(() => {
     if (value) {
@@ -87,31 +82,20 @@ const DurationPicker: React.FC<DurationPickerProps> = ({
   }
 
   return (
-    <div className={getFormOverlayClassName(isTopLayer)} style={getFormLayerStyle(isTopLayer)}>
-      <div 
-        ref={formRef}
-        className="form-container"
-        data-modal="true"
-        style={{
-          minWidth: '320px',
-          maxWidth: '400px',
-          minHeight: '200px'
-        }}
-      >
-        <div className="form-scrollable-content">
+    <div 
+      ref={formRef}
+      className="form-container form-container--small"
+      style={{
+        minWidth: '320px',
+        maxWidth: '400px',
+        minHeight: '200px'
+      }}
+    >
           {/* Header */}
-          <div className="form-flex form-gap-12 form-justify-between form-items-center form-mb-20">
-            <h2 className="form-header form-header--h2">
+          <div className="form-text-center form-mb-20">
+            <h2 className="form-header form-header--h2" style={{ textAlign: 'center', justifyContent: 'center' }}>
               {isRunning ? `Zone ${zone_id} - Timer Running` : `Set Duration for Zone ${zone_id}`}
             </h2>
-            <button
-              onClick={onClose}
-              className="form-btn form-btn--cancel"
-              type="button"
-              aria-label="Close"
-            >
-              ×
-            </button>
           </div>
       
           {isRunning ? (
@@ -120,11 +104,11 @@ const DurationPicker: React.FC<DurationPickerProps> = ({
                 <p className="form-text-accent form-mb-16">
                   ⏱️ Manual timer is currently running for Zone {zone_id}
                 </p>
-                <div className="form-flex form-gap-8 form-justify-center">
-                  <button onClick={handleCancel} className="form-btn form-btn--cancel">
+                <div className="form-actions form-actions--end">
+                  <button onClick={handleCancel} className="form-btn form-btn--secondary form-btn--flex">
                     Cancel
                   </button>
-                  <button onClick={handleStop} className="form-btn form-btn--danger">
+                  <button onClick={handleStop} className="form-btn form-btn--danger form-btn--flex">
                     Stop Timer
                   </button>
                 </div>
@@ -187,18 +171,16 @@ const DurationPicker: React.FC<DurationPickerProps> = ({
               </div>
               
               {/* Action Buttons */}
-              <div className="form-flex form-gap-8 form-justify-center form-mt-20">
-                <button onClick={handleCancel} className="form-btn form-btn--cancel">
+              <div className="form-actions form-actions--end">
+                <button onClick={handleCancel} className="form-btn form-btn--secondary form-btn--flex">
                   Cancel
                 </button>
-                <button onClick={handleDone} className="form-btn form-btn--primary">
+                <button onClick={handleDone} className="form-btn form-btn--primary form-btn--flex">
                   Start Timer
                 </button>
               </div>
             </div>
           )}
-        </div>
-      </div>
     </div>
   );
 };

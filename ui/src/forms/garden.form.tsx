@@ -13,6 +13,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import ZoneForm from './zones.form';
+import LocationItem from './location.item';
 import { getFormLayerStyle, getFormOverlayClassName, useClickOutside } from './utils';
 import { useFormLayer } from '../../../core/useFormLayer';
 import './forms.css';
@@ -84,6 +85,7 @@ export default function SmartPlacementForm({
   const [zoneFormData, setZoneFormData] = useState<any>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [saveMessage, setSaveMessage] = useState('');
+  const [showLocationForm, setShowLocationForm] = useState(false);
 
   // Custom scrollbar functionality
   useEffect(() => {
@@ -339,6 +341,43 @@ export default function SmartPlacementForm({
   }, [plant_id, library_book]);
 
   // Form is now managed by the layer system - no manual registration needed
+
+  // Function to refresh locations data
+  const refreshLocations = async () => {
+    try {
+      console.log('Refreshing locations data...');
+      const locationsResponse = await fetch('/api/locations', {
+        signal: AbortSignal.timeout(5000)
+      });
+      
+      if (!locationsResponse.ok) {
+        throw new Error(`Failed to fetch locations: ${locationsResponse.status}`);
+      }
+      
+      const locationsData = await locationsResponse.json();
+      console.log('Refreshed locations data:', locationsData);
+      
+      // Convert object structure to array if needed
+      let locationsArray = [];
+      if (Array.isArray(locationsData)) {
+        locationsArray = locationsData;
+      } else if (locationsData.locations && Array.isArray(locationsData.locations)) {
+        locationsArray = locationsData.locations;
+      } else if (typeof locationsData === 'object' && locationsData !== null) {
+        locationsArray = Object.entries(locationsData).map(([location_id, location]: [string, any]) => ({
+          location_id: parseInt(location_id),
+          name: location.name,
+          description: location.description,
+          zones: location.zones || []
+        }));
+      }
+      
+      setLocations(locationsArray);
+      console.log('Locations refreshed successfully');
+    } catch (error) {
+      console.error('Error refreshing locations:', error);
+    }
+  };
 
 
 
@@ -772,7 +811,7 @@ export default function SmartPlacementForm({
               <p className="form-section-title">
                 📍 Select location:
               </p>
-              <div className="form-button-grid">
+              <div className="form-flex form-flex-column form-gap-8">
                 {(() => {
                   console.log('Location selection debug:', {
                     modalDataZoneId: modalData.zoneId,
@@ -788,9 +827,24 @@ export default function SmartPlacementForm({
                     <div
                       key={loc.location_id}
                       onClick={() => setModalData({ ...modalData, locationId: loc.location_id.toString() })}
-                      className={`form-select-button form-location-button ${modalData.locationId === loc.location_id.toString() ? 'form-select-button--selected' : ''}`}
+                      className={`form-zone-button ${modalData.locationId === loc.location_id.toString() ? 'form-zone-button--selected' : 'form-zone-button--active'}`}
                     >
-                      {loc.name}
+                      <div className="form-flex form-justify-between form-items-center">
+                        <div>
+                          <strong>{loc.name}</strong>
+                          <div className="form-text-muted form-text-muted--small">
+                            {loc.description || 'No description'}
+                            {loc.zones && loc.zones.length > 0 && (
+                              <span className="form-zone-details">
+                                • Zones: {loc.zones.join(', ')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className={`form-btn form-btn--small form-zone-match-badge ${modalData.locationId === loc.location_id.toString() ? 'form-zone-match-badge--selected' : 'form-zone-match-badge--manual'}`}>
+                          Location
+                        </div>
+                      </div>
                     </div>
                   ))}
                 {locations.filter(loc => loc.zones.includes(parseInt(modalData.zoneId))).length === 0 && (
@@ -803,8 +857,7 @@ export default function SmartPlacementForm({
                 <button
                   type="button"
                   onClick={() => {
-                    // Handle add location (placeholder for now)
-                    console.log('Add new location clicked');
+                    setShowLocationForm(true);
                   }}
                   className="form-btn form-btn--outline"
                 >
@@ -965,6 +1018,43 @@ export default function SmartPlacementForm({
             onCancel={() => {
               setShowZoneForm(false);
               setZoneFormData(null);
+            }}
+          />
+        </div>
+      )}
+
+      {/* Location Form Overlay */}
+      {showLocationForm && (
+        <div
+          data-modal="true"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 1001,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <LocationItem
+            onSave={async (locationData) => {
+              try {
+                console.log('Location saved successfully:', locationData);
+                // Close the location form
+                setShowLocationForm(false);
+                // Refresh locations to show the new location
+                await refreshLocations();
+                console.log('Locations refreshed after save');
+              } catch (error) {
+                console.error('Error handling location save:', error);
+              }
+            }}
+            onCancel={() => {
+              setShowLocationForm(false);
             }}
           />
         </div>

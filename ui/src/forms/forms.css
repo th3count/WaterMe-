@@ -654,6 +654,7 @@
   border-radius: 6px;
   cursor: pointer;
   transition: var(--form-transition);
+  width: 100%; /* Ensure full width */
 }
 
 .form-zone-button--active {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ZoneForm from './forms/zones.form';
 import LocationForm from './forms/locations.addlocation';
+import LocationItem from './forms/location.item';
 import SmartPlacementForm from './forms/garden.form';
 import LibraryForm from './forms/library.form';
 import TimePicker from './forms/timepicker.item';
@@ -49,6 +50,12 @@ const FORM_COMPONENTS: Record<string, {
   'durationpicker.item.tsx': { 
     component: DurationPicker, 
     importPath: './forms/durationpicker.item',
+    directory: 'ui/src/forms/',
+    type: 'item'
+  },
+  'location.item.tsx': { 
+    component: LocationItem, 
+    importPath: './forms/location.item',
     directory: 'ui/src/forms/',
     type: 'item'
   }
@@ -116,6 +123,13 @@ const FORM_DEFAULT_PROPS: Record<string, any> = {
       transform: 'translate(-50%, -50%)',
       zIndex: 1000
     }
+  },
+  'location.item.tsx': {
+    // Create mode (no location_id)
+    onSave: (locationData: any) => console.log('Demo save - Location Item (Create):', locationData),
+    onCancel: () => console.log('Demo cancel - Location Item'),
+    loading: false,
+    error: ''
   }
 };
 
@@ -126,7 +140,8 @@ const FORM_DESCRIPTIONS: Record<string, string> = {
   'garden.form.tsx': 'Smart placement form for placing plants from library into garden zones (in ui/src/forms/garden.form.tsx)',
   'library.form.tsx': 'Universal plant viewer/editor - supports library, garden, and edit modes (in ui/src/forms/library.form.tsx)',
   'timepicker.item.tsx': 'Time picker component for selecting watering times (in ui/src/forms/timepicker.item.tsx)',
-  'durationpicker.item.tsx': 'Duration picker component for selecting watering duration (in ui/src/forms/durationpicker.item.tsx)'
+  'durationpicker.item.tsx': 'Duration picker component for selecting watering duration (in ui/src/forms/durationpicker.item.tsx)',
+  'location.item.tsx': 'Location creation and editing item - simple picker for location CRUD operations (in ui/src/forms/location.item.tsx)'
 };
 
 // Form display names
@@ -136,7 +151,8 @@ const FORM_NAMES: Record<string, string> = {
   'garden.form.tsx': 'Smart Placement Form',
   'library.form.tsx': 'Universal Plant Form',
   'timepicker.item.tsx': 'Time Picker',
-  'durationpicker.item.tsx': 'Duration Picker'
+  'durationpicker.item.tsx': 'Duration Picker',
+  'location.item.tsx': 'Location Item'
 };
 
 // Available forms and pickers
@@ -185,6 +201,13 @@ const PICKERS_LIST = [
     description: 'Duration picker component for selecting watering duration',
     component: DurationPicker,
     defaultProps: FORM_DEFAULT_PROPS['durationpicker.item.tsx']
+  },
+  {
+    name: 'Location Item',
+    file: 'location.item.tsx',
+    description: 'Location creation and editing item - simple picker for location CRUD operations',
+    component: LocationItem,
+    defaultProps: FORM_DEFAULT_PROPS['location.item.tsx']
   }
 ];
 

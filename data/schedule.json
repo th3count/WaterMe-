@@ -1,35 +1,31 @@
 {
   "1": {
-    "comment": "",
-    "cycles": 1,
     "mode": "smart",
-    "period": "W",
-    "startDay": "2025-07-27",
+    "period": "D",
+    "cycles": 1,
     "times": [
       {
-        "duration": "00:23:45",
-        "start_time": "06:00"
+        "start_time": "06:00",
+        "duration": "00:11:33",
+        "value": "06:00"
       }
-    ]
+    ],
+    "startDay": "2025-08-04",
+    "comment": ""
   },
   "2": {
     "mode": "smart",
     "period": "W",
-    "cycles": 2,
+    "cycles": 1,
     "times": [
       {
         "start_time": "06:00",
-        "duration": "05:08:23",
-        "value": "06:00"
-      },
-      {
-        "start_time": "06:00",
-        "duration": "05:08:23",
+        "duration": "00:20:00",
         "value": "06:00"
       }
     ],
-    "startDay": "2025-08-01",
-    "comment": "2w"
+    "startDay": "2025-08-04",
+    "comment": ""
   },
   "3": {
     "mode": "disabled"

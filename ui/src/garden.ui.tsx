@@ -17,6 +17,7 @@ import { useFormLayer } from '../../core/useFormLayer';
 import SmartPlacementForm from './forms/garden.form';
 import DurationPicker from './forms/durationpicker.item';
 import LibraryForm from './forms/library.form';
+import LocationItem from './forms/location.item';
 
 // Helper to format HHMMSS as human readable
 function formatDuration(d: string): string {
@@ -404,6 +405,7 @@ export default function GardenOverview() {
   
   // Form visibility states
   const [showPlantDetail, setShowPlantDetail] = useState<{instance_id: string} | null>(null);
+  const [editingLocationId, setEditingLocationId] = useState<number | null>(null);
 
 
 
@@ -1215,6 +1217,36 @@ export default function GardenOverview() {
         emitterSizingMode: 'manual',
         zoneSelectionMode: 'manual'
       });
+    } else {
+      // Open location item for editing
+      const location = locations[idx];
+      if (location) {
+        setEditingLocationId(location.location_id);
+        const layerId = `location-edit-${location.location_id}`;
+        addLayer(layerId, 'form', LocationItem, {
+          location_id: location.location_id,
+          onSave: (updatedLocation: any) => {
+            console.log('Location updated:', updatedLocation);
+            // Refresh locations data by reloading from API
+            fetch(`${getApiBaseUrl()}/api/locations`)
+              .then(response => response.json())
+              .then(data => {
+                setLocations(data);
+                removeLayer(layerId);
+                setEditingLocationId(null);
+              })
+              .catch(error => {
+                console.error('Error refreshing locations:', error);
+                removeLayer(layerId);
+                setEditingLocationId(null);
+              });
+          },
+          onCancel: () => {
+            removeLayer(layerId);
+            setEditingLocationId(null);
+          }
+        });
+      }
     }
   };
 
@@ -1657,23 +1689,28 @@ export default function GardenOverview() {
                   }}>{loc.name}</h2>
                     
                     {/* Delete Button */}
-                    <span
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDeleteLocation(loc.location_id, loc.name);
                       }}
+                      className="form-btn form-btn--cancel"
                       style={{
-                        color: '#dc3545',
-                        cursor: 'pointer',
-                        fontSize: '16px',
-                        fontWeight: 'bold',
-                        padding: '2px',
+                        background: 'none',
+                        border: 'none',
+                        fontSize: '24px',
+                        padding: '0',
+                        width: '30px',
+                        height: '30px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                         marginLeft: '8px'
                       }}
                       title={`Delete location "${loc.name}"`}
                     >
                       ×
-                </span>
+                    </button>
                   </div>
                 <div style={{
                     color: heldPlant ? '#181f2a' : '#bdbdbd',
@@ -1745,22 +1782,27 @@ export default function GardenOverview() {
                           </span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ color: '#bdbdbd' }}>x{ap.quantity}</span>
-                            <span
+                            <button
                               onClick={(e) => {
                               e.stopPropagation(); 
                               handleRemovePlant(idx, ap.instanceId); 
                             }}
-                            style={{
-                                color: '#dc3545',
-                                cursor: 'pointer',
-                                fontSize: '14px',
-                                fontWeight: 'bold',
-                                padding: '2px'
+                              className="form-btn form-btn--cancel"
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                fontSize: '24px',
+                                padding: '0',
+                                width: '30px',
+                                height: '30px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
                               }}
                               title={`Delete ${ap.plant.common_name} (x${ap.quantity})`}
                             >
                               ×
-                            </span>
+                            </button>
                           </div>
                         </li>
                       ))}
@@ -1852,15 +1894,17 @@ export default function GardenOverview() {
                             display: 'flex',
                               justifyContent: 'space-between',
                             alignItems: 'center',
-                              position: 'relative'
+                              position: 'relative',
+                              cursor: 'pointer'
                             }}
+                            onClick={() => setShowPlantDetail({instance_id: ap.instanceId})}
                           >
                             <span style={{ fontWeight: 'bold' }}>
                               {ap.plant.common_name}
                             </span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <span style={{ color: '#bdbdbd' }}>x{ap.quantity}</span>
-                              <span
+                              <button
                                 onClick={(e) => {
                                 e.stopPropagation(); 
                                 // Find the location index for this plant
@@ -1871,17 +1915,22 @@ export default function GardenOverview() {
                                 handleRemovePlant(locationIdx, ap.instanceId); 
                                   }
                               }}
-                              style={{
-                                  color: '#dc3545',
-                                  cursor: 'pointer',
-                                  fontSize: '14px',
-                                  fontWeight: 'bold',
-                                  padding: '2px'
+                                className="form-btn form-btn--cancel"
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  fontSize: '24px',
+                                  padding: '0',
+                                  width: '30px',
+                                  height: '30px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
                                 }}
                                 title={`Delete ${ap.plant.common_name} (x${ap.quantity})`}
                               >
                                 ×
-                              </span>
+                              </button>
               </div>
                           </li>
                         ))}
