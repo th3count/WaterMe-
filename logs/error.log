@@ -61,3 +61,5 @@
 [2025-08-03 02:37:29] [ERROR] [error] Failed to check daily refresh | error='WateringScheduler' object has no attribute '_daily_refresh_done'
 [2025-08-03 02:38:29] [ERROR] [error] Failed to check daily refresh | error='WateringScheduler' object has no attribute '_daily_refresh_done'
 [2025-08-03 02:39:29] [ERROR] [error] Failed to check daily refresh | error='WateringScheduler' object has no attribute '_daily_refresh_done'
+[2025-08-03 02:40:29] [ERROR] [error] Failed to check daily refresh | error='WateringScheduler' object has no attribute '_daily_refresh_done'
+[2025-08-03 02:41:29] [ERROR] [error] Failed to check daily refresh | error='WateringScheduler' object has no attribute '_daily_refresh_done'
