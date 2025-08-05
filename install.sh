@@ -385,10 +385,16 @@ git_pull_latest() {
         print_step "Updating existing repository..."
         cd "$WATERME_HOME"
         
-        # Stash any local changes
-        if git status --porcelain | grep -q .; then
-            print_warning "Local changes detected, stashing..."
-            git stash
+        # Stash any local changes (only if there are commits)
+        if git rev-parse --verify HEAD >/dev/null 2>&1; then
+            if git status --porcelain | grep -q .; then
+                print_warning "Local changes detected, stashing..."
+                git stash
+            fi
+        else
+            # No commits yet, just clean untracked files
+            print_warning "No commits yet, cleaning untracked files..."
+            git clean -fd
         fi
         
         # Pull latest changes
@@ -755,10 +761,16 @@ install_waterme_code() {
         print_step "Updating existing repository..."
         cd "$WATERME_HOME"
         
-        # Stash any local changes
-        if git status --porcelain | grep -q .; then
-            print_warning "Local changes detected, stashing..."
-            git stash
+        # Stash any local changes (only if there are commits)
+        if git rev-parse --verify HEAD >/dev/null 2>&1; then
+            if git status --porcelain | grep -q .; then
+                print_warning "Local changes detected, stashing..."
+                git stash
+            fi
+        else
+            # No commits yet, just clean untracked files
+            print_warning "No commits yet, cleaning untracked files..."
+            git clean -fd
         fi
         
         # Pull latest changes
