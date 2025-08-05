@@ -1,16 +1,32 @@
 #!/usr/bin/env python3
 """
+🔗 SYSTEM DOCUMENTATION: See /rules/ directory for comprehensive guides
+📖 Primary Reference: /rules/system-overview.md
+🏗️ Architecture: /rules/project-structure.md
+🌐 API Patterns: /rules/api-patterns.md
+💻 Coding Standards: /rules/coding-standards.md
+
 WaterMe! - Smart Garden Irrigation System
-Main Entry Point
+==========================================
+Main System Entry Point & Process Manager
 
-This is the primary entry point for the WaterMe! system.
-It handles system initialization, health checks, and launches all components.
+This is the primary entry point for the WaterMe! system. It handles:
+- System initialization and health checks
+- Process lifecycle management (API server, UI, scheduler)
+- GPIO cleanup and hardware safety
+- Network configuration and monitoring
+- Unified logging integration
 
-🤖 AI ASSISTANT: For complete system understanding, reference ~/rules/ documentation:
-📖 System Overview: ~/rules/system-overview.md
-🏗️ Project Structure: ~/rules/project-structure.md  
-🌐 API Patterns: ~/rules/api-patterns.md
-💻 Coding Standards: ~/rules/coding-standards.md
+The system follows the startup process:
+1. waterme.py (System Entry Point)
+   ↓ configuration loading
+2. Flask API Server Launch (api.py)
+   ↓ scheduler initialization  
+3. WateringScheduler Start (scheduler.py)
+   ↓ GPIO setup
+4. Hardware Initialization (gpio.py)
+   ↓ UI serving
+5. React UI Available (ui/src/App.tsx)
 
 Usage:
     python waterme.py                    # Start the system
@@ -19,9 +35,11 @@ Usage:
     python waterme.py --restart         # Restart the system
     python waterme.py --logs            # View recent logs
     python waterme.py --config          # Show configuration
+    python waterme.py --network         # Show network information
     python waterme.py --help            # Show this help
 """
 
+# Standard library imports
 import os
 import sys
 import time
@@ -31,46 +49,45 @@ import argparse
 import subprocess
 import threading
 import configparser
+import socket
 from datetime import datetime
 from pathlib import Path
+
+# External library imports
 import pytz
 
 # Add the backend directory to the path
 sys.path.insert(0, os.path.dirname(__file__))
 
-# Dependency check and auto-install
-REQUIRED_PACKAGES = [
-    'flask', 'flask_cors', 'pytz', 'astral', 'configparser', 'RPi.GPIO',
-    'fastapi', 'uvicorn', 'sqlalchemy', 'pydantic'
-]
+# Internal imports (after path setup)
+from core.logging import setup_logger, log_event
 
-def check_and_install_dependencies():
-    import importlib
-    missing = []
-    for pkg in REQUIRED_PACKAGES:
-        try:
-            importlib.import_module(pkg.replace('-', '_'))
-        except ImportError:
-            missing.append(pkg)
-    if missing:
-        print(f"\n🔧 Installing missing dependencies: {', '.join(missing)}\n")
-        try:
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', *missing])
-        except Exception as e:
-            print(f"❌ Failed to install dependencies: {e}")
-            print("Please install the missing packages manually and restart.")
-            sys.exit(1)
-
-check_and_install_dependencies()
+# Note: All dependencies are handled by install.sh script
+# No automatic dependency installation in waterme.py
 
 class WaterMeSystem:
+    """
+    Main WaterMe! system controller and process manager.
+    
+    Handles system initialization, process lifecycle management,
+    GPIO cleanup, and unified logging integration.
+    """
+    
     def __init__(self):
+        """Initialize the WaterMe! system with proper error handling and logging."""
+        # Directory structure
         self.project_root = os.path.dirname(__file__)
-        self.backend_dir = self.project_root  # Now points to project root
+        self.backend_dir = self.project_root
         self.ui_dir = os.path.join(self.project_root, 'ui')
         self.data_dir = os.path.join(self.project_root, 'data')
         self.config_dir = os.path.join(self.project_root, 'config')
         self.logs_dir = os.path.join(self.project_root, 'logs')
+        
+        # Ensure critical directories exist
+        self._ensure_directories()
+        
+        # Setup logging first for error tracking
+        self._setup_logging()
         
         # Process management
         self.backend_process = None
@@ -79,20 +96,66 @@ class WaterMeSystem:
         
         # System status
         self.is_running = False
+        self.start_time = None
         
-        # Configuration - LOAD FIRST
-        self.config = self.load_config()
-        
-        # Load timezone from settings.cfg directly for initial start_time
-        settings_file = os.path.join(self.config_dir, 'settings.cfg')
-        config_parser = configparser.ConfigParser()
-        config_parser.read(settings_file)
-        tz_name = config_parser['Garden'].get('timezone', 'UTC') if 'Garden' in config_parser else 'UTC'
-        tz = pytz.timezone(tz_name)
-        self.start_time = datetime.now(tz)
+        # Load configuration with error handling
+        try:
+            self.config = self.load_config()
+            self._load_timezone_and_set_start_time()
+            log_event(self.system_logger, 'INFO', 'WaterMeSystem initialized successfully')
+        except Exception as e:
+            print(f"❌ Failed to initialize WaterMeSystem: {e}")
+            if hasattr(self, 'system_logger'):
+                log_event(self.system_logger, 'ERROR', 'WaterMeSystem initialization failed', error=str(e))
+            raise
+    
+    def _ensure_directories(self):
+        """Ensure all required directories exist."""
+        required_dirs = [self.data_dir, self.config_dir, self.logs_dir]
+        for dir_path in required_dirs:
+            try:
+                os.makedirs(dir_path, exist_ok=True)
+            except Exception as e:
+                print(f"❌ Failed to create directory {dir_path}: {e}")
+                raise
+    
+    def _setup_logging(self):
+        """Initialize unified logging system."""
+        try:
+            self.system_logger = setup_logger('waterme_system', 'system.log')
+            self.error_logger = setup_logger('waterme_error', 'error.log')
+        except Exception as e:
+            print(f"Warning: Could not setup logging: {e}")
+            # Create minimal fallback loggers
+            self.system_logger = None
+            self.error_logger = None
+    
+    def _load_timezone_and_set_start_time(self):
+        """Load timezone from settings and set initial start time."""
+        try:
+            settings_file = os.path.join(self.config_dir, 'settings.cfg')
+            config_parser = configparser.ConfigParser()
+            config_parser.read(settings_file)
+            
+            tz_name = 'UTC'  # Default fallback
+            if 'Garden' in config_parser:
+                tz_name = config_parser['Garden'].get('timezone', 'UTC')
+            
+            tz = pytz.timezone(tz_name)
+            self.start_time = datetime.now(tz)
+            
+            if self.system_logger:
+                log_event(self.system_logger, 'INFO', f'Timezone set to {tz_name}')
+                
+        except Exception as e:
+            # Fallback to UTC if timezone loading fails
+            self.start_time = datetime.now(pytz.UTC)
+            if self.error_logger:
+                log_event(self.error_logger, 'WARN', 'Failed to load timezone, using UTC', error=str(e))
     
     def load_config(self):
-        """Load system configuration"""
+        """Load system configuration with proper error handling."""
+        # Default configuration
         config = {
             'backend_port': 5000,
             'ui_port': 3000,
@@ -109,9 +172,18 @@ class WaterMeSystem:
         if os.path.exists(config_file):
             try:
                 with open(config_file, 'r') as f:
-                    config.update(json.load(f))
+                    loaded_config = json.load(f)
+                    config.update(loaded_config)
+                    if self.system_logger:
+                        log_event(self.system_logger, 'INFO', f'Configuration loaded from {config_file}')
             except Exception as e:
-                print(f"Warning: Could not load config file: {e}")
+                error_msg = f"Could not load config file {config_file}: {e}"
+                print(f"Warning: {error_msg}")
+                if self.error_logger:
+                    log_event(self.error_logger, 'WARN', error_msg)
+        else:
+            if self.system_logger:
+                log_event(self.system_logger, 'INFO', 'Using default configuration (no config file found)')
         
         return config
     
@@ -212,15 +284,18 @@ class WaterMeSystem:
             return True
     
     def is_port_in_use(self, port):
-        """Check if a port is in use"""
-        import socket
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            return s.connect_ex(('localhost', port)) == 0
+        """Check if a port is in use with proper error handling."""
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                result = s.connect_ex(('localhost', port)) == 0
+                return result
+        except Exception as e:
+            if self.error_logger:
+                log_event(self.error_logger, 'WARN', f'Could not check port {port}', error=str(e))
+            return False  # Assume port is available if we can't check
     
     def get_network_urls(self):
-        """Get network URLs for the system"""
-        import socket
-        
+        """Get network URLs for the system with proper error handling."""
         urls = {
             'backend': [],
             'frontend': []
@@ -240,7 +315,11 @@ class WaterMeSystem:
                 urls['frontend'].append(f"http://{ip}:{self.config['ui_port']}")
                 
         except Exception as e:
-            print(f"Warning: Could not get network URLs: {e}")
+            warning_msg = f"Could not get network URLs: {e}"
+            print(f"Warning: {warning_msg}")
+            if self.error_logger:
+                log_event(self.error_logger, 'WARN', warning_msg)
+            
             # Fallback to localhost only
             urls['backend'] = [f"http://localhost:{self.config['backend_port']}"]
             urls['frontend'] = [f"http://localhost:{self.config['ui_port']}"]
@@ -248,13 +327,11 @@ class WaterMeSystem:
         return urls
     
     def _get_lan_ips(self):
-        """Get actual LAN IP addresses"""
-        import socket
-        
+        """Get actual LAN IP addresses with improved error handling."""
         lan_ips = []
         
         try:
-            # Get all network interfaces
+            # Method 1: Get all network interfaces
             for interface_name, interface_addresses in socket.getaddrinfo(socket.gethostname(), None):
                 if interface_name[0] == socket.AF_INET:  # IPv4 only
                     ip = interface_addresses[4][0]
@@ -265,26 +342,26 @@ class WaterMeSystem:
                         not ip.startswith('::')):
                         lan_ips.append(ip)
         except Exception as e:
-            print(f"Warning: Could not get network interfaces: {e}")
+            if self.error_logger:
+                log_event(self.error_logger, 'WARN', 'Could not get network interfaces', error=str(e))
         
-        # If no LAN IPs found, try alternative method
+        # Method 2: If no LAN IPs found, try alternative method
         if not lan_ips:
             try:
                 # Try to connect to a remote address to determine our IP
                 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                     s.connect(("8.8.8.8", 80))
                     local_ip = s.getsockname()[0]
-                    if local_ip != '127.0.0.1' and local_ip != '127.0.1.1':
+                    if local_ip not in ['127.0.0.1', '127.0.1.1']:
                         lan_ips.append(local_ip)
             except Exception as e:
-                print(f"Warning: Could not determine local IP: {e}")
+                if self.error_logger:
+                    log_event(self.error_logger, 'WARN', 'Could not determine local IP', error=str(e))
         
         return lan_ips
     
     def get_network_info(self):
-        """Get detailed network information"""
-        import socket
-        
+        """Get detailed network information with proper error handling."""
         info = {
             'hostname': 'Unknown',
             'local_ip': 'Unknown',
@@ -305,115 +382,247 @@ class WaterMeSystem:
                 try:
                     local_ip = socket.gethostbyname(hostname)
                     info['local_ip'] = local_ip
-                except:
-                    pass
+                except Exception as e:
+                    if self.error_logger:
+                        log_event(self.error_logger, 'WARN', 'Could not resolve hostname to IP', error=str(e))
                 
         except Exception as e:
-            print(f"Warning: Could not get network info: {e}")
+            warning_msg = f"Could not get network info: {e}"
+            print(f"Warning: {warning_msg}")
+            if self.error_logger:
+                log_event(self.error_logger, 'WARN', warning_msg)
         
         return info
     
     def start_backend(self):
-        """Start the backend API server"""
+        """Start the backend API server with proper error handling and logging."""
         print("🚀 Starting backend server...")
+        if self.system_logger:
+            log_event(self.system_logger, 'INFO', 'Starting backend API server')
         
         try:
+            # Verify api.py exists
+            api_file = os.path.join(self.backend_dir, 'api.py')
+            if not os.path.exists(api_file):
+                raise FileNotFoundError(f"API file not found: {api_file}")
+            
             # Change to backend directory
+            original_cwd = os.getcwd()
             os.chdir(self.backend_dir)
             
             # Set environment variables for network access
             env = os.environ.copy()
             env['FLASK_HOST'] = '0.0.0.0'  # Ensure network access
+            env['FLASK_PORT'] = str(self.config['backend_port'])
             
             # Start the backend process
             self.backend_process = subprocess.Popen([
                 sys.executable, 'api.py'
             ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
             
-            # Wait a moment for startup
-            time.sleep(3)
+            # Wait for startup with timeout
+            startup_timeout = 10  # seconds
+            for i in range(startup_timeout):
+                if self.backend_process.poll() is not None:
+                    # Process terminated early
+                    break
+                if self.is_port_in_use(self.config['backend_port']):
+                    # Port is active, backend likely started
+                    break
+                time.sleep(1)
             
-            # Check if process is still running
-            if self.backend_process.poll() is None:
-                print(f"✅ Backend server started on port {self.config['backend_port']}")
+            # Restore original working directory
+            os.chdir(original_cwd)
+            
+            # Check if process is still running and port is active
+            if self.backend_process.poll() is None and self.is_port_in_use(self.config['backend_port']):
+                success_msg = f"Backend server started on port {self.config['backend_port']}"
+                print(f"✅ {success_msg}")
+                if self.system_logger:
+                    log_event(self.system_logger, 'INFO', success_msg)
                 return True
             else:
-                stdout, stderr = self.backend_process.communicate()
-                print(f"❌ Backend server failed to start:")
-                print(f"   STDOUT: {stdout.decode()}")
-                print(f"   STDERR: {stderr.decode()}")
+                # Process failed or port not active
+                stdout, stderr = "", ""
+                if self.backend_process.poll() is not None:
+                    try:
+                        stdout, stderr = self.backend_process.communicate(timeout=5)
+                        stdout = stdout.decode()
+                        stderr = stderr.decode()
+                    except subprocess.TimeoutExpired:
+                        stdout, stderr = "<timeout>", "<timeout>"
+                
+                error_msg = "Backend server failed to start"
+                print(f"❌ {error_msg}:")
+                if stdout:
+                    print(f"   STDOUT: {stdout}")
+                if stderr:
+                    print(f"   STDERR: {stderr}")
+                
+                if self.error_logger:
+                    log_event(self.error_logger, 'ERROR', error_msg, stdout=stdout, stderr=stderr)
+                
                 return False
                 
         except Exception as e:
-            print(f"❌ Failed to start backend: {e}")
+            error_msg = f"Failed to start backend: {e}"
+            print(f"❌ {error_msg}")
+            if self.error_logger:
+                log_event(self.error_logger, 'ERROR', error_msg)
             return False
     
     def start_ui(self):
-        """Start the frontend UI"""
+        """Start the frontend UI with proper error handling and logging."""
         if not self.config['auto_start_ui']:
             print("ℹ️  UI auto-start disabled")
+            if self.system_logger:
+                log_event(self.system_logger, 'INFO', 'UI auto-start disabled')
             return True
         
         print("🎨 Starting frontend UI...")
+        if self.system_logger:
+            log_event(self.system_logger, 'INFO', 'Starting frontend UI')
         
         try:
+            # Verify UI directory exists
+            if not os.path.exists(self.ui_dir):
+                raise FileNotFoundError(f"UI directory not found: {self.ui_dir}")
+            
             # Change to UI directory
+            original_cwd = os.getcwd()
             os.chdir(self.ui_dir)
             
-            # Check if node_modules exists
+            # Check if package.json exists
+            if not os.path.exists('package.json'):
+                raise FileNotFoundError("package.json not found in UI directory")
+            
+            # Check if node_modules exists and install if needed
             if not os.path.exists('node_modules'):
                 print("📦 Installing UI dependencies...")
-                subprocess.run(['npm', 'install'], check=True)
+                if self.system_logger:
+                    log_event(self.system_logger, 'INFO', 'Installing UI dependencies')
+                
+                result = subprocess.run(['npm', 'install'], 
+                                      capture_output=True, text=True, timeout=300)
+                if result.returncode != 0:
+                    raise subprocess.CalledProcessError(result.returncode, 'npm install', 
+                                                      result.stdout, result.stderr)
+                print("✅ UI dependencies installed")
             
             # Start the UI development server with network access
             env = os.environ.copy()
             env['VITE_HOST'] = '0.0.0.0'  # Ensure network access
+            env['VITE_PORT'] = str(self.config['ui_port'])
             
             self.ui_process = subprocess.Popen([
                 'npm', 'run', 'dev'
             ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
             
-            # Wait a moment for startup
-            time.sleep(5)
+            # Wait for startup with timeout
+            startup_timeout = 15  # seconds (UI takes longer to start)
+            for i in range(startup_timeout):
+                if self.ui_process.poll() is not None:
+                    # Process terminated early
+                    break
+                if self.is_port_in_use(self.config['ui_port']):
+                    # Port is active, UI likely started
+                    break
+                time.sleep(1)
+            
+            # Restore original working directory
+            os.chdir(original_cwd)
             
             # Check if process is still running
             if self.ui_process.poll() is None:
-                print(f"✅ Frontend UI started on port {self.config['ui_port']}")
+                success_msg = f"Frontend UI started on port {self.config['ui_port']}"
+                print(f"✅ {success_msg}")
+                if self.system_logger:
+                    log_event(self.system_logger, 'INFO', success_msg)
                 return True
             else:
-                stdout, stderr = self.ui_process.communicate()
-                print(f"❌ Frontend UI failed to start:")
-                print(f"   STDOUT: {stdout.decode()}")
-                print(f"   STDERR: {stderr.decode()}")
+                # Process failed
+                stdout, stderr = "", ""
+                try:
+                    stdout, stderr = self.ui_process.communicate(timeout=5)
+                    stdout = stdout.decode()
+                    stderr = stderr.decode()
+                except subprocess.TimeoutExpired:
+                    stdout, stderr = "<timeout>", "<timeout>"
+                
+                error_msg = "Frontend UI failed to start"
+                print(f"❌ {error_msg}:")
+                if stdout:
+                    print(f"   STDOUT: {stdout}")
+                if stderr:
+                    print(f"   STDERR: {stderr}")
+                
+                if self.error_logger:
+                    log_event(self.error_logger, 'ERROR', error_msg, stdout=stdout, stderr=stderr)
+                
                 return False
                 
         except Exception as e:
-            print(f"❌ Failed to start UI: {e}")
+            error_msg = f"Failed to start UI: {e}"
+            print(f"❌ {error_msg}")
+            if self.error_logger:
+                log_event(self.error_logger, 'ERROR', error_msg)
             return False
     
     def stop_backend(self):
-        """Stop the backend server"""
+        """Stop the backend server with proper cleanup and logging."""
         if self.backend_process:
             print("🛑 Stopping backend server...")
-            self.backend_process.terminate()
+            if self.system_logger:
+                log_event(self.system_logger, 'INFO', 'Stopping backend server')
+            
             try:
+                # Graceful termination first
+                self.backend_process.terminate()
                 self.backend_process.wait(timeout=10)
-                print("✅ Backend server stopped")
+                print("✅ Backend server stopped gracefully")
+                if self.system_logger:
+                    log_event(self.system_logger, 'INFO', 'Backend server stopped gracefully')
             except subprocess.TimeoutExpired:
+                # Force kill if graceful termination fails
                 self.backend_process.kill()
                 print("⚠️  Backend server force killed")
+                if self.system_logger:
+                    log_event(self.system_logger, 'WARN', 'Backend server force killed after timeout')
+            except Exception as e:
+                error_msg = f"Error stopping backend server: {e}"
+                print(f"❌ {error_msg}")
+                if self.error_logger:
+                    log_event(self.error_logger, 'ERROR', error_msg)
+            finally:
+                self.backend_process = None
     
     def stop_ui(self):
-        """Stop the frontend UI"""
+        """Stop the frontend UI with proper cleanup and logging."""
         if self.ui_process:
             print("🛑 Stopping frontend UI...")
-            self.ui_process.terminate()
+            if self.system_logger:
+                log_event(self.system_logger, 'INFO', 'Stopping frontend UI')
+            
             try:
+                # Graceful termination first
+                self.ui_process.terminate()
                 self.ui_process.wait(timeout=10)
-                print("✅ Frontend UI stopped")
+                print("✅ Frontend UI stopped gracefully")
+                if self.system_logger:
+                    log_event(self.system_logger, 'INFO', 'Frontend UI stopped gracefully')
             except subprocess.TimeoutExpired:
+                # Force kill if graceful termination fails
                 self.ui_process.kill()
                 print("⚠️  Frontend UI force killed")
+                if self.system_logger:
+                    log_event(self.system_logger, 'WARN', 'Frontend UI force killed after timeout')
+            except Exception as e:
+                error_msg = f"Error stopping frontend UI: {e}"
+                print(f"❌ {error_msg}")
+                if self.error_logger:
+                    log_event(self.error_logger, 'ERROR', error_msg)
+            finally:
+                self.ui_process = None
     
     def start(self):
         """Start the complete WaterMe! system"""
@@ -486,35 +695,64 @@ class WaterMeSystem:
         return True
     
     def cleanup_gpio(self):
-        """Turn off all relays and clean up GPIO through scheduler"""
+        """Turn off all relays and clean up GPIO through scheduler with proper error handling."""
         try:
             print("🔌 Turning off all relays through scheduler...")
-            print("DEBUG: cleanup_gpio called - about to call scheduler.shutdown()")
-            # Use scheduler for proper GPIO control
+            if self.system_logger:
+                log_event(self.system_logger, 'INFO', 'Starting GPIO cleanup through scheduler')
+            
+            # Primary method: Use scheduler for proper GPIO control
             from core.scheduler import scheduler
-            
-            # Use the new shutdown method that preserves active zones
             scheduler.shutdown()
-            print("✅ Scheduler shutdown complete - active zones saved for restoration")
             
-        except ImportError:
-            print("   Scheduler module not available (development mode)")
-            # Fallback to direct GPIO control if scheduler unavailable
-            try:
-                from core.gpio import deactivate_zone, cleanup_gpio, ZONE_PINS
-                for zone_id in ZONE_PINS.keys():
-                    try:
-                        deactivate_zone(zone_id)
-                    except Exception as e:
-                        print(f"   Warning: Could not deactivate zone {zone_id}: {e}")
-                cleanup_gpio()
-                print("✅ Fallback GPIO cleanup completed")
-            except Exception as e:
-                print(f"⚠️  Error during fallback GPIO cleanup: {e}")
+            print("✅ Scheduler shutdown complete - active zones saved for restoration")
+            if self.system_logger:
+                log_event(self.system_logger, 'INFO', 'Scheduler shutdown completed successfully')
+            
+        except ImportError as e:
+            # Scheduler not available - use fallback GPIO control
+            warning_msg = "Scheduler module not available, using fallback GPIO control"
+            print(f"   {warning_msg}")
+            if self.system_logger:
+                log_event(self.system_logger, 'WARN', warning_msg, error=str(e))
+            
+            self._fallback_gpio_cleanup()
+            
         except Exception as e:
-            print(f"⚠️  Error during scheduler cleanup: {e}")
-            import traceback
-            traceback.print_exc()
+            error_msg = f"Error during scheduler cleanup: {e}"
+            print(f"⚠️  {error_msg}")
+            if self.error_logger:
+                log_event(self.error_logger, 'ERROR', error_msg)
+            
+            # Attempt fallback cleanup
+            self._fallback_gpio_cleanup()
+    
+    def _fallback_gpio_cleanup(self):
+        """Fallback GPIO cleanup when scheduler is unavailable."""
+        try:
+            from core.gpio import deactivate_zone, cleanup_gpio, ZONE_PINS
+            
+            # Deactivate all zones
+            for zone_id in ZONE_PINS.keys():
+                try:
+                    deactivate_zone(zone_id)
+                except Exception as e:
+                    warning_msg = f"Could not deactivate zone {zone_id}: {e}"
+                    print(f"   Warning: {warning_msg}")
+                    if self.error_logger:
+                        log_event(self.error_logger, 'WARN', warning_msg)
+            
+            # Final GPIO cleanup
+            cleanup_gpio()
+            print("✅ Fallback GPIO cleanup completed")
+            if self.system_logger:
+                log_event(self.system_logger, 'INFO', 'Fallback GPIO cleanup completed')
+                
+        except Exception as e:
+            error_msg = f"Error during fallback GPIO cleanup: {e}"
+            print(f"⚠️  {error_msg}")
+            if self.error_logger:
+                log_event(self.error_logger, 'ERROR', error_msg)
     
     def restart(self):
         """Restart the complete system"""
@@ -619,18 +857,39 @@ class WaterMeSystem:
         print(f"\n💡 Access from other devices on your network using the IP addresses above!")
     
     def signal_handler(self, signum, frame):
-        """Handle shutdown signals"""
-        print(f"\n🛑 Received signal {signum}, shutting down...")
-        print(f"DEBUG: signal_handler called - about to call cleanup_gpio()")
-        # Ensure GPIO cleanup happens on Ctrl-C
-        self.cleanup_gpio()
-        print(f"DEBUG: cleanup_gpio() completed - about to call self.stop()")
-        self.stop()
-        print(f"DEBUG: self.stop() completed - about to exit")
-        sys.exit(0)
+        """Handle shutdown signals with proper cleanup and logging."""
+        signal_name = 'SIGTERM' if signum == signal.SIGTERM else 'SIGINT' if signum == signal.SIGINT else f'Signal {signum}'
+        print(f"\n🛑 Received {signal_name}, shutting down gracefully...")
+        
+        if self.system_logger:
+            log_event(self.system_logger, 'INFO', f'Received {signal_name}, initiating graceful shutdown')
+        
+        try:
+            # Ensure GPIO cleanup happens first for hardware safety
+            self.cleanup_gpio()
+            
+            # Stop all processes
+            self.stop()
+            
+            if self.system_logger:
+                log_event(self.system_logger, 'INFO', 'Graceful shutdown completed')
+            
+            print("✅ Graceful shutdown completed")
+            
+        except Exception as e:
+            error_msg = f"Error during graceful shutdown: {e}"
+            print(f"❌ {error_msg}")
+            if self.error_logger:
+                log_event(self.error_logger, 'ERROR', error_msg)
+        finally:
+            sys.exit(0)
 
 def main():
-    """Main entry point"""
+    """
+    Main entry point for WaterMe! system with proper error handling.
+    
+    Handles command-line arguments, system initialization, and graceful shutdown.
+    """
     parser = argparse.ArgumentParser(
         description="WaterMe! Smart Garden Irrigation System",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -655,38 +914,66 @@ Examples:
     parser.add_argument('--network', action='store_true', help='Show network information')
     parser.add_argument('--lines', type=int, default=20, help='Number of log lines to show')
     
-    args = parser.parse_args()
-    
-    # Create system instance
-    system = WaterMeSystem()
-    
-    # Set up signal handlers
-    signal.signal(signal.SIGINT, system.signal_handler)
-    signal.signal(signal.SIGTERM, system.signal_handler)
-    
-    # Handle commands
-    if args.stop:
-        system.stop()
-    elif args.restart:
-        system.restart()
-    elif args.status:
-        system.status()
-    elif args.logs:
-        system.logs(args.lines)
-    elif args.config:
-        system.config_show()
-    elif args.network:
-        system.network_info()
-    elif args.start or not any([args.stop, args.restart, args.status, args.logs, args.config, args.network]):
-        # Default action is to start
-        if system.start():
-            try:
-                # Keep the main process alive
-                while system.is_running:
-                    time.sleep(1)
-            except KeyboardInterrupt:
-                print("\n🛑 Keyboard interrupt received")
-                system.stop()
+    try:
+        args = parser.parse_args()
+        
+        # Create system instance with error handling
+        try:
+            system = WaterMeSystem()
+        except ImportError as e:
+            print(f"❌ Missing dependencies. Please run install.sh first: {e}")
+            print("Run: sudo ./install.sh")
+            sys.exit(1)
+        except Exception as e:
+            print(f"❌ Failed to initialize WaterMe! system: {e}")
+            sys.exit(1)
+        
+        # Set up signal handlers
+        signal.signal(signal.SIGINT, system.signal_handler)
+        signal.signal(signal.SIGTERM, system.signal_handler)
+        
+        # Handle commands with proper error handling
+        try:
+            if args.stop:
+                success = system.stop()
+                sys.exit(0 if success else 1)
+            elif args.restart:
+                success = system.restart()
+                sys.exit(0 if success else 1)
+            elif args.status:
+                system.status()
+            elif args.logs:
+                system.logs(args.lines)
+            elif args.config:
+                system.config_show()
+            elif args.network:
+                system.network_info()
+            elif args.start or not any([args.stop, args.restart, args.status, args.logs, args.config, args.network]):
+                # Default action is to start
+                if system.start():
+                    try:
+                        # Keep the main process alive
+                        print("\n🌱 WaterMe! is running. Press Ctrl+C to stop.")
+                        while system.is_running:
+                            time.sleep(1)
+                    except KeyboardInterrupt:
+                        print("\n🛑 Keyboard interrupt received")
+                        system.stop()
+                else:
+                    print("❌ Failed to start WaterMe! system")
+                    sys.exit(1)
+        except Exception as e:
+            print(f"❌ Command execution failed: {e}")
+            if hasattr(system, 'error_logger') and system.error_logger:
+                log_event(system.error_logger, 'ERROR', f'Command execution failed: {e}')
+            sys.exit(1)
+            
+    except KeyboardInterrupt:
+        print("\n🛑 Interrupted by user")
+        sys.exit(0)
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+        sys.exit(1)
 
 if __name__ == '__main__':
     main() 

@@ -1,0 +1,629 @@
+#!/bin/bash
+#
+# 🔗 SYSTEM DOCUMENTATION: See /rules/ directory for comprehensive guides
+# 📖 Primary Reference: /rules/system-overview.md
+# 🏗️ Architecture: /rules/project-structure.md
+# 💻 Coding Standards: /rules/coding-standards.md
+#
+# WaterMe! Smart Garden Irrigation System - Installation Script
+# =============================================================
+# 
+# This script sets up a complete WaterMe! installation on a virgin Raspbian environment.
+# It handles all dependencies, configurations, and system setup automatically.
+#
+# Requirements:
+# - Fresh Raspbian OS installation
+# - Internet connection
+# - Root/sudo access
+#
+# Usage:
+#   curl -sSL https://raw.githubusercontent.com/your-repo/waterme/main/install.sh | bash
+#   OR
+#   chmod +x install.sh && ./install.sh
+#
+# What this script does:
+# 1. System updates and base packages
+# 2. Python 3.9+ installation and pip setup
+# 3. Node.js 18+ installation for UI
+# 4. Python dependencies installation
+# 5. GPIO permissions and hardware setup
+# 6. Directory structure creation
+# 7. Configuration file templates
+# 8. Systemd service setup
+# 9. Firewall configuration
+# 10. Final system validation
+
+set -e  # Exit on any error
+set -u  # Exit on undefined variables
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+# Configuration
+WATERME_USER="waterme"
+WATERME_HOME="/opt/waterme"
+WATERME_SERVICE="waterme"
+PYTHON_MIN_VERSION="3.9"
+NODE_MIN_VERSION="18"
+
+# Logging
+LOG_FILE="/tmp/waterme_install.log"
+exec > >(tee -a "$LOG_FILE")
+exec 2>&1
+
+print_header() {
+    echo -e "${CYAN}"
+    echo "=================================================================="
+    echo "🌱 WaterMe! Smart Garden Irrigation System - Installer"
+    echo "=================================================================="
+    echo -e "${NC}"
+}
+
+print_step() {
+    echo -e "${BLUE}▶ $1${NC}"
+}
+
+print_success() {
+    echo -e "${GREEN}✅ $1${NC}"
+}
+
+print_warning() {
+    echo -e "${YELLOW}⚠️  $1${NC}"
+}
+
+print_error() {
+    echo -e "${RED}❌ $1${NC}"
+}
+
+check_root() {
+    if [[ $EUID -ne 0 ]]; then
+        print_error "This script must be run as root (use sudo)"
+        exit 1
+    fi
+}
+
+check_os() {
+    print_step "Checking operating system..."
+    
+    if [[ ! -f /etc/os-release ]]; then
+        print_error "Cannot determine OS version"
+        exit 1
+    fi
+    
+    source /etc/os-release
+    
+    if [[ "$ID" != "raspbian" && "$ID_LIKE" != *"debian"* ]]; then
+        print_warning "This script is designed for Raspbian/Debian. Proceeding anyway..."
+    fi
+    
+    print_success "OS check completed: $PRETTY_NAME"
+}
+
+update_system() {
+    print_step "Updating system packages..."
+    
+    apt-get update -y
+    apt-get upgrade -y
+    
+    # Install essential packages
+    apt-get install -y \
+        curl \
+        wget \
+        git \
+        build-essential \
+        software-properties-common \
+        apt-transport-https \
+        ca-certificates \
+        gnupg \
+        lsb-release \
+        sudo \
+        systemd \
+        rsync \
+        unzip \
+        nano \
+        htop \
+        tree
+    
+    print_success "System packages updated"
+}
+
+install_python() {
+    print_step "Installing Python ${PYTHON_MIN_VERSION}+..."
+    
+    # Check if Python is already installed with correct version
+    if command -v python3 &> /dev/null; then
+        PYTHON_VERSION=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
+        if python3 -c "import sys; exit(0 if sys.version_info >= (${PYTHON_MIN_VERSION//./, }) else 1)" 2>/dev/null; then
+            print_success "Python $PYTHON_VERSION already installed"
+        else
+            print_warning "Python $PYTHON_VERSION is too old, installing newer version..."
+        fi
+    fi
+    
+    # Install Python and related packages
+    apt-get install -y \
+        python3 \
+        python3-pip \
+        python3-venv \
+        python3-dev \
+        python3-setuptools \
+        python3-wheel
+    
+    # Verify installation
+    PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
+    print_success "Python $PYTHON_VERSION installed"
+    
+    # Upgrade pip
+    python3 -m pip install --upgrade pip setuptools wheel
+    print_success "pip upgraded to latest version"
+}
+
+install_nodejs() {
+    print_step "Installing Node.js ${NODE_MIN_VERSION}+..."
+    
+    # Check if Node.js is already installed with correct version
+    if command -v node &> /dev/null; then
+        NODE_VERSION=$(node --version | cut -d'v' -f2)
+        NODE_MAJOR=$(echo $NODE_VERSION | cut -d'.' -f1)
+        if [[ $NODE_MAJOR -ge $NODE_MIN_VERSION ]]; then
+            print_success "Node.js v$NODE_VERSION already installed"
+            return
+        fi
+    fi
+    
+    # Install Node.js from NodeSource repository
+    curl -fsSL https://deb.nodesource.com/setup_${NODE_MIN_VERSION}.x | bash -
+    apt-get install -y nodejs
+    
+    # Verify installation
+    NODE_VERSION=$(node --version)
+    NPM_VERSION=$(npm --version)
+    print_success "Node.js $NODE_VERSION and npm $NPM_VERSION installed"
+}
+
+create_user() {
+    print_step "Creating WaterMe! system user..."
+    
+    if id "$WATERME_USER" &>/dev/null; then
+        print_success "User $WATERME_USER already exists"
+    else
+        # Create system user
+        useradd --system --create-home --home-dir "$WATERME_HOME" --shell /bin/bash "$WATERME_USER"
+        
+        # Add user to necessary groups for GPIO access
+        usermod -a -G gpio,spi,i2c,dialout "$WATERME_USER"
+        
+        print_success "User $WATERME_USER created"
+    fi
+}
+
+setup_directories() {
+    print_step "Setting up directory structure..."
+    
+    # Create main directories
+    mkdir -p "$WATERME_HOME"/{data,config,logs,library,tools,ui,core}
+    
+    # Set ownership
+    chown -R "$WATERME_USER:$WATERME_USER" "$WATERME_HOME"
+    
+    # Set permissions
+    chmod 755 "$WATERME_HOME"
+    chmod 755 "$WATERME_HOME"/{data,config,logs,library,tools,ui,core}
+    chmod 775 "$WATERME_HOME"/{data,logs}  # Allow group write for logs and data
+    
+    print_success "Directory structure created"
+}
+
+install_python_dependencies() {
+    print_step "Installing Python dependencies..."
+    
+    # Create requirements.txt if it doesn't exist
+    cat > "$WATERME_HOME/requirements.txt" << 'EOF'
+# WaterMe! Python Dependencies
+flask>=2.3.0
+flask-cors>=4.0.0
+pytz>=2023.3
+astral>=3.2
+configparser>=5.3.0
+RPi.GPIO>=0.7.1
+requests>=2.31.0
+python-dateutil>=2.8.2
+pathlib>=1.0.1
+threading-timer>=1.0.0
+EOF
+
+    # Install dependencies as waterme user
+    sudo -u "$WATERME_USER" python3 -m pip install --user -r "$WATERME_HOME/requirements.txt"
+    
+    print_success "Python dependencies installed"
+}
+
+setup_gpio_permissions() {
+    print_step "Configuring GPIO permissions..."
+    
+    # Add udev rules for GPIO access
+    cat > /etc/udev/rules.d/99-gpio.rules << 'EOF'
+# GPIO permissions for WaterMe!
+SUBSYSTEM=="gpio", KERNEL=="gpiochip*", ACTION=="add", RUN+="/bin/chgrp gpio /sys/class/gpio/export /sys/class/gpio/unexport", RUN+="/bin/chmod 220 /sys/class/gpio/export /sys/class/gpio/unexport"
+SUBSYSTEM=="gpio", KERNEL=="gpio*", ACTION=="add", RUN+="/bin/chgrp gpio %S%p/active_low %S%p/direction %S%p/edge %S%p/value", RUN+="/bin/chmod 660 %S%p/active_low %S%p/direction %S%p/edge %S%p/value"
+EOF
+
+    # Reload udev rules
+    udevadm control --reload-rules
+    udevadm trigger
+    
+    # Enable SPI and I2C (optional, for future sensors)
+    if command -v raspi-config &> /dev/null; then
+        raspi-config nonint do_spi 0  # Enable SPI
+        raspi-config nonint do_i2c 0  # Enable I2C
+        print_success "SPI and I2C enabled"
+    fi
+    
+    print_success "GPIO permissions configured"
+}
+
+create_config_templates() {
+    print_step "Creating configuration templates..."
+    
+    # GPIO configuration template
+    cat > "$WATERME_HOME/config/gpio.cfg" << 'EOF'
+[GPIO]
+# Number of watering zones (1-8 supported)
+zoneCount = 8
+
+# GPIO pin assignments for each zone (BCM numbering)
+# Default pins: 5, 6, 13, 16, 19, 20, 21, 26
+pins = 5, 6, 13, 16, 19, 20, 21, 26
+
+# Pump zone index (1-based, 0 = no pump zone)
+# Set to the zone number that controls your main pump
+pumpIndex = 8
+
+# GPIO signal polarity (true = active low for relay modules)
+# Most relay modules are active low (true)
+activeLow = True
+
+# GPIO mode: BCM (GPIO numbering) or BOARD (physical pin numbering)
+mode = BCM
+EOF
+
+    # Garden settings template
+    cat > "$WATERME_HOME/config/settings.cfg" << 'EOF'
+[Garden]
+# Garden identification
+name = My Smart Garden
+city = Your City, Country
+
+# GPS coordinates for solar calculations
+# Get these from Google Maps or GPS
+gps_lat = 50.4452
+gps_lon = -104.6189
+
+# Operating mode: "manual" or "smart"
+mode = smart
+
+# Timezone for scheduling (use standard timezone names)
+# Examples: America/New_York, Europe/London, America/Los_Angeles
+timezone = UTC
+
+# Global watering multiplier (1.0 = normal, 2.0 = double, 0.5 = half)
+timer_multiplier = 1.0
+
+# Simulation mode for development (True/False)
+# Set to False for hardware operation
+simulate = False
+
+[Well_Water]
+# Future feature - well water management
+max_flow_rate_gph = 0
+reservoir_size_gallons = 0
+recharge_time_minutes = 0
+EOF
+
+    # Runtime configuration
+    cat > "$WATERME_HOME/config/waterme.json" << 'EOF'
+{
+  "backend_port": 5000,
+  "ui_port": 3000,
+  "host": "0.0.0.0",
+  "debug": false,
+  "auto_start_ui": true,
+  "log_level": "INFO",
+  "network_access": true,
+  "allow_external_connections": true
+}
+EOF
+
+    # Create empty data files
+    echo '{}' > "$WATERME_HOME/data/locations.json"
+    echo '{}' > "$WATERME_HOME/data/map.json"
+    echo '{}' > "$WATERME_HOME/data/schedule.json"
+    echo '{}' > "$WATERME_HOME/data/active_zones.json"
+    echo '{"ignored_alerts": []}' > "$WATERME_HOME/data/health_alerts.json"
+    echo '[]' > "$WATERME_HOME/data/logs.json"
+    
+    # Set ownership
+    chown -R "$WATERME_USER:$WATERME_USER" "$WATERME_HOME/config" "$WATERME_HOME/data"
+    
+    print_success "Configuration templates created"
+}
+
+install_waterme_code() {
+    print_step "Installing WaterMe! application code..."
+    
+    # Note: In a real deployment, this would clone from a git repository
+    # For now, we'll create placeholder files that need to be populated
+    
+    cat > "$WATERME_HOME/README.md" << 'EOF'
+# WaterMe! Installation Complete
+
+Your WaterMe! system has been installed successfully!
+
+## Next Steps:
+
+1. **Configure your system:**
+   - Edit `/opt/waterme/config/settings.cfg` with your location and timezone
+   - Edit `/opt/waterme/config/gpio.cfg` with your GPIO pin assignments
+
+2. **Copy your application code:**
+   - Copy your WaterMe! source code to `/opt/waterme/`
+   - Ensure all files are owned by the waterme user: `sudo chown -R waterme:waterme /opt/waterme/`
+
+3. **Install UI dependencies:**
+   ```bash
+   cd /opt/waterme/ui
+   sudo -u waterme npm install
+   ```
+
+4. **Start the service:**
+   ```bash
+   sudo systemctl enable waterme
+   sudo systemctl start waterme
+   ```
+
+5. **Check status:**
+   ```bash
+   sudo systemctl status waterme
+   ```
+
+## Access URLs:
+- Backend API: http://your-pi-ip:5000
+- Frontend UI: http://your-pi-ip:3000
+
+## Logs:
+- Service logs: `sudo journalctl -u waterme -f`
+- Application logs: `/opt/waterme/logs/`
+
+## Configuration:
+- GPIO settings: `/opt/waterme/config/gpio.cfg`
+- Garden settings: `/opt/waterme/config/settings.cfg`
+- Runtime config: `/opt/waterme/config/waterme.json`
+EOF
+
+    chown "$WATERME_USER:$WATERME_USER" "$WATERME_HOME/README.md"
+    print_success "Installation guide created"
+}
+
+create_systemd_service() {
+    print_step "Creating systemd service..."
+    
+    cat > "/etc/systemd/system/$WATERME_SERVICE.service" << EOF
+[Unit]
+Description=WaterMe! Smart Garden Irrigation System
+Documentation=file:///opt/waterme/README.md
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=$WATERME_USER
+Group=$WATERME_USER
+WorkingDirectory=$WATERME_HOME
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+Environment=PYTHONPATH=$WATERME_HOME
+ExecStart=/usr/bin/python3 $WATERME_HOME/waterme.py
+ExecReload=/bin/kill -HUP \$MAINPID
+ExecStop=/bin/kill -TERM \$MAINPID
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=waterme
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=$WATERME_HOME/data $WATERME_HOME/logs $WATERME_HOME/config
+ProtectHome=true
+
+# GPIO access
+SupplementaryGroups=gpio spi i2c dialout
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    # Reload systemd
+    systemctl daemon-reload
+    
+    print_success "Systemd service created"
+}
+
+configure_firewall() {
+    print_step "Configuring firewall..."
+    
+    # Install ufw if not present
+    if ! command -v ufw &> /dev/null; then
+        apt-get install -y ufw
+    fi
+    
+    # Configure firewall rules
+    ufw --force enable
+    ufw default deny incoming
+    ufw default allow outgoing
+    
+    # Allow SSH
+    ufw allow ssh
+    
+    # Allow WaterMe! ports
+    ufw allow 5000/tcp comment 'WaterMe! Backend API'
+    ufw allow 3000/tcp comment 'WaterMe! Frontend UI'
+    
+    # Allow local network access
+    ufw allow from 192.168.0.0/16
+    ufw allow from 10.0.0.0/8
+    ufw allow from 172.16.0.0/12
+    
+    print_success "Firewall configured"
+}
+
+setup_log_rotation() {
+    print_step "Setting up log rotation..."
+    
+    cat > "/etc/logrotate.d/waterme" << EOF
+$WATERME_HOME/logs/*.log {
+    daily
+    missingok
+    rotate 30
+    compress
+    delaycompress
+    notifempty
+    create 0644 $WATERME_USER $WATERME_USER
+    postrotate
+        systemctl reload-or-restart $WATERME_SERVICE > /dev/null 2>&1 || true
+    endscript
+}
+EOF
+
+    print_success "Log rotation configured"
+}
+
+create_helper_scripts() {
+    print_step "Creating helper scripts..."
+    
+    # WaterMe! control script
+    cat > "/usr/local/bin/waterme" << EOF
+#!/bin/bash
+# WaterMe! control script
+
+case "\$1" in
+    start)
+        sudo systemctl start waterme
+        ;;
+    stop)
+        sudo systemctl stop waterme
+        ;;
+    restart)
+        sudo systemctl restart waterme
+        ;;
+    status)
+        sudo systemctl status waterme
+        ;;
+    logs)
+        sudo journalctl -u waterme -f
+        ;;
+    config)
+        sudo nano $WATERME_HOME/config/settings.cfg
+        ;;
+    gpio)
+        sudo nano $WATERME_HOME/config/gpio.cfg
+        ;;
+    update)
+        cd $WATERME_HOME
+        sudo -u $WATERME_USER git pull
+        sudo systemctl restart waterme
+        ;;
+    *)
+        echo "Usage: waterme {start|stop|restart|status|logs|config|gpio|update}"
+        exit 1
+        ;;
+esac
+EOF
+
+    chmod +x /usr/local/bin/waterme
+    
+    print_success "Helper scripts created"
+}
+
+final_validation() {
+    print_step "Performing final validation..."
+    
+    # Check Python installation
+    python3 --version || { print_error "Python validation failed"; exit 1; }
+    
+    # Check Node.js installation
+    node --version || { print_error "Node.js validation failed"; exit 1; }
+    
+    # Check user creation
+    id "$WATERME_USER" &>/dev/null || { print_error "User validation failed"; exit 1; }
+    
+    # Check directory structure
+    [[ -d "$WATERME_HOME" ]] || { print_error "Directory validation failed"; exit 1; }
+    
+    # Check systemd service
+    systemctl list-unit-files | grep -q "$WATERME_SERVICE.service" || { print_error "Service validation failed"; exit 1; }
+    
+    print_success "All validations passed"
+}
+
+print_completion() {
+    echo -e "${GREEN}"
+    echo "=================================================================="
+    echo "🎉 WaterMe! Installation Complete!"
+    echo "=================================================================="
+    echo -e "${NC}"
+    echo
+    echo "📁 Installation directory: $WATERME_HOME"
+    echo "👤 System user: $WATERME_USER"
+    echo "🔧 Service name: $WATERME_SERVICE"
+    echo
+    echo "📋 Next steps:"
+    echo "1. Copy your WaterMe! source code to $WATERME_HOME"
+    echo "2. Configure your system: waterme config"
+    echo "3. Configure GPIO pins: waterme gpio"
+    echo "4. Start the service: waterme start"
+    echo "5. Check status: waterme status"
+    echo "6. View logs: waterme logs"
+    echo
+    echo "🌐 Once running, access your system at:"
+    echo "   • Backend API: http://$(hostname -I | awk '{print $1}'):5000"
+    echo "   • Frontend UI: http://$(hostname -I | awk '{print $1}'):3000"
+    echo
+    echo "📖 Full documentation: $WATERME_HOME/README.md"
+    echo "📝 Installation log: $LOG_FILE"
+    echo
+    echo -e "${CYAN}Happy gardening! 🌱${NC}"
+}
+
+# Main installation process
+main() {
+    print_header
+    
+    check_root
+    check_os
+    update_system
+    install_python
+    install_nodejs
+    create_user
+    setup_directories
+    install_python_dependencies
+    setup_gpio_permissions
+    create_config_templates
+    install_waterme_code
+    create_systemd_service
+    configure_firewall
+    setup_log_rotation
+    create_helper_scripts
+    final_validation
+    
+    print_completion
+}
+
+# Run main function
+main "$@"
