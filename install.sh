@@ -57,7 +57,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 WATERME_USER="waterme"
-WATERME_HOME="/opt/waterme"
+WATERME_HOME="/home/waterme/WaterMe"
 WATERME_SERVICE="waterme"
 PYTHON_MIN_VERSION="3.9"
 NODE_MIN_VERSION="18"
@@ -730,9 +730,9 @@ Your WaterMe! system has been installed successfully!
    - Edit `/opt/waterme/config/settings.cfg` with your location and timezone
    - Edit `/opt/waterme/config/gpio.cfg` with your GPIO pin assignments
 
-2. **Copy your application code:**
-   - Copy your WaterMe! source code to `/opt/waterme/`
-   - Ensure all files are owned by the waterme user: `sudo chown -R waterme:waterme /opt/waterme/`
+2. **Application code is automatically installed to:**
+   - `/home/waterme/WaterMe/`
+   - All files are owned by the waterme user
 
 3. **UI dependencies are automatically installed** during the installation process.
 
@@ -746,7 +746,7 @@ Your WaterMe! system has been installed successfully!
    
    **For manual mode (default):**
    ```bash
-   sudo -u waterme python3 /opt/waterme/waterme.py
+   sudo -u waterme python3 /home/waterme/WaterMe/waterme.py
    # OR
    waterme start     # Helper script
    ```
@@ -757,13 +757,13 @@ Your WaterMe! system has been installed successfully!
 
 ## Logs:
 - **Service mode**: `waterme logs` or `sudo journalctl -u waterme -f`
-- **Manual mode**: `waterme logs` or `tail -f /opt/waterme/logs/*.log`
-- Application logs: `/opt/waterme/logs/`
+- **Manual mode**: `waterme logs` or `tail -f /home/waterme/WaterMe/logs/*.log`
+- Application logs: `/home/waterme/WaterMe/logs/`
 
 ## Configuration:
-- GPIO settings: `/opt/waterme/config/gpio.cfg`
-- Garden settings: `/opt/waterme/config/settings.cfg`
-- Runtime config: `/opt/waterme/config/waterme.json`
+- GPIO settings: `/home/waterme/WaterMe/config/gpio.cfg`
+- Garden settings: `/home/waterme/WaterMe/config/settings.cfg`
+- Runtime config: `/home/waterme/WaterMe/config/waterme.json`
 EOF
 
     chown "$WATERME_USER:$WATERME_USER" "$WATERME_HOME/README.md"
