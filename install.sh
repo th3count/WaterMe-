@@ -757,6 +757,20 @@ install_waterme_code() {
         fi
     fi
     
+    # Verify key files exist
+    if [[ -f "$WATERME_HOME/waterme.py" ]]; then
+        print_success "waterme.py found"
+    else
+        print_error "waterme.py not found in cloned repository"
+        return 1
+    fi
+    
+    if [[ -f "$WATERME_HOME/api.py" ]]; then
+        print_success "api.py found"
+    else
+        print_warning "api.py not found in cloned repository"
+    fi
+    
     # Set ownership
     chown -R "$WATERME_USER:$WATERME_USER" "$WATERME_HOME"
     
