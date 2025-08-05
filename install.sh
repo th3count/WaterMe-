@@ -120,6 +120,10 @@ parse_arguments() {
                 GIT_UPGRADE=true
                 shift
                 ;;
+            --uninstall)
+                UNINSTALL=true
+                shift
+                ;;
             -h|--help)
                 echo "WaterMe! Installation Script"
                 echo ""
@@ -131,6 +135,7 @@ parse_arguments() {
                 echo "  --debug             Enable verbose debugging output"
                 echo "  --git-pull          Pull latest code from repository"
                 echo "  --git-upgrade       Full upgrade: pull code + reinstall dependencies"
+                echo "  --uninstall         Remove WaterMe! installation completely"
                 echo "  -h, --help          Show this help message"
                 echo ""
                 echo "Examples:"
@@ -139,6 +144,7 @@ parse_arguments() {
                 echo "  sudo ./install.sh --debug            # With debugging"
                 echo "  sudo ./install.sh --git-pull         # Pull latest code"
                 echo "  sudo ./install.sh --git-upgrade      # Full upgrade"
+                echo "  sudo ./install.sh --uninstall        # Remove installation"
                 echo ""
                 exit 0
                 ;;
@@ -448,6 +454,96 @@ git_upgrade_system() {
     fi
     
     print_success "System upgrade completed"
+}
+
+uninstall_waterme() {
+    print_step "Uninstalling WaterMe! system..."
+    
+    if [[ "$DEBUG" == "true" ]]; then
+        echo "DEBUG: Starting uninstall process"
+        echo "DEBUG: WATERME_HOME=$WATERME_HOME"
+        echo "DEBUG: WATERME_USER=$WATERME_USER"
+        echo "DEBUG: WATERME_SERVICE=$WATERME_SERVICE"
+    fi
+    
+    # Stop service if running
+    if systemctl is-active --quiet "$WATERME_SERVICE" 2>/dev/null; then
+        print_step "Stopping WaterMe! service..."
+        systemctl stop "$WATERME_SERVICE"
+        systemctl disable "$WATERME_SERVICE"
+    fi
+    
+    # Remove systemd service file
+    if [[ -f "/etc/systemd/system/$WATERME_SERVICE.service" ]]; then
+        print_step "Removing systemd service..."
+        rm -f "/etc/systemd/system/$WATERME_SERVICE.service"
+        systemctl daemon-reload
+    fi
+    
+    # Remove helper script
+    if [[ -f "/usr/local/bin/waterme" ]]; then
+        print_step "Removing helper script..."
+        rm -f "/usr/local/bin/waterme"
+    fi
+    
+    # Remove log rotation configuration
+    if [[ -f "/etc/logrotate.d/waterme" ]]; then
+        print_step "Removing log rotation configuration..."
+        rm -f "/etc/logrotate.d/waterme"
+    fi
+    
+    # Remove GPIO udev rules
+    if [[ -f "/etc/udev/rules.d/99-gpio.rules" ]]; then
+        print_step "Removing GPIO udev rules..."
+        rm -f "/etc/udev/rules.d/99-gpio.rules"
+        udevadm control --reload-rules
+        udevadm trigger
+    fi
+    
+    # Remove firewall rules (if they exist)
+    if command -v ufw &> /dev/null; then
+        print_step "Removing firewall rules..."
+        ufw delete allow 5000/tcp 2>/dev/null || true
+        ufw delete allow 3000/tcp 2>/dev/null || true
+    fi
+    
+    # Remove WaterMe! user
+    if id "$WATERME_USER" &>/dev/null; then
+        print_step "Removing WaterMe! user..."
+        userdel -r "$WATERME_USER" 2>/dev/null || print_warning "Could not remove user $WATERME_USER"
+    fi
+    
+    # Remove installation directory
+    if [[ -d "$WATERME_HOME" ]]; then
+        print_step "Removing installation directory..."
+        rm -rf "$WATERME_HOME"
+    fi
+    
+    # Remove any remaining processes
+    print_step "Stopping any remaining WaterMe! processes..."
+    pkill -f "python3.*waterme.py" 2>/dev/null || true
+    pkill -f "waterme" 2>/dev/null || true
+    
+    # Remove Python packages (optional - user packages)
+    print_step "Removing Python packages..."
+    if [[ -d "/home/$WATERME_USER/.local/lib/python3.*/site-packages" ]]; then
+        sudo -u "$WATERME_USER" python3 -m pip uninstall -y flask flask-cors pytz astral requests python-dateutil RPi.GPIO 2>/dev/null || true
+    fi
+    
+    print_success "WaterMe! uninstallation completed"
+    echo
+    echo "📋 Uninstallation Summary:"
+    echo "  ✅ Service stopped and disabled"
+    echo "  ✅ Systemd service file removed"
+    echo "  ✅ Helper script removed"
+    echo "  ✅ Log rotation configuration removed"
+    echo "  ✅ GPIO udev rules removed"
+    echo "  ✅ Firewall rules removed"
+    echo "  ✅ User $WATERME_USER removed"
+    echo "  ✅ Installation directory removed"
+    echo "  ✅ Python packages removed"
+    echo
+    echo "🌱 WaterMe! has been completely removed from your system."
 }
 
 install_ui_dependencies() {
@@ -1013,6 +1109,14 @@ main() {
         check_root
         git_upgrade_system
         print_completion
+        exit 0
+    fi
+    
+    if [[ "$UNINSTALL" == true ]]; then
+        print_header
+        print_step "Uninstall mode - removing WaterMe! completely"
+        check_root
+        uninstall_waterme
         exit 0
     fi
     
