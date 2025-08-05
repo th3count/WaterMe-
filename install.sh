@@ -154,6 +154,13 @@ check_os() {
     
     source /etc/os-release
     
+    # Debug output
+    if [[ "$DEBUG" == "true" ]]; then
+        echo "DEBUG: OS_ID=$ID"
+        echo "DEBUG: OS_ID_LIKE=${ID_LIKE:-}"
+        echo "DEBUG: OS_PRETTY_NAME=$PRETTY_NAME"
+    fi
+    
     if [[ "$ID" != "raspbian" && "${ID_LIKE:-}" != *"debian"* ]]; then
         print_warning "This script is designed for Raspbian/Debian. Proceeding anyway..."
     fi
@@ -164,10 +171,16 @@ check_os() {
 update_system() {
     print_step "Updating system packages..."
     
+    if [[ "$DEBUG" == "true" ]]; then
+        echo "DEBUG: Starting system update..."
+        echo "DEBUG: ENABLE_SERVICE=$ENABLE_SERVICE"
+    fi
+    
     apt-get update -y
     apt-get upgrade -y
     
     # Install essential packages
+    print_step "Installing essential packages..."
     apt-get install -y \
         curl \
         wget \
@@ -187,7 +200,12 @@ update_system() {
     
     # Install systemd if service mode is enabled
     if [[ "$ENABLE_SERVICE" == true ]]; then
+        print_step "Installing systemd (service mode enabled)..."
         apt-get install -y systemd
+    else
+        if [[ "$DEBUG" == "true" ]]; then
+            echo "DEBUG: Skipping systemd installation (manual mode)"
+        fi
     fi
     
     print_success "System packages updated"
@@ -199,14 +217,22 @@ install_python() {
     # Check if Python is already installed with correct version
     if command -v python3 &> /dev/null; then
         PYTHON_VERSION=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
+        if [[ "$DEBUG" == "true" ]]; then
+            echo "DEBUG: Found Python $PYTHON_VERSION"
+        fi
         if python3 -c "import sys; exit(0 if sys.version_info >= (${PYTHON_MIN_VERSION//./, }) else 1)" 2>/dev/null; then
             print_success "Python $PYTHON_VERSION already installed"
         else
             print_warning "Python $PYTHON_VERSION is too old, installing newer version..."
         fi
+    else
+        if [[ "$DEBUG" == "true" ]]; then
+            echo "DEBUG: Python3 not found, will install"
+        fi
     fi
     
     # Install Python and related packages
+    print_step "Installing Python packages..."
     apt-get install -y \
         python3 \
         python3-pip \
@@ -220,6 +246,7 @@ install_python() {
     print_success "Python $PYTHON_VERSION installed"
     
     # Upgrade pip
+    print_step "Upgrading pip..."
     python3 -m pip install --upgrade pip setuptools wheel
     print_success "pip upgraded to latest version"
 }
@@ -704,22 +731,38 @@ EOF
 final_validation() {
     print_step "Performing final validation..."
     
+    if [[ "$DEBUG" == "true" ]]; then
+        echo "DEBUG: Starting final validation..."
+        echo "DEBUG: WATERME_USER=$WATERME_USER"
+        echo "DEBUG: WATERME_HOME=$WATERME_HOME"
+        echo "DEBUG: ENABLE_SERVICE=$ENABLE_SERVICE"
+    fi
+    
     # Check Python installation
+    print_step "Validating Python installation..."
     python3 --version || { print_error "Python validation failed"; exit 1; }
     
     # Check Node.js installation
+    print_step "Validating Node.js installation..."
     node --version || { print_error "Node.js validation failed"; exit 1; }
     
     # Check user creation
+    print_step "Validating user creation..."
     id "$WATERME_USER" &>/dev/null || { print_error "User validation failed"; exit 1; }
     
     # Check directory structure
+    print_step "Validating directory structure..."
     [[ -d "$WATERME_HOME" ]] || { print_error "Directory validation failed"; exit 1; }
     
     # Check systemd service if enabled
     if [[ "$ENABLE_SERVICE" == true ]]; then
+        print_step "Validating systemd service..."
         systemctl list-unit-files | grep -q "$WATERME_SERVICE.service" || { print_error "Service validation failed"; exit 1; }
         print_success "Systemd service validation passed"
+    else
+        if [[ "$DEBUG" == "true" ]]; then
+            echo "DEBUG: Skipping systemd service validation (manual mode)"
+        fi
     fi
     
     print_success "All validations passed"
@@ -772,11 +815,17 @@ main() {
     # Parse command line arguments
     parse_arguments "$@"
     
-    # Show installation mode
+    # Show installation mode and debug status
     if [[ "$ENABLE_SERVICE" == true ]]; then
         print_step "Installation mode: Service (systemd enabled)"
     else
         print_step "Installation mode: Manual (no systemd service)"
+    fi
+    
+    if [[ "$DEBUG" == "true" ]]; then
+        print_step "Debug mode: ENABLED"
+        echo "DEBUG: Installation started at $(date)"
+        echo "DEBUG: Script arguments: $@"
     fi
     
     check_root
