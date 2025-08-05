@@ -252,10 +252,16 @@ install_python() {
     PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
     print_success "Python $PYTHON_VERSION installed"
     
-    # Upgrade pip
-    print_step "Upgrading pip..."
-    python3 -m pip install --upgrade pip setuptools wheel
-    print_success "pip upgraded to latest version"
+    # Upgrade pip (skip if externally managed)
+    print_step "Checking pip version..."
+    if python3 -m pip install --upgrade pip setuptools wheel 2>/dev/null; then
+        print_success "pip upgraded to latest version"
+    else
+        print_warning "pip upgrade skipped (externally managed environment)"
+        if [[ "$DEBUG" == "true" ]]; then
+            echo "DEBUG: Using system pip version"
+        fi
+    fi
 }
 
 install_nodejs() {
@@ -332,9 +338,14 @@ RPi.GPIO>=0.7.1
 EOF
 
     # Install dependencies as waterme user (non-interactive)
-    sudo -u "$WATERME_USER" python3 -m pip install --user --quiet -r "$WATERME_HOME/requirements.txt"
-    
-    print_success "Python dependencies installed"
+    if sudo -u "$WATERME_USER" python3 -m pip install --user --quiet -r "$WATERME_HOME/requirements.txt" 2>/dev/null; then
+        print_success "Python dependencies installed"
+    else
+        print_warning "Some Python dependencies may need manual installation"
+        if [[ "$DEBUG" == "true" ]]; then
+            echo "DEBUG: Check requirements.txt for missing packages"
+        fi
+    fi
 }
 
 install_ui_dependencies() {
