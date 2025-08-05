@@ -510,16 +510,30 @@ uninstall_waterme() {
         ufw delete allow 3000/tcp 2>/dev/null || true
     fi
     
-    # Remove WaterMe! user
+    # Remove WaterMe! user (only if not current user)
     if id "$WATERME_USER" &>/dev/null; then
-        print_step "Removing WaterMe! user..."
-        userdel -r "$WATERME_USER" 2>/dev/null || print_warning "Could not remove user $WATERME_USER"
+        if [[ "$(whoami)" != "$WATERME_USER" ]]; then
+            print_step "Removing WaterMe! user..."
+            userdel -r "$WATERME_USER" 2>/dev/null || print_warning "Could not remove user $WATERME_USER"
+        else
+            print_warning "Skipping user removal (you are logged in as $WATERME_USER)"
+        fi
     fi
     
-    # Remove installation directory
+    # Remove installation directory (ask user first)
     if [[ -d "$WATERME_HOME" ]]; then
-        print_step "Removing installation directory..."
-        rm -rf "$WATERME_HOME"
+        print_step "Installation directory found: $WATERME_HOME"
+        echo "⚠️  This will remove all WaterMe! files and data."
+        echo "   Your configuration and logs will be lost."
+        read -p "   Remove installation directory? (y/N): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            print_step "Removing installation directory..."
+            rm -rf "$WATERME_HOME"
+            print_success "Installation directory removed"
+        else
+            print_warning "Installation directory preserved"
+        fi
     fi
     
     # Remove any remaining processes
@@ -542,8 +556,16 @@ uninstall_waterme() {
     echo "  ✅ Log rotation configuration removed"
     echo "  ✅ GPIO udev rules removed"
     echo "  ✅ Firewall rules removed"
-    echo "  ✅ User $WATERME_USER removed"
-    echo "  ✅ Installation directory removed"
+    if [[ "$(whoami)" != "$WATERME_USER" ]]; then
+        echo "  ✅ User $WATERME_USER removed"
+    else
+        echo "  ⚠️  User $WATERME_USER preserved (current user)"
+    fi
+    if [[ -d "$WATERME_HOME" ]]; then
+        echo "  ✅ Installation directory removed"
+    else
+        echo "  ⚠️  Installation directory preserved"
+    fi
     echo "  ✅ Python packages removed"
     echo
     echo "🌱 WaterMe! has been completely removed from your system."
