@@ -346,8 +346,10 @@ setup_directories() {
 install_python_dependencies() {
     print_step "Installing Python dependencies..."
     
+    local VENV_PATH="$WATERME_HOME/venv"
+    
     if [[ "$DEBUG" == "true" ]]; then
-        echo "DEBUG: Installing Python dependencies from $WATERME_HOME/requirements.txt"
+        echo "DEBUG: Creating Python virtual environment at $VENV_PATH"
         echo "DEBUG: Requirements file exists: $([[ -f "$WATERME_HOME/requirements.txt" ]] && echo "YES" || echo "NO")"
         if [[ -f "$WATERME_HOME/requirements.txt" ]]; then
             echo "DEBUG: Requirements content:"
@@ -355,14 +357,22 @@ install_python_dependencies() {
         fi
     fi
     
-    # Install dependencies as waterme user (non-interactive)
-    if sudo -u "$WATERME_USER" python3 -m pip install --user --quiet -r "$WATERME_HOME/requirements.txt" 2>/dev/null; then
-        print_success "Python dependencies installed"
+    # Create virtual environment as waterme user
+    if sudo -u "$WATERME_USER" python3 -m venv "$VENV_PATH"; then
+        print_success "Virtual environment created"
+    else
+        print_error "Failed to create virtual environment"
+        return 1
+    fi
+    
+    # Install dependencies in virtual environment
+    if sudo -u "$WATERME_USER" "$VENV_PATH/bin/pip" install --quiet -r "$WATERME_HOME/requirements.txt"; then
+        print_success "Python dependencies installed in virtual environment"
     else
         print_warning "Some Python dependencies may need manual installation"
         if [[ "$DEBUG" == "true" ]]; then
-            echo "DEBUG: Failed to install dependencies, trying individual packages..."
-            sudo -u "$WATERME_USER" python3 -m pip install --user flask flask-cors pytz astral requests python-dateutil RPi.GPIO
+            echo "DEBUG: Failed to install from requirements.txt, trying individual packages..."
+            sudo -u "$WATERME_USER" "$VENV_PATH/bin/pip" install flask flask-cors pytz astral requests python-dateutil RPi.GPIO
         fi
     fi
 }
@@ -546,7 +556,7 @@ uninstall_waterme() {
     
     # Remove any remaining processes
     print_step "Stopping any remaining WaterMe! processes..."
-    pkill -f "python3.*waterme.py" 2>/dev/null || true
+    pkill -f ".*waterme.py" 2>/dev/null || true
     pkill -f "waterme" 2>/dev/null || true
     
     # Remove Python packages (optional - user packages)
@@ -951,7 +961,7 @@ Group=$WATERME_USER
 WorkingDirectory=$WATERME_HOME
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
 Environment=PYTHONPATH=$WATERME_HOME
-ExecStart=/usr/bin/python3 $WATERME_HOME/waterme.py
+ExecStart=$WATERME_HOME/venv/bin/python $WATERME_HOME/waterme.py
 ExecReload=/bin/kill -HUP \$MAINPID
 ExecStop=/bin/kill -TERM \$MAINPID
 Restart=always
@@ -1025,6 +1035,7 @@ WATERME_DIR="$WATERME_HOME"
 WATERME_USER="$WATERME_USER"
 WATERME_SERVICE="$WATERME_SERVICE"
 SERVICE_MODE=$ENABLE_SERVICE
+PYTHON_CMD="\$WATERME_DIR/venv/bin/python"
 
 case "\$1" in
     start)
@@ -1033,7 +1044,7 @@ case "\$1" in
             sudo systemctl start \$WATERME_SERVICE
         else
             echo "Starting WaterMe! manually..."
-            sudo -u \$WATERME_USER python3 \$WATERME_DIR/waterme.py
+            sudo -u \$WATERME_USER \$PYTHON_CMD \$WATERME_DIR/waterme.py
         fi
         ;;
     stop)
@@ -1042,7 +1053,7 @@ case "\$1" in
             sudo systemctl stop \$WATERME_SERVICE
         else
             echo "Stopping WaterMe!..."
-            pkill -f "python3.*waterme.py" || echo "No WaterMe! process found"
+            pkill -f ".*waterme.py" || echo "No WaterMe! process found"
         fi
         ;;
     restart)
@@ -1051,18 +1062,18 @@ case "\$1" in
             sudo systemctl restart \$WATERME_SERVICE
         else
             echo "Restarting WaterMe! manually..."
-            pkill -f "python3.*waterme.py" || true
+            pkill -f ".*waterme.py" || true
             sleep 2
-            sudo -u \$WATERME_USER python3 \$WATERME_DIR/waterme.py &
+            sudo -u \$WATERME_USER \$PYTHON_CMD \$WATERME_DIR/waterme.py &
         fi
         ;;
     status)
         if [[ "\$SERVICE_MODE" == true ]]; then
             sudo systemctl status \$WATERME_SERVICE
         else
-            if pgrep -f "python3.*waterme.py" > /dev/null; then
+            if pgrep -f ".*waterme.py" > /dev/null; then
                 echo "WaterMe! is running (manual mode)"
-                ps aux | grep "python3.*waterme.py" | grep -v grep
+                ps aux | grep ".*waterme.py" | grep -v grep
             else
                 echo "WaterMe! is not running"
             fi
@@ -1110,7 +1121,7 @@ case "\$1" in
             echo "Mode: Service (systemd)"
         else
             echo "Mode: Manual"
-            echo "Note: Use 'python3 $WATERME_HOME/waterme.py' directly for more control."
+            echo "Note: Use '$WATERME_HOME/venv/bin/python $WATERME_HOME/waterme.py' directly for more control."
         fi
         exit 1
         ;;
@@ -1190,7 +1201,7 @@ print_completion() {
         echo "5. Start service: waterme start"
         echo "6. Check status: waterme status"
     else
-        echo "4. Start manually: python3 $WATERME_HOME/waterme.py"
+        echo "4. Start manually: $WATERME_HOME/venv/bin/python $WATERME_HOME/waterme.py"
         echo "5. Or use helper: waterme start"
         echo "6. Check status: waterme status"
     fi

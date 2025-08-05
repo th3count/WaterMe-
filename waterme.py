@@ -83,6 +83,10 @@ class WaterMeSystem:
         self.config_dir = os.path.join(self.project_root, 'config')
         self.logs_dir = os.path.join(self.project_root, 'logs')
         
+        # Virtual environment Python path
+        self.venv_python = os.path.join(self.project_root, 'venv', 'bin', 'python')
+        self.python_executable = self.venv_python if os.path.exists(self.venv_python) else sys.executable
+        
         # Ensure critical directories exist
         self._ensure_directories()
         
@@ -397,8 +401,9 @@ class WaterMeSystem:
     def start_backend(self):
         """Start the backend API server with proper error handling and logging."""
         print("🚀 Starting backend server...")
+        print(f"   Using Python: {self.python_executable}")
         if self.system_logger:
-            log_event(self.system_logger, 'INFO', 'Starting backend API server')
+            log_event(self.system_logger, 'INFO', f'Starting backend API server using Python: {self.python_executable}')
         
         try:
             # Verify api.py exists
@@ -415,9 +420,9 @@ class WaterMeSystem:
             env['FLASK_HOST'] = '0.0.0.0'  # Ensure network access
             env['FLASK_PORT'] = str(self.config['backend_port'])
             
-            # Start the backend process
+            # Start the backend process using virtual environment Python
             self.backend_process = subprocess.Popen([
-                sys.executable, 'api.py'
+                self.python_executable, 'api.py'
             ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
             
             # Wait for startup with timeout
