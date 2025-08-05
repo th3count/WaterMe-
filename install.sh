@@ -324,12 +324,11 @@ flask>=2.3.0
 flask-cors>=4.0.0
 pytz>=2023.3
 astral>=3.2
-configparser>=5.3.0
-RPi.GPIO>=0.7.1
 requests>=2.31.0
 python-dateutil>=2.8.2
-pathlib>=1.0.1
-threading-timer>=1.0.0
+RPi.GPIO>=0.7.1
+# Note: configparser, pathlib, threading are part of Python standard library
+# Note: threading-timer is not needed as we use standard threading
 EOF
 
     # Install dependencies as waterme user (non-interactive)
