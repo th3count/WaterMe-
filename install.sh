@@ -756,10 +756,28 @@ EOF
 install_waterme_code() {
     print_step "Installing WaterMe! application code..."
     
+    if [[ "$DEBUG" == "true" ]]; then
+        echo "DEBUG: Starting install_waterme_code()"
+        echo "DEBUG: WATERME_HOME=$WATERME_HOME"
+        echo "DEBUG: GIT_REPO=$GIT_REPO"
+        echo "DEBUG: GIT_BRANCH=$GIT_BRANCH"
+        echo "DEBUG: Current directory: $(pwd)"
+        echo "DEBUG: WATERME_HOME exists: $([[ -d "$WATERME_HOME" ]] && echo "YES" || echo "NO")"
+        echo "DEBUG: WATERME_HOME/.git exists: $([[ -d "$WATERME_HOME/.git" ]] && echo "YES" || echo "NO")"
+        echo "DEBUG: WATERME_HOME contents: $(ls -la "$WATERME_HOME" 2>/dev/null || echo "Directory empty or not accessible")"
+    fi
+    
     # Clone the repository to the installation directory
     if [[ -d "$WATERME_HOME/.git" ]]; then
         print_step "Updating existing repository..."
         cd "$WATERME_HOME"
+        
+        if [[ "$DEBUG" == "true" ]]; then
+            echo "DEBUG: Updating existing repository"
+            echo "DEBUG: Changed to directory: $(pwd)"
+            echo "DEBUG: Git status: $(git status --porcelain 2>/dev/null || echo "Git not initialized")"
+            echo "DEBUG: Git HEAD exists: $(git rev-parse --verify HEAD >/dev/null 2>&1 && echo "YES" || echo "NO")"
+        fi
         
         # Stash any local changes (only if there are commits)
         if git rev-parse --verify HEAD >/dev/null 2>&1; then
@@ -818,11 +836,46 @@ install_waterme_code() {
                 fi
                 
                 cd "$WATERME_HOME"
+                if [[ "$DEBUG" == "true" ]]; then
+                    echo "DEBUG: Initializing git repository"
+                    echo "DEBUG: Current directory: $(pwd)"
+                    echo "DEBUG: Directory contents: $(ls -la 2>/dev/null || echo "Empty")"
+                fi
                 git init
                 git remote add origin "$GIT_REPO"
+                if [[ "$DEBUG" == "true" ]]; then
+                    echo "DEBUG: Fetching from origin"
+                fi
                 git fetch origin
-                git checkout -b "$GIT_BRANCH" origin/"$GIT_BRANCH"
-                print_success "Repository initialized successfully"
+                if [[ "$DEBUG" == "true" ]]; then
+                    echo "DEBUG: Available branches: $(git branch -r 2>/dev/null || echo "None")"
+                    echo "DEBUG: Attempting checkout of $GIT_BRANCH"
+                fi
+                if git checkout -b "$GIT_BRANCH" origin/"$GIT_BRANCH"; then
+                    print_success "Repository initialized successfully"
+                    if [[ "$DEBUG" == "true" ]]; then
+                        echo "DEBUG: Checkout successful"
+                        echo "DEBUG: Final directory contents: $(ls -la 2>/dev/null || echo "Empty")"
+                    fi
+                else
+                    print_warning "Checkout failed, trying fresh clone..."
+                    if [[ "$DEBUG" == "true" ]]; then
+                        echo "DEBUG: Checkout failed, attempting fresh clone"
+                        echo "DEBUG: Removing $WATERME_HOME"
+                    fi
+                    cd /tmp
+                    rm -rf "$WATERME_HOME"
+                    if git clone -b "$GIT_BRANCH" "$GIT_REPO" "$WATERME_HOME"; then
+                        print_success "Repository cloned successfully"
+                        if [[ "$DEBUG" == "true" ]]; then
+                            echo "DEBUG: Fresh clone successful"
+                            echo "DEBUG: Cloned directory contents: $(ls -la "$WATERME_HOME" 2>/dev/null || echo "Empty")"
+                        fi
+                    else
+                        print_error "Failed to clone repository"
+                        return 1
+                    fi
+                fi
             fi
         else
             # Clone fresh repository
@@ -836,6 +889,14 @@ install_waterme_code() {
     fi
     
     # Verify key files exist
+    if [[ "$DEBUG" == "true" ]]; then
+        echo "DEBUG: Verifying key files"
+        echo "DEBUG: WATERME_HOME=$WATERME_HOME"
+        echo "DEBUG: Directory contents: $(ls -la "$WATERME_HOME" 2>/dev/null || echo "Directory not accessible")"
+        echo "DEBUG: waterme.py exists: $([[ -f "$WATERME_HOME/waterme.py" ]] && echo "YES" || echo "NO")"
+        echo "DEBUG: api.py exists: $([[ -f "$WATERME_HOME/api.py" ]] && echo "YES" || echo "NO")"
+    fi
+    
     if [[ -f "$WATERME_HOME/waterme.py" ]]; then
         print_success "waterme.py found"
     else
