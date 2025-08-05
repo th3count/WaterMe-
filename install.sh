@@ -770,7 +770,8 @@ install_waterme_code() {
             rm -rf "$WATERME_HOME"
         fi
         
-        # Clone the repository
+        # Clone the repository (use absolute path and change to safe directory)
+        cd /tmp
         if git clone -b "$GIT_BRANCH" "$GIT_REPO" "$WATERME_HOME"; then
             print_success "Repository cloned successfully"
         else
