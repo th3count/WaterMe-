@@ -381,12 +381,12 @@ git_pull_latest() {
         print_step "Updating existing repository..."
         cd "$WATERME_HOME"
         
-        # Stash any local changes (only if there are commits)
+        # Simple approach: just reset to origin and pull
         if git rev-parse --verify HEAD >/dev/null 2>&1; then
-            if git status --porcelain | grep -q .; then
-                print_warning "Local changes detected, stashing..."
-                git stash
+            if [[ "$DEBUG" == "true" ]]; then
+                echo "DEBUG: Resetting to origin/$GIT_BRANCH"
             fi
+            git reset --hard origin/"$GIT_BRANCH"
         else
             # No commits yet, just clean untracked files
             print_warning "No commits yet, cleaning untracked files..."
@@ -399,12 +399,6 @@ git_pull_latest() {
         else
             print_error "Failed to pull latest code"
             return 1
-        fi
-        
-        # Restore stashed changes if any
-        if git stash list | grep -q .; then
-            print_warning "Restoring stashed changes..."
-            git stash pop
         fi
     else
         print_step "Cloning repository to $WATERME_HOME..."
