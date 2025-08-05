@@ -20,6 +20,9 @@
 #   curl -sSL https://raw.githubusercontent.com/your-repo/waterme/main/install.sh | bash
 #   OR
 #   chmod +x install.sh && ./install.sh
+#   OR
+#   ./install.sh --service-enable    # Install with systemd service
+#   ./install.sh --service-disable   # Install without systemd service (default)
 #
 # What this script does:
 # 1. System updates and base packages
@@ -29,9 +32,11 @@
 # 5. GPIO permissions and hardware setup
 # 6. Directory structure creation
 # 7. Configuration file templates
-# 8. Systemd service setup
-# 9. Firewall configuration
-# 10. Final system validation
+# 8. Firewall configuration
+# 9. Systemd service setup (if --service-enable)
+# 10. Log rotation setup
+# 11. Helper scripts creation
+# 12. Final system validation
 
 set -e  # Exit on any error
 set -u  # Exit on undefined variables
@@ -50,6 +55,9 @@ WATERME_HOME="/opt/waterme"
 WATERME_SERVICE="waterme"
 PYTHON_MIN_VERSION="3.9"
 NODE_MIN_VERSION="18"
+
+# Default settings
+ENABLE_SERVICE=false
 
 # Logging
 LOG_FILE="/tmp/waterme_install.log"
@@ -80,6 +88,38 @@ print_error() {
     echo -e "${RED}❌ $1${NC}"
 }
 
+parse_arguments() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --service-enable)
+                ENABLE_SERVICE=true
+                shift
+                ;;
+            --service-disable)
+                ENABLE_SERVICE=false
+                shift
+                ;;
+            -h|--help)
+                echo "WaterMe! Installation Script"
+                echo ""
+                echo "Usage: $0 [OPTIONS]"
+                echo ""
+                echo "Options:"
+                echo "  --service-enable    Install with systemd service (production)"
+                echo "  --service-disable   Install without systemd service (default, manual)"
+                echo "  -h, --help          Show this help message"
+                echo ""
+                exit 0
+                ;;
+            *)
+                print_error "Unknown option: $1"
+                echo "Use --help for usage information"
+                exit 1
+                ;;
+        esac
+    done
+}
+
 check_root() {
     if [[ $EUID -ne 0 ]]; then
         print_error "This script must be run as root (use sudo)"
@@ -97,7 +137,7 @@ check_os() {
     
     source /etc/os-release
     
-    if [[ "$ID" != "raspbian" && "$ID_LIKE" != *"debian"* ]]; then
+    if [[ "$ID" != "raspbian" && "${ID_LIKE:-}" != *"debian"* ]]; then
         print_warning "This script is designed for Raspbian/Debian. Proceeding anyway..."
     fi
     
@@ -122,12 +162,16 @@ update_system() {
         gnupg \
         lsb-release \
         sudo \
-        systemd \
         rsync \
         unzip \
         nano \
         htop \
         tree
+    
+    # Install systemd if service mode is enabled
+    if [[ "$ENABLE_SERVICE" == true ]]; then
+        apt-get install -y systemd
+    fi
     
     print_success "System packages updated"
 }
@@ -380,15 +424,19 @@ Your WaterMe! system has been installed successfully!
    sudo -u waterme npm install
    ```
 
-4. **Start the service:**
+4. **Start the system:**
+   
+   **For service mode (--service-enable):**
    ```bash
-   sudo systemctl enable waterme
-   sudo systemctl start waterme
+   waterme enable    # Enable auto-start
+   waterme start     # Start service
    ```
-
-5. **Check status:**
+   
+   **For manual mode (default):**
    ```bash
-   sudo systemctl status waterme
+   sudo -u waterme python3 /opt/waterme/waterme.py
+   # OR
+   waterme start     # Helper script
    ```
 
 ## Access URLs:
@@ -396,7 +444,8 @@ Your WaterMe! system has been installed successfully!
 - Frontend UI: http://your-pi-ip:3000
 
 ## Logs:
-- Service logs: `sudo journalctl -u waterme -f`
+- **Service mode**: `waterme logs` or `sudo journalctl -u waterme -f`
+- **Manual mode**: `waterme logs` or `tail -f /opt/waterme/logs/*.log`
 - Application logs: `/opt/waterme/logs/`
 
 ## Configuration:
@@ -409,13 +458,47 @@ EOF
     print_success "Installation guide created"
 }
 
+
+
+configure_firewall() {
+    print_step "Configuring firewall..."
+    
+    # Install ufw if not present
+    if ! command -v ufw &> /dev/null; then
+        apt-get install -y ufw
+    fi
+    
+    # Configure firewall rules
+    ufw --force enable
+    ufw default deny incoming
+    ufw default allow outgoing
+    
+    # Allow SSH
+    ufw allow ssh
+    
+    # Allow WaterMe! ports
+    ufw allow 5000/tcp comment 'WaterMe! Backend API'
+    ufw allow 3000/tcp comment 'WaterMe! Frontend UI'
+    
+    # Allow local network access
+    ufw allow from 192.168.0.0/16
+    ufw allow from 10.0.0.0/8
+    ufw allow from 172.16.0.0/12
+    
+    print_success "Firewall configured"
+}
+
 create_systemd_service() {
+    if [[ "$ENABLE_SERVICE" != true ]]; then
+        return 0
+    fi
+    
     print_step "Creating systemd service..."
     
     cat > "/etc/systemd/system/$WATERME_SERVICE.service" << EOF
 [Unit]
 Description=WaterMe! Smart Garden Irrigation System
-Documentation=file:///opt/waterme/README.md
+Documentation=file://$WATERME_HOME/README.md
 After=network.target
 Wants=network.target
 
@@ -455,34 +538,6 @@ EOF
     print_success "Systemd service created"
 }
 
-configure_firewall() {
-    print_step "Configuring firewall..."
-    
-    # Install ufw if not present
-    if ! command -v ufw &> /dev/null; then
-        apt-get install -y ufw
-    fi
-    
-    # Configure firewall rules
-    ufw --force enable
-    ufw default deny incoming
-    ufw default allow outgoing
-    
-    # Allow SSH
-    ufw allow ssh
-    
-    # Allow WaterMe! ports
-    ufw allow 5000/tcp comment 'WaterMe! Backend API'
-    ufw allow 3000/tcp comment 'WaterMe! Frontend UI'
-    
-    # Allow local network access
-    ufw allow from 192.168.0.0/16
-    ufw allow from 10.0.0.0/8
-    ufw allow from 172.16.0.0/12
-    
-    print_success "Firewall configured"
-}
-
 setup_log_rotation() {
     print_step "Setting up log rotation..."
     
@@ -496,7 +551,19 @@ $WATERME_HOME/logs/*.log {
     notifempty
     create 0644 $WATERME_USER $WATERME_USER
     postrotate
+EOF
+
+    if [[ "$ENABLE_SERVICE" == true ]]; then
+        cat >> "/etc/logrotate.d/waterme" << EOF
         systemctl reload-or-restart $WATERME_SERVICE > /dev/null 2>&1 || true
+EOF
+    else
+        cat >> "/etc/logrotate.d/waterme" << EOF
+        # Manual mode - no service restart needed
+EOF
+    fi
+
+    cat >> "/etc/logrotate.d/waterme" << EOF
     endscript
 }
 EOF
@@ -507,40 +574,102 @@ EOF
 create_helper_scripts() {
     print_step "Creating helper scripts..."
     
-    # WaterMe! control script
+    # WaterMe! control script - conditional based on service mode
     cat > "/usr/local/bin/waterme" << EOF
 #!/bin/bash
 # WaterMe! control script
 
+WATERME_DIR="$WATERME_HOME"
+WATERME_USER="$WATERME_USER"
+WATERME_SERVICE="$WATERME_SERVICE"
+SERVICE_MODE=$ENABLE_SERVICE
+
 case "\$1" in
     start)
-        sudo systemctl start waterme
+        if [[ "\$SERVICE_MODE" == true ]]; then
+            echo "Starting WaterMe! service..."
+            sudo systemctl start \$WATERME_SERVICE
+        else
+            echo "Starting WaterMe! manually..."
+            sudo -u \$WATERME_USER python3 \$WATERME_DIR/waterme.py
+        fi
         ;;
     stop)
-        sudo systemctl stop waterme
+        if [[ "\$SERVICE_MODE" == true ]]; then
+            echo "Stopping WaterMe! service..."
+            sudo systemctl stop \$WATERME_SERVICE
+        else
+            echo "Stopping WaterMe!..."
+            pkill -f "python3.*waterme.py" || echo "No WaterMe! process found"
+        fi
         ;;
     restart)
-        sudo systemctl restart waterme
+        if [[ "\$SERVICE_MODE" == true ]]; then
+            echo "Restarting WaterMe! service..."
+            sudo systemctl restart \$WATERME_SERVICE
+        else
+            echo "Restarting WaterMe! manually..."
+            pkill -f "python3.*waterme.py" || true
+            sleep 2
+            sudo -u \$WATERME_USER python3 \$WATERME_DIR/waterme.py &
+        fi
         ;;
     status)
-        sudo systemctl status waterme
+        if [[ "\$SERVICE_MODE" == true ]]; then
+            sudo systemctl status \$WATERME_SERVICE
+        else
+            if pgrep -f "python3.*waterme.py" > /dev/null; then
+                echo "WaterMe! is running (manual mode)"
+                ps aux | grep "python3.*waterme.py" | grep -v grep
+            else
+                echo "WaterMe! is not running"
+            fi
+        fi
         ;;
     logs)
-        sudo journalctl -u waterme -f
+        if [[ "\$SERVICE_MODE" == true ]]; then
+            sudo journalctl -u \$WATERME_SERVICE -f
+        else
+            tail -f \$WATERME_DIR/logs/*.log
+        fi
         ;;
     config)
-        sudo nano $WATERME_HOME/config/settings.cfg
+        sudo nano \$WATERME_DIR/config/settings.cfg
         ;;
     gpio)
-        sudo nano $WATERME_HOME/config/gpio.cfg
+        sudo nano \$WATERME_DIR/config/gpio.cfg
         ;;
     update)
-        cd $WATERME_HOME
-        sudo -u $WATERME_USER git pull
-        sudo systemctl restart waterme
+        cd \$WATERME_DIR
+        sudo -u \$WATERME_USER git pull
+        if [[ "\$SERVICE_MODE" == true ]]; then
+            sudo systemctl restart \$WATERME_SERVICE
+        fi
+        ;;
+    enable)
+        if [[ "\$SERVICE_MODE" == true ]]; then
+            sudo systemctl enable \$WATERME_SERVICE
+            echo "WaterMe! service enabled for auto-start"
+        else
+            echo "Service mode not installed. Use --service-enable during installation."
+        fi
+        ;;
+    disable)
+        if [[ "\$SERVICE_MODE" == true ]]; then
+            sudo systemctl disable \$WATERME_SERVICE
+            echo "WaterMe! service disabled"
+        else
+            echo "Service mode not installed."
+        fi
         ;;
     *)
-        echo "Usage: waterme {start|stop|restart|status|logs|config|gpio|update}"
+        echo "Usage: waterme {start|stop|restart|status|logs|config|gpio|update|enable|disable}"
+        if [[ "\$SERVICE_MODE" == true ]]; then
+            echo "Mode: Service (systemd)"
+        else
+            echo "Mode: Manual"
+            echo "Note: Use 'python3 $WATERME_HOME/waterme.py' directly for more control."
+        fi
         exit 1
         ;;
 esac
@@ -548,7 +677,11 @@ EOF
 
     chmod +x /usr/local/bin/waterme
     
-    print_success "Helper scripts created"
+    if [[ "$ENABLE_SERVICE" == true ]]; then
+        print_success "Helper scripts created (service mode)"
+    else
+        print_success "Helper scripts created (manual mode)"
+    fi
 }
 
 final_validation() {
@@ -566,8 +699,11 @@ final_validation() {
     # Check directory structure
     [[ -d "$WATERME_HOME" ]] || { print_error "Directory validation failed"; exit 1; }
     
-    # Check systemd service
-    systemctl list-unit-files | grep -q "$WATERME_SERVICE.service" || { print_error "Service validation failed"; exit 1; }
+    # Check systemd service if enabled
+    if [[ "$ENABLE_SERVICE" == true ]]; then
+        systemctl list-unit-files | grep -q "$WATERME_SERVICE.service" || { print_error "Service validation failed"; exit 1; }
+        print_success "Systemd service validation passed"
+    fi
     
     print_success "All validations passed"
 }
@@ -581,15 +717,26 @@ print_completion() {
     echo
     echo "📁 Installation directory: $WATERME_HOME"
     echo "👤 System user: $WATERME_USER"
-    echo "🔧 Service name: $WATERME_SERVICE"
+    if [[ "$ENABLE_SERVICE" == true ]]; then
+        echo "🔧 Service name: $WATERME_SERVICE (systemd enabled)"
+    else
+        echo "🔧 Mode: Manual operation (no systemd service)"
+    fi
     echo
     echo "📋 Next steps:"
     echo "1. Copy your WaterMe! source code to $WATERME_HOME"
     echo "2. Configure your system: waterme config"
     echo "3. Configure GPIO pins: waterme gpio"
-    echo "4. Start the service: waterme start"
-    echo "5. Check status: waterme status"
-    echo "6. View logs: waterme logs"
+    echo "4. Install UI dependencies: cd $WATERME_HOME/ui && npm install"
+    if [[ "$ENABLE_SERVICE" == true ]]; then
+        echo "5. Enable service: waterme enable"
+        echo "6. Start service: waterme start"
+        echo "7. Check status: waterme status"
+    else
+        echo "5. Start manually: python3 $WATERME_HOME/waterme.py"
+        echo "6. Or use helper: waterme start"
+        echo "7. Check status: waterme status"
+    fi
     echo
     echo "🌐 Once running, access your system at:"
     echo "   • Backend API: http://$(hostname -I | awk '{print $1}'):5000"
@@ -605,6 +752,16 @@ print_completion() {
 main() {
     print_header
     
+    # Parse command line arguments
+    parse_arguments "$@"
+    
+    # Show installation mode
+    if [[ "$ENABLE_SERVICE" == true ]]; then
+        print_step "Installation mode: Service (systemd enabled)"
+    else
+        print_step "Installation mode: Manual (no systemd service)"
+    fi
+    
     check_root
     check_os
     update_system
@@ -616,8 +773,8 @@ main() {
     setup_gpio_permissions
     create_config_templates
     install_waterme_code
-    create_systemd_service
     configure_firewall
+    create_systemd_service
     setup_log_rotation
     create_helper_scripts
     final_validation
