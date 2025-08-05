@@ -346,27 +346,23 @@ setup_directories() {
 install_python_dependencies() {
     print_step "Installing Python dependencies..."
     
-    # Create requirements.txt if it doesn't exist
-    cat > "$WATERME_HOME/requirements.txt" << 'EOF'
-# WaterMe! Python Dependencies
-flask>=2.3.0
-flask-cors>=4.0.0
-pytz>=2023.3
-astral>=3.2
-requests>=2.31.0
-python-dateutil>=2.8.2
-RPi.GPIO>=0.7.1
-# Note: configparser, pathlib, threading are part of Python standard library
-# Note: threading-timer is not needed as we use standard threading
-EOF
-
+    if [[ "$DEBUG" == "true" ]]; then
+        echo "DEBUG: Installing Python dependencies from $WATERME_HOME/requirements.txt"
+        echo "DEBUG: Requirements file exists: $([[ -f "$WATERME_HOME/requirements.txt" ]] && echo "YES" || echo "NO")"
+        if [[ -f "$WATERME_HOME/requirements.txt" ]]; then
+            echo "DEBUG: Requirements content:"
+            cat "$WATERME_HOME/requirements.txt"
+        fi
+    fi
+    
     # Install dependencies as waterme user (non-interactive)
     if sudo -u "$WATERME_USER" python3 -m pip install --user --quiet -r "$WATERME_HOME/requirements.txt" 2>/dev/null; then
         print_success "Python dependencies installed"
     else
         print_warning "Some Python dependencies may need manual installation"
         if [[ "$DEBUG" == "true" ]]; then
-            echo "DEBUG: Check requirements.txt for missing packages"
+            echo "DEBUG: Failed to install dependencies, trying individual packages..."
+            sudo -u "$WATERME_USER" python3 -m pip install --user flask flask-cors pytz astral requests python-dateutil RPi.GPIO
         fi
     fi
 }
@@ -1275,11 +1271,11 @@ main() {
     install_nodejs
     create_user
     setup_directories
-    install_python_dependencies
     install_ui_dependencies
     setup_gpio_permissions
     create_config_templates
     install_waterme_code
+    install_python_dependencies
     configure_firewall
     create_systemd_service
     setup_log_rotation
