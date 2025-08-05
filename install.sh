@@ -99,6 +99,10 @@ print_error() {
     echo -e "${RED}❌ $1${NC}"
 }
 
+print_info() {
+    echo -e "${CYAN}ℹ️  $1${NC}"
+}
+
 parse_arguments() {
     while [[ $# -gt 0 ]]; do
         case $1 in
