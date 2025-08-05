@@ -41,6 +41,12 @@
 set -e  # Exit on any error
 set -u  # Exit on undefined variables
 
+# Enable debugging output
+DEBUG=${DEBUG:-false}
+if [[ "$DEBUG" == "true" ]]; then
+    set -x  # Print commands before execution
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -99,6 +105,11 @@ parse_arguments() {
                 ENABLE_SERVICE=false
                 shift
                 ;;
+            --debug)
+                DEBUG=true
+                set -x  # Enable debug mode
+                shift
+                ;;
             -h|--help)
                 echo "WaterMe! Installation Script"
                 echo ""
@@ -107,7 +118,13 @@ parse_arguments() {
                 echo "Options:"
                 echo "  --service-enable    Install with systemd service (production)"
                 echo "  --service-disable   Install without systemd service (default, manual)"
+                echo "  --debug             Enable verbose debugging output"
                 echo "  -h, --help          Show this help message"
+                echo ""
+                echo "Examples:"
+                echo "  sudo ./install.sh                    # Manual mode (default)"
+                echo "  sudo ./install.sh --service-enable   # Service mode"
+                echo "  sudo ./install.sh --debug            # With debugging"
                 echo ""
                 exit 0
                 ;;

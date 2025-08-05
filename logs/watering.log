@@ -39,3 +39,32 @@
 [2025-08-04 22:04:51] [INFO] [watering] Smart zone duration calculated | zone_id=1 total_plants=2 total_seconds=2162.7 average_seconds=1081.35 calculated_duration=00:18:01 plant_count=2 cycles_per_week=7.0 zone_frequency=D1 mock_mode=False
 [2025-08-04 22:04:51] [INFO] [watering] Smart duration refresh completed | zones_updated=1 zones_skipped=7 total_zones_checked=8
 [2025-08-04 22:04:51] [INFO] [watering] Daily smart duration refresh completed | zones_updated=1
+[2025-08-04 22:59:13] [INFO] [watering] Triggering initial smart duration refresh after initialization
+[2025-08-04 22:59:13] [DEBUG] [watering] Starting smart zone duration calculation | zone_id=1 mock_mode=False
+[2025-08-04 22:59:13] [DEBUG] [watering] Zone frequency analysis | zone_id=1 zone_frequency=D1 cycles_per_week=7.0
+[2025-08-04 22:59:13] [DEBUG] [watering] Found plants in zone | zone_id=1 plant_count=2
+[2025-08-04 22:59:13] [DEBUG] [watering] Processing plant for duration calculation | instance_id=1 plant_id=1 library_book=fruitbushes plant_name=Strawberry, Red
+[2025-08-04 22:59:13] [DEBUG] [watering] Plant water requirements | instance_id=1 plant_id=1 water_optimal_in_week=1.5 root_area_sqft=0.45 emitter_size=0.2 quantity=1
+[2025-08-04 22:59:13] [DEBUG] [watering] Volume calculation breakdown | instance_id=1 plant_id=1 weekly_volume_per_plant=0.42052500000000004 volume_per_plant_per_cycle=0.060075 cycles_per_week=7.0 time_per_plant_seconds=1081.35
+[2025-08-04 22:59:13] [DEBUG] [watering] Processing plant for duration calculation | instance_id=2 plant_id=1 library_book=fruitbushes plant_name=Strawberry, Red
+[2025-08-04 22:59:13] [DEBUG] [watering] Plant water requirements | instance_id=2 plant_id=1 water_optimal_in_week=1.5 root_area_sqft=0.45 emitter_size=0.2 quantity=1
+[2025-08-04 22:59:13] [DEBUG] [watering] Volume calculation breakdown | instance_id=2 plant_id=1 weekly_volume_per_plant=0.42052500000000004 volume_per_plant_per_cycle=0.060075 cycles_per_week=7.0 time_per_plant_seconds=1081.35
+[2025-08-04 22:59:13] [DEBUG] [watering] Duration calculation summary | zone_id=1 total_seconds=2162.7 total_plants=2 cycles_per_week=7.0 zone_frequency=D1
+[2025-08-04 22:59:13] [INFO] [watering] Smart zone duration calculated | zone_id=1 total_plants=2 total_seconds=2162.7 average_seconds=1081.35 calculated_duration=00:18:01 plant_count=2 cycles_per_week=7.0 zone_frequency=D1 mock_mode=False
+[2025-08-04 22:59:13] [INFO] [watering] Smart duration refresh completed | zones_updated=1 zones_skipped=7 total_zones_checked=8
+[2025-08-04 22:59:13] [INFO] [watering] Initial smart duration refresh completed | zones_updated=1
+[2025-08-04 22:59:51] [INFO] [watering] Manual zone activation | zone_id=1 duration=1200
+[2025-08-04 23:00:09] [DEBUG] [watering] Starting smart zone duration calculation | zone_id=1 mock_mode=False
+[2025-08-04 23:00:09] [DEBUG] [watering] Zone frequency analysis | zone_id=1 zone_frequency=D1 cycles_per_week=7.0
+[2025-08-04 23:00:09] [DEBUG] [watering] Found plants in zone | zone_id=1 plant_count=2
+[2025-08-04 23:00:09] [DEBUG] [watering] Processing plant for duration calculation | instance_id=1 plant_id=1 library_book=fruitbushes plant_name=Strawberry, Red
+[2025-08-04 23:00:09] [DEBUG] [watering] Plant water requirements | instance_id=1 plant_id=1 water_optimal_in_week=1.5 root_area_sqft=0.45 emitter_size=0.2 quantity=1
+[2025-08-04 23:00:09] [DEBUG] [watering] Volume calculation breakdown | instance_id=1 plant_id=1 weekly_volume_per_plant=0.42052500000000004 volume_per_plant_per_cycle=0.060075 cycles_per_week=7.0 time_per_plant_seconds=1081.35
+[2025-08-04 23:00:09] [DEBUG] [watering] Processing plant for duration calculation | instance_id=2 plant_id=1 library_book=fruitbushes plant_name=Strawberry, Red
+[2025-08-04 23:00:09] [DEBUG] [watering] Plant water requirements | instance_id=2 plant_id=1 water_optimal_in_week=1.5 root_area_sqft=0.45 emitter_size=0.2 quantity=1
+[2025-08-04 23:00:09] [DEBUG] [watering] Volume calculation breakdown | instance_id=2 plant_id=1 weekly_volume_per_plant=0.42052500000000004 volume_per_plant_per_cycle=0.060075 cycles_per_week=7.0 time_per_plant_seconds=1081.35
+[2025-08-04 23:00:09] [DEBUG] [watering] Duration calculation summary | zone_id=1 total_seconds=2162.7 total_plants=2 cycles_per_week=7.0 zone_frequency=D1
+[2025-08-04 23:00:09] [INFO] [watering] Smart zone duration calculated | zone_id=1 total_plants=2 total_seconds=2162.7 average_seconds=1081.35 calculated_duration=00:18:01 plant_count=2 cycles_per_week=7.0 zone_frequency=D1 mock_mode=False
+[2025-08-04 23:00:09] [INFO] [watering] Smart duration refresh completed | zones_updated=1 zones_skipped=7 total_zones_checked=8
+[2025-08-04 23:00:09] [INFO] [watering] Daily smart duration refresh completed | zones_updated=1
+[2025-08-04 23:11:05] [INFO] [watering] Manual zone activation | zone_id=2 duration=2

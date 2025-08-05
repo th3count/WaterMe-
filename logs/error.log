@@ -1,0 +1,2 @@
+[2025-08-04 23:11:05] [ERROR] [ERROR] Direct GPIO test exception | zone_id=2 error=name 'logger' is not defined
+[2025-08-04 23:11:08] [ERROR] [error] Failed to stop expired zone | zone_id=2

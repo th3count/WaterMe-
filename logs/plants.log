@@ -271,3 +271,742 @@
 [2025-08-04 22:18:44] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
 [2025-08-04 22:18:44] [INFO] [PLANTS] Plant library loaded | total_plants=93
 [2025-08-04 22:18:44] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 22:19:14] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 22:19:14] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 22:19:14] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 22:19:14] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 22:19:14] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 22:19:14] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 22:19:14] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 22:59:09] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 22:59:09] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 22:59:09] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 22:59:09] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 22:59:09] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 22:59:09] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 22:59:09] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 22:59:14] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 22:59:14] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 22:59:14] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 22:59:14] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 22:59:14] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 22:59:14] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 22:59:14] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 22:59:14] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 22:59:14] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 22:59:14] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 22:59:14] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 22:59:14] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 22:59:14] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 22:59:14] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 22:59:14] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 22:59:14] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 22:59:14] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 22:59:14] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 22:59:14] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 22:59:14] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 22:59:14] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 22:59:16] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 22:59:16] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 22:59:16] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 22:59:16] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 22:59:16] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 22:59:16] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 22:59:16] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 22:59:16] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 22:59:16] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 22:59:16] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 22:59:16] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 22:59:16] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 22:59:16] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 22:59:16] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 22:59:17] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 22:59:17] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 22:59:17] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 22:59:17] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 22:59:17] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 22:59:17] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 22:59:17] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 22:59:17] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 22:59:17] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 22:59:17] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 22:59:17] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 22:59:17] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 22:59:17] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 22:59:17] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 22:59:30] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruitbushes common_name=Raspberry, Red
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruitbushes
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_2 plant_name=Raspberry, Red
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruitbushes
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_2 plant_name=Raspberry, Red
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruitbushes
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_2 plant_name=Raspberry, Red
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 22:59:30] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=False optimal_zone=None
+[2025-08-04 22:59:30] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruitbushes.json common_name=None
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruitbushes.json
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_2 plant_name=Raspberry, Red
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruitbushes.json
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_2 plant_name=Raspberry, Red
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruitbushes.json
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_2 plant_name=Raspberry, Red
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 22:59:30] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=False optimal_zone=None
+[2025-08-04 22:59:30] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruitbushes.json common_name=None
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruitbushes.json
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_2 plant_name=Raspberry, Red
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruitbushes.json
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_2 plant_name=Raspberry, Red
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruitbushes.json
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_2 plant_name=Raspberry, Red
+[2025-08-04 22:59:30] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 22:59:30] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=False optimal_zone=None
+[2025-08-04 22:59:33] [INFO] [PLANTS] Plant placement analysis requested | plant_id=1 library_book=fruitbushes common_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Calling emitter calculation for zone | zone_id=1 plant_id=1
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Emitter calculation result | zone_id=1 success=True recommended_emitter=0.2
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 22:59:33] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Strawberry, Red has_compatible_zones=True optimal_zone=1
+[2025-08-04 22:59:33] [INFO] [PLANTS] Plant placement analysis requested | plant_id=1 library_book=fruitbushes.json common_name=None
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Calling emitter calculation for zone | zone_id=1 plant_id=1
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes.json plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Emitter calculation result | zone_id=1 success=True recommended_emitter=0.2
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes.json plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 22:59:33] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Strawberry, Red has_compatible_zones=True optimal_zone=1
+[2025-08-04 22:59:33] [INFO] [PLANTS] Plant placement analysis requested | plant_id=1 library_book=fruitbushes.json common_name=None
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Calling emitter calculation for zone | zone_id=1 plant_id=1
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes.json plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Emitter calculation result | zone_id=1 success=True recommended_emitter=0.2
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes.json plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 22:59:33] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Strawberry, Red has_compatible_zones=True optimal_zone=1
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] API: Emitter compatibility validation requested | plant_id=1 library_book=fruitbushes.json zone_id=1
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes.json plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] API: Emitter compatibility validation completed | zone_id=1 compatible=True recommended_emitter=0.2
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] API: Emitter compatibility validation requested | plant_id=1 library_book=fruitbushes.json zone_id=1
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes.json plant_name=Strawberry, Red
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 22:59:33] [DEBUG] [PLANTS] API: Emitter compatibility validation completed | zone_id=1 compatible=True recommended_emitter=0.2
+[2025-08-04 22:59:44] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 22:59:44] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 22:59:44] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 22:59:44] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 22:59:44] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 22:59:44] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 22:59:44] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:00:14] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:00:14] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:00:14] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:00:14] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:00:14] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:00:14] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:00:14] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:00:44] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:00:44] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:00:44] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:00:44] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:00:44] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:00:44] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:00:44] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:01:14] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:01:14] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:01:14] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:01:14] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:01:14] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:01:14] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:01:14] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:01:44] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:01:44] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:01:44] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:01:44] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:01:44] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:01:44] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:01:44] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:02:14] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:02:14] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:02:14] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:02:14] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:02:14] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:02:14] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:02:14] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:02:17] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:02:17] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:02:17] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:02:17] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:02:17] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:02:17] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:02:17] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:02:17] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:02:17] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:02:17] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:02:17] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:02:17] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:02:17] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:02:17] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:02:44] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:02:44] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:02:44] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:02:44] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:02:44] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:02:44] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:02:44] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:03:14] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:03:14] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:03:14] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:03:14] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:03:14] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:03:14] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:03:14] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:03:44] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:03:44] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:03:44] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:03:44] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:03:44] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:03:44] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:03:44] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:03:59] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruitbushes common_name=Blackberry
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] get_plant_data called | plant_id=3 library_book=fruitbushes
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_3 plant_name=Blackberry
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] get_plant_data called | plant_id=3 library_book=fruitbushes
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_3 plant_name=Blackberry
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] get_plant_data called | plant_id=3 library_book=fruitbushes
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_3 plant_name=Blackberry
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:03:59] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Blackberry has_compatible_zones=False optimal_zone=None
+[2025-08-04 23:03:59] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruitbushes.json common_name=None
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] get_plant_data called | plant_id=3 library_book=fruitbushes.json
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_3 plant_name=Blackberry
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] get_plant_data called | plant_id=3 library_book=fruitbushes.json
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_3 plant_name=Blackberry
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] get_plant_data called | plant_id=3 library_book=fruitbushes.json
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_3 plant_name=Blackberry
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:03:59] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Blackberry has_compatible_zones=False optimal_zone=None
+[2025-08-04 23:03:59] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruitbushes.json common_name=None
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] get_plant_data called | plant_id=3 library_book=fruitbushes.json
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_3 plant_name=Blackberry
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] get_plant_data called | plant_id=3 library_book=fruitbushes.json
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_3 plant_name=Blackberry
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] get_plant_data called | plant_id=3 library_book=fruitbushes.json
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_3 plant_name=Blackberry
+[2025-08-04 23:03:59] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:03:59] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Blackberry has_compatible_zones=False optimal_zone=None
+[2025-08-04 23:04:01] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruittrees common_name=Gala Apple
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruittrees
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruittrees_2 plant_name=Gala Apple
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruittrees
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruittrees_2 plant_name=Gala Apple
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruittrees
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruittrees_2 plant_name=Gala Apple
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:01] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Gala Apple has_compatible_zones=False optimal_zone=None
+[2025-08-04 23:04:01] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruittrees.json common_name=None
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruittrees.json
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruittrees_2 plant_name=Gala Apple
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruittrees.json
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruittrees_2 plant_name=Gala Apple
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruittrees.json
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruittrees_2 plant_name=Gala Apple
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:01] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Gala Apple has_compatible_zones=False optimal_zone=None
+[2025-08-04 23:04:01] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruittrees.json common_name=None
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruittrees.json
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruittrees_2 plant_name=Gala Apple
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruittrees.json
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruittrees_2 plant_name=Gala Apple
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruittrees.json
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruittrees_2 plant_name=Gala Apple
+[2025-08-04 23:04:01] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:01] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Gala Apple has_compatible_zones=False optimal_zone=None
+[2025-08-04 23:04:03] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruitbushes common_name=Raspberry, Red
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruitbushes
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_2 plant_name=Raspberry, Red
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruitbushes
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_2 plant_name=Raspberry, Red
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruitbushes
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_2 plant_name=Raspberry, Red
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:03] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=False optimal_zone=None
+[2025-08-04 23:04:03] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruitbushes.json common_name=None
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruitbushes.json
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_2 plant_name=Raspberry, Red
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruitbushes.json
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_2 plant_name=Raspberry, Red
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruitbushes.json
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_2 plant_name=Raspberry, Red
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:03] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=False optimal_zone=None
+[2025-08-04 23:04:03] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruitbushes.json common_name=None
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruitbushes.json
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_2 plant_name=Raspberry, Red
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruitbushes.json
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_2 plant_name=Raspberry, Red
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] get_plant_data called | plant_id=2 library_book=fruitbushes.json
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_2 plant_name=Raspberry, Red
+[2025-08-04 23:04:03] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:03] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=False optimal_zone=None
+[2025-08-04 23:04:05] [INFO] [PLANTS] Plant placement analysis requested | plant_id=9 library_book=fruitbushes common_name=Elderberry
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] get_plant_data called | plant_id=9 library_book=fruitbushes
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_9 plant_name=Elderberry
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] get_plant_data called | plant_id=9 library_book=fruitbushes
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_9 plant_name=Elderberry
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] get_plant_data called | plant_id=9 library_book=fruitbushes
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_9 plant_name=Elderberry
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:05] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Elderberry has_compatible_zones=False optimal_zone=None
+[2025-08-04 23:04:05] [INFO] [PLANTS] Plant placement analysis requested | plant_id=9 library_book=fruitbushes.json common_name=None
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] get_plant_data called | plant_id=9 library_book=fruitbushes.json
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_9 plant_name=Elderberry
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] get_plant_data called | plant_id=9 library_book=fruitbushes.json
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_9 plant_name=Elderberry
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] get_plant_data called | plant_id=9 library_book=fruitbushes.json
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_9 plant_name=Elderberry
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:05] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Elderberry has_compatible_zones=False optimal_zone=None
+[2025-08-04 23:04:05] [INFO] [PLANTS] Plant placement analysis requested | plant_id=9 library_book=fruitbushes.json common_name=None
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] get_plant_data called | plant_id=9 library_book=fruitbushes.json
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_9 plant_name=Elderberry
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] get_plant_data called | plant_id=9 library_book=fruitbushes.json
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_9 plant_name=Elderberry
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] get_plant_data called | plant_id=9 library_book=fruitbushes.json
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_9 plant_name=Elderberry
+[2025-08-04 23:04:05] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:05] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Elderberry has_compatible_zones=False optimal_zone=None
+[2025-08-04 23:04:07] [INFO] [PLANTS] Plant placement analysis requested | plant_id=5 library_book=fruitbushes common_name=Haskap
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] get_plant_data called | plant_id=5 library_book=fruitbushes
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_5 plant_name=Haskap
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] get_plant_data called | plant_id=5 library_book=fruitbushes
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_5 plant_name=Haskap
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] get_plant_data called | plant_id=5 library_book=fruitbushes
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_5 plant_name=Haskap
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:07] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Haskap has_compatible_zones=False optimal_zone=None
+[2025-08-04 23:04:07] [INFO] [PLANTS] Plant placement analysis requested | plant_id=5 library_book=fruitbushes.json common_name=None
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] get_plant_data called | plant_id=5 library_book=fruitbushes.json
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_5 plant_name=Haskap
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] get_plant_data called | plant_id=5 library_book=fruitbushes.json
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_5 plant_name=Haskap
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] get_plant_data called | plant_id=5 library_book=fruitbushes.json
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_5 plant_name=Haskap
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:07] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Haskap has_compatible_zones=False optimal_zone=None
+[2025-08-04 23:04:07] [INFO] [PLANTS] Plant placement analysis requested | plant_id=5 library_book=fruitbushes.json common_name=None
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] get_plant_data called | plant_id=5 library_book=fruitbushes.json
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_5 plant_name=Haskap
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] get_plant_data called | plant_id=5 library_book=fruitbushes.json
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_5 plant_name=Haskap
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] get_plant_data called | plant_id=5 library_book=fruitbushes.json
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_5 plant_name=Haskap
+[2025-08-04 23:04:07] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:07] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Haskap has_compatible_zones=False optimal_zone=None
+[2025-08-04 23:04:09] [INFO] [PLANTS] Plant placement analysis requested | plant_id=14 library_book=fruitbushes common_name=Dewberry
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] get_plant_data called | plant_id=14 library_book=fruitbushes
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_14 plant_name=Dewberry
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] get_plant_data called | plant_id=14 library_book=fruitbushes
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_14 plant_name=Dewberry
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] get_plant_data called | plant_id=14 library_book=fruitbushes
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_14 plant_name=Dewberry
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:09] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Dewberry has_compatible_zones=False optimal_zone=None
+[2025-08-04 23:04:09] [INFO] [PLANTS] Plant placement analysis requested | plant_id=14 library_book=fruitbushes.json common_name=None
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] get_plant_data called | plant_id=14 library_book=fruitbushes.json
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_14 plant_name=Dewberry
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] get_plant_data called | plant_id=14 library_book=fruitbushes.json
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_14 plant_name=Dewberry
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] get_plant_data called | plant_id=14 library_book=fruitbushes.json
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_14 plant_name=Dewberry
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:09] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Dewberry has_compatible_zones=False optimal_zone=None
+[2025-08-04 23:04:09] [INFO] [PLANTS] Plant placement analysis requested | plant_id=14 library_book=fruitbushes.json common_name=None
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] get_plant_data called | plant_id=14 library_book=fruitbushes.json
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_14 plant_name=Dewberry
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] get_plant_data called | plant_id=14 library_book=fruitbushes.json
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_14 plant_name=Dewberry
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] get_plant_data called | plant_id=14 library_book=fruitbushes.json
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_14 plant_name=Dewberry
+[2025-08-04 23:04:09] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:09] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Dewberry has_compatible_zones=False optimal_zone=None
+[2025-08-04 23:04:13] [INFO] [PLANTS] Plant placement analysis requested | plant_id=5 library_book=fruitbushes common_name=Haskap
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] get_plant_data called | plant_id=5 library_book=fruitbushes
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_5 plant_name=Haskap
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] get_plant_data called | plant_id=5 library_book=fruitbushes
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_5 plant_name=Haskap
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] get_plant_data called | plant_id=5 library_book=fruitbushes
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_5 plant_name=Haskap
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:13] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Haskap has_compatible_zones=False optimal_zone=None
+[2025-08-04 23:04:13] [INFO] [PLANTS] Plant placement analysis requested | plant_id=5 library_book=fruitbushes.json common_name=None
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] get_plant_data called | plant_id=5 library_book=fruitbushes.json
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_5 plant_name=Haskap
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] get_plant_data called | plant_id=5 library_book=fruitbushes.json
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_5 plant_name=Haskap
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] get_plant_data called | plant_id=5 library_book=fruitbushes.json
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_5 plant_name=Haskap
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:13] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Haskap has_compatible_zones=False optimal_zone=None
+[2025-08-04 23:04:13] [INFO] [PLANTS] Plant placement analysis requested | plant_id=5 library_book=fruitbushes.json common_name=None
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] get_plant_data called | plant_id=5 library_book=fruitbushes.json
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_5 plant_name=Haskap
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] get_plant_data called | plant_id=5 library_book=fruitbushes.json
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_5 plant_name=Haskap
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] get_plant_data called | plant_id=5 library_book=fruitbushes.json
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_5 plant_name=Haskap
+[2025-08-04 23:04:13] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:13] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Haskap has_compatible_zones=False optimal_zone=None
+[2025-08-04 23:04:14] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:04:14] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:04:14] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:04:14] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:04:14] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:04:14] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:04:14] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:04:17] [INFO] [PLANTS] Plant placement analysis requested | plant_id=1 library_book=fruitbushes common_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Calling emitter calculation for zone | zone_id=1 plant_id=1
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Emitter calculation result | zone_id=1 success=True recommended_emitter=0.2
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 23:04:17] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Strawberry, Red has_compatible_zones=True optimal_zone=1
+[2025-08-04 23:04:17] [INFO] [PLANTS] Plant placement analysis requested | plant_id=1 library_book=fruitbushes.json common_name=None
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Calling emitter calculation for zone | zone_id=1 plant_id=1
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes.json plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Emitter calculation result | zone_id=1 success=True recommended_emitter=0.2
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes.json plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 23:04:17] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Strawberry, Red has_compatible_zones=True optimal_zone=1
+[2025-08-04 23:04:17] [INFO] [PLANTS] Plant placement analysis requested | plant_id=1 library_book=fruitbushes.json common_name=None
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Calling emitter calculation for zone | zone_id=1 plant_id=1
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes.json plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Emitter calculation result | zone_id=1 success=True recommended_emitter=0.2
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes.json plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 23:04:17] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Strawberry, Red has_compatible_zones=True optimal_zone=1
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] API: Emitter compatibility validation requested | plant_id=1 library_book=fruitbushes.json zone_id=1
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes.json plant_name=Strawberry, Red
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 23:04:17] [DEBUG] [PLANTS] API: Emitter compatibility validation completed | zone_id=1 compatible=True recommended_emitter=0.2
+[2025-08-04 23:04:18] [DEBUG] [PLANTS] API: Emitter compatibility validation requested | plant_id=1 library_book=fruitbushes.json zone_id=1
+[2025-08-04 23:04:18] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:18] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:18] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:18] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes.json plant_name=Strawberry, Red
+[2025-08-04 23:04:18] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 23:04:18] [DEBUG] [PLANTS] API: Emitter compatibility validation completed | zone_id=1 compatible=True recommended_emitter=0.2
+[2025-08-04 23:04:30] [INFO] [PLANTS] Plant placement analysis requested | plant_id=1 library_book=fruitbushes common_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Calling emitter calculation for zone | zone_id=1 plant_id=1
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Emitter calculation result | zone_id=1 success=True recommended_emitter=0.2
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 23:04:30] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Strawberry, Red has_compatible_zones=True optimal_zone=1
+[2025-08-04 23:04:30] [INFO] [PLANTS] Plant placement analysis requested | plant_id=1 library_book=fruitbushes.json common_name=None
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Calling emitter calculation for zone | zone_id=1 plant_id=1
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes.json plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Emitter calculation result | zone_id=1 success=True recommended_emitter=0.2
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:30] [INFO] [PLANTS] Plant placement analysis requested | plant_id=1 library_book=fruitbushes.json common_name=None
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes.json plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Strawberry, Red has_compatible_zones=True optimal_zone=1
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Calling emitter calculation for zone | zone_id=1 plant_id=1
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes.json plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Emitter calculation result | zone_id=1 success=True recommended_emitter=0.2
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes.json plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 23:04:30] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Strawberry, Red has_compatible_zones=True optimal_zone=1
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] API: Emitter compatibility validation requested | plant_id=1 library_book=fruitbushes.json zone_id=1
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes.json plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] API: Emitter compatibility validation completed | zone_id=1 compatible=True recommended_emitter=0.2
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] API: Emitter compatibility validation requested | plant_id=1 library_book=fruitbushes.json zone_id=1
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] get_plant_data called | plant_id=1 library_book=fruitbushes.json
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Plant found with unique ID | unique_plant_id=fruitbushes_1 plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Zone frequency found | zone_id=1 period=D cycles=1 frequency=D1
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Emitter calculation details | zone_id=1 zone_mode=smart water_optimal_in_week=1.5 root_area_sqft=0.45 zone_frequency=D1 cycles_per_week=7.0 target_duration_hours=0.30027777777777775 weekly_water_volume=0.42052500000000004 per_cycle_volume=0.060075 calculated_gph=0.20006475485661426 is_empty_zone=False is_new_placement=True plant_id=1 library_book=fruitbushes.json plant_name=Strawberry, Red
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] Emitter selection | calculated_gph=0.20006475485661426 nearest_emitter=0.2 available_emitters=[0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+[2025-08-04 23:04:30] [DEBUG] [PLANTS] API: Emitter compatibility validation completed | zone_id=1 compatible=True recommended_emitter=0.2
+[2025-08-04 23:04:44] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:04:44] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:04:44] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:04:44] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:04:44] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:04:44] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:04:44] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:05:14] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:05:14] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:05:14] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:05:14] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:05:14] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:05:14] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:05:14] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:05:44] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:05:44] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:05:44] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:05:44] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:05:44] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:05:44] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:05:44] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:05:44] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:05:44] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:05:44] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:05:44] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:05:44] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:05:44] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:05:44] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:05:44] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:05:44] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:05:44] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:05:44] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:05:44] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:05:44] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:05:44] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:06:14] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:06:14] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:06:14] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:06:14] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:06:14] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:06:14] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:06:14] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:06:44] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:06:44] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:06:44] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:06:44] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:06:44] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:06:44] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:06:44] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:07:14] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:07:14] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:07:14] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:07:14] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:07:14] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:07:14] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:07:14] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:07:44] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:07:44] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:07:44] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:07:44] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:07:44] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:07:44] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:07:44] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:08:14] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:08:14] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:08:14] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:08:14] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:08:14] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:08:14] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:08:14] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:08:44] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:08:44] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:08:44] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:08:44] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:08:44] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:08:44] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:08:44] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:09:30] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:09:30] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:09:30] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:09:30] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:09:30] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:09:30] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:09:30] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:09:44] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:09:44] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:09:44] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:09:44] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:09:44] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:09:44] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:09:44] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:10:14] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:10:14] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:10:14] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:10:14] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:10:14] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:10:14] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:10:14] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:11:00] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:11:00] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:11:00] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:11:00] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:11:00] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:11:00] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:11:00] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 23:11:14] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 23:11:14] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 23:11:14] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 23:11:14] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 23:11:14] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 23:11:14] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 23:11:14] [INFO] [PLANTS] Schedule data loaded | zone_count=8
