@@ -82,26 +82,45 @@ else:
         GPIO = MockGPIO()
 
 app = Flask(__name__)
-CORS(app, resources={
-    r"/api/*": {
-        "origins": ["http://192.168.0.100:3000", "http://localhost:3000", "http://127.0.0.1:3000"],
-        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Connection", "Authorization"],
-        "supports_credentials": False
-    },
-    r"/config/*": {
-        "origins": ["http://192.168.0.100:3000", "http://localhost:3000", "http://127.0.0.1:3000"],
-        "methods": ["GET", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Connection", "Authorization"],
-        "supports_credentials": False
-    },
-    r"/library/*": {
-        "origins": ["http://192.168.0.100:3000", "http://localhost:3000", "http://127.0.0.1:3000"],
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Connection", "Authorization"],
-        "supports_credentials": False
-    }
-})
+# CORS configuration for LAN access - allows all local network traffic
+import re
+
+def is_local_origin(origin):
+    """Check if origin is from local/private network"""
+    if not origin:
+        return False
+    
+    # Extract hostname/IP from origin
+    match = re.match(r'https?://([^:]+)', origin)
+    if not match:
+        return False
+    
+    host = match.group(1)
+    
+    # Allow localhost variants
+    if host in ['localhost', '127.0.0.1', '::1']:
+        return True
+    
+    # Allow private IP ranges (RFC 1918)
+    # 192.168.0.0/16, 10.0.0.0/8, 172.16.0.0/12
+    ip_patterns = [
+        r'^192\.168\.\d{1,3}\.\d{1,3}$',
+        r'^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$',
+        r'^172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3}$'
+    ]
+    
+    for pattern in ip_patterns:
+        if re.match(pattern, host):
+            return True
+    
+    return False
+
+# Configure CORS to allow all LAN traffic
+CORS(app, 
+     origins=is_local_origin,  # Use function to validate origins dynamically
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+     allow_headers=["Content-Type", "Connection", "Authorization", "X-Requested-With"],
+     supports_credentials=False)
 
 @app.after_request
 def after_request(response):
