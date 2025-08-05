@@ -176,12 +176,19 @@ update_system() {
         echo "DEBUG: ENABLE_SERVICE=$ENABLE_SERVICE"
     fi
     
-    apt-get update -y
-    apt-get upgrade -y
+    # Set environment to avoid prompts
+    export DEBIAN_FRONTEND=noninteractive
+    export DEBCONF_NONINTERACTIVE_SEEN=true
     
-    # Install essential packages
+    # Update package lists
+    apt-get update -y
+    
+    # Upgrade system packages (non-interactive)
+    apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
+    
+    # Install essential packages (non-interactive)
     print_step "Installing essential packages..."
-    apt-get install -y \
+    apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
         curl \
         wget \
         git \
@@ -201,7 +208,7 @@ update_system() {
     # Install systemd if service mode is enabled
     if [[ "$ENABLE_SERVICE" == true ]]; then
         print_step "Installing systemd (service mode enabled)..."
-        apt-get install -y systemd
+        apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" systemd
     else
         if [[ "$DEBUG" == "true" ]]; then
             echo "DEBUG: Skipping systemd installation (manual mode)"
@@ -231,9 +238,9 @@ install_python() {
         fi
     fi
     
-    # Install Python and related packages
+    # Install Python and related packages (non-interactive)
     print_step "Installing Python packages..."
-    apt-get install -y \
+    apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
         python3 \
         python3-pip \
         python3-venv \
@@ -264,9 +271,9 @@ install_nodejs() {
         fi
     fi
     
-    # Install Node.js from NodeSource repository
+    # Install Node.js from NodeSource repository (non-interactive)
     curl -fsSL https://deb.nodesource.com/setup_${NODE_MIN_VERSION}.x | bash -
-    apt-get install -y nodejs
+    apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" nodejs
     
     # Verify installation
     NODE_VERSION=$(node --version)
@@ -325,8 +332,8 @@ pathlib>=1.0.1
 threading-timer>=1.0.0
 EOF
 
-    # Install dependencies as waterme user
-    sudo -u "$WATERME_USER" python3 -m pip install --user -r "$WATERME_HOME/requirements.txt"
+    # Install dependencies as waterme user (non-interactive)
+    sudo -u "$WATERME_USER" python3 -m pip install --user --quiet -r "$WATERME_HOME/requirements.txt"
     
     print_success "Python dependencies installed"
 }
