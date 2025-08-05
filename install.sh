@@ -794,6 +794,17 @@ install_waterme_code() {
                 fi
             else
                 print_step "Home directory exists but is not a git repo, initializing..."
+                
+                # Backup existing files if any
+                if [[ "$(ls -A "$WATERME_HOME" 2>/dev/null)" ]]; then
+                    print_info "Backing up existing files..."
+                    BACKUP_DIR="$WATERME_HOME/backup_$(date +%Y%m%d_%H%M%S)"
+                    mkdir -p "$BACKUP_DIR"
+                    mv "$WATERME_HOME"/* "$BACKUP_DIR/" 2>/dev/null || true
+                    mv "$WATERME_HOME"/.* "$BACKUP_DIR/" 2>/dev/null || true
+                    print_success "Files backed up to $BACKUP_DIR"
+                fi
+                
                 cd "$WATERME_HOME"
                 git init
                 git remote add origin "$GIT_REPO"
