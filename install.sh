@@ -810,10 +810,6 @@ install_waterme_code() {
                 return 1
             fi
         fi
-        else
-            print_error "Failed to clone repository"
-            return 1
-        fi
     fi
     
     # Verify key files exist
