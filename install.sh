@@ -512,11 +512,23 @@ uninstall_waterme() {
     
     # Remove WaterMe! user (only if not current user)
     if id "$WATERME_USER" &>/dev/null; then
-        if [[ "$(whoami)" != "$WATERME_USER" ]]; then
-            print_step "Removing WaterMe! user..."
-            userdel -r "$WATERME_USER" 2>/dev/null || print_warning "Could not remove user $WATERME_USER"
+        # Check if we're running as root but the target user is logged in
+        if [[ "$EUID" -eq 0 && -n "$SUDO_USER" ]]; then
+            # We're running as root via sudo, check if SUDO_USER is the waterme user
+            if [[ "$SUDO_USER" == "$WATERME_USER" ]]; then
+                print_warning "Skipping user removal (you are logged in as $WATERME_USER)"
+            else
+                print_step "Removing WaterMe! user..."
+                userdel -r "$WATERME_USER" 2>/dev/null || print_warning "Could not remove user $WATERME_USER"
+            fi
         else
-            print_warning "Skipping user removal (you are logged in as $WATERME_USER)"
+            # Not running as root, check if current user is waterme
+            if [[ "$(whoami)" == "$WATERME_USER" ]]; then
+                print_warning "Skipping user removal (you are logged in as $WATERME_USER)"
+            else
+                print_step "Removing WaterMe! user..."
+                userdel -r "$WATERME_USER" 2>/dev/null || print_warning "Could not remove user $WATERME_USER"
+            fi
         fi
     fi
     
@@ -556,10 +568,10 @@ uninstall_waterme() {
     echo "  ✅ Log rotation configuration removed"
     echo "  ✅ GPIO udev rules removed"
     echo "  ✅ Firewall rules removed"
-    if [[ "$(whoami)" != "$WATERME_USER" ]]; then
-        echo "  ✅ User $WATERME_USER removed"
-    else
+    if [[ "$EUID" -eq 0 && -n "$SUDO_USER" && "$SUDO_USER" == "$WATERME_USER" ]] || [[ "$(whoami)" == "$WATERME_USER" ]]; then
         echo "  ⚠️  User $WATERME_USER preserved (current user)"
+    else
+        echo "  ✅ User $WATERME_USER removed"
     fi
     if [[ -d "$WATERME_HOME" ]]; then
         echo "  ✅ Installation directory removed"
