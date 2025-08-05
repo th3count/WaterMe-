@@ -602,10 +602,21 @@ install_ui_dependencies() {
     
     # Check if UI directory exists and has package.json
     if [[ -f "$WATERME_HOME/ui/package.json" ]]; then
-        print_step "Installing npm dependencies from existing package.json..."
+        print_step "Installing npm dependencies with compatibility fixes..."
         cd "$WATERME_HOME/ui"
+        
+        # Fix Vite version for Node.js 18.x compatibility
+        if [[ "$DEBUG" == "true" ]]; then
+            echo "DEBUG: Updating Vite to compatible version (5.4.0)"
+        fi
+        
+        # Install compatible versions first
+        sudo -u "$WATERME_USER" npm install vite@^5.4.0 @vitejs/plugin-react@^4.3.0 --save-dev --silent 2>/dev/null || true
+        
+        # Clear npm cache and reinstall all dependencies
+        sudo -u "$WATERME_USER" npm cache clean --force --silent 2>/dev/null || true
         sudo -u "$WATERME_USER" npm install --silent
-        print_success "UI dependencies installed"
+        print_success "UI dependencies installed with compatibility fixes"
     else
         print_step "Creating basic UI package.json..."
         
@@ -630,12 +641,12 @@ install_ui_dependencies() {
     "@types/react-dom": "^18.2.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
-    "@vitejs/plugin-react": "^4.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
     "eslint": "^8.0.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.0",
     "typescript": "^5.0.0",
-    "vite": "^4.0.0"
+    "vite": "^5.4.0"
   }
 }
 EOF

@@ -476,7 +476,7 @@ class WaterMeSystem:
                 log_event(self.error_logger, 'ERROR', error_msg)
             return False
     
-    def start_ui(self):
+    def start_ui(self, retry_count=0):
         """Start the frontend UI with proper error handling and logging."""
         if not self.config['auto_start_ui']:
             print("ℹ️  UI auto-start disabled")
@@ -545,7 +545,7 @@ class WaterMeSystem:
                     log_event(self.system_logger, 'INFO', success_msg)
                 return True
             else:
-                # Process failed
+                # Process failed - check for Vite compatibility issues
                 stdout, stderr = "", ""
                 try:
                     stdout, stderr = self.ui_process.communicate(timeout=5)
@@ -553,6 +553,19 @@ class WaterMeSystem:
                     stderr = stderr.decode()
                 except subprocess.TimeoutExpired:
                     stdout, stderr = "<timeout>", "<timeout>"
+                
+                # Check for crypto.hash compatibility issue and attempt fix
+                if "crypto.hash is not a function" in stderr and retry_count == 0:
+                    print("🔧 Detected Vite compatibility issue, attempting automatic fix...")
+                    if self.system_logger:
+                        log_event(self.system_logger, 'INFO', 'Attempting automatic Vite compatibility fix')
+                    
+                    # Try to fix Vite version compatibility
+                    if self._fix_vite_compatibility():
+                        print("🔄 Retrying UI startup with fixed dependencies...")
+                        # Restore working directory and retry
+                        os.chdir(original_cwd)
+                        return self.start_ui(retry_count=1)  # Retry once only
                 
                 error_msg = "Frontend UI failed to start"
                 print(f"❌ {error_msg}:")
@@ -571,6 +584,50 @@ class WaterMeSystem:
             print(f"❌ {error_msg}")
             if self.error_logger:
                 log_event(self.error_logger, 'ERROR', error_msg)
+            return False
+    
+    def _fix_vite_compatibility(self):
+        """Fix Vite version compatibility issues with Node.js 18.x."""
+        try:
+            print("   📦 Updating Vite to compatible version...")
+            
+            # Change to UI directory
+            original_cwd = os.getcwd()
+            os.chdir(self.ui_dir)
+            
+            # Install compatible Vite version
+            result = subprocess.run([
+                'npm', 'install', 'vite@^5.4.0', '@vitejs/plugin-react@^4.3.0', '--save-dev'
+            ], capture_output=True, text=True, timeout=120)
+            
+            if result.returncode != 0:
+                print(f"   ⚠️  Failed to update Vite: {result.stderr}")
+                os.chdir(original_cwd)
+                return False
+            
+            # Clear npm cache
+            subprocess.run(['npm', 'cache', 'clean', '--force'], 
+                         capture_output=True, text=True, timeout=30)
+            
+            # Reinstall all dependencies
+            result = subprocess.run(['npm', 'install'], 
+                                  capture_output=True, text=True, timeout=300)
+            
+            os.chdir(original_cwd)
+            
+            if result.returncode == 0:
+                print("   ✅ Vite compatibility fix applied successfully")
+                if self.system_logger:
+                    log_event(self.system_logger, 'INFO', 'Vite compatibility fix applied successfully')
+                return True
+            else:
+                print(f"   ⚠️  Failed to reinstall dependencies: {result.stderr}")
+                return False
+                
+        except Exception as e:
+            print(f"   ❌ Error applying Vite fix: {e}")
+            if self.error_logger:
+                log_event(self.error_logger, 'ERROR', f'Error applying Vite fix: {e}')
             return False
     
     def stop_backend(self):
