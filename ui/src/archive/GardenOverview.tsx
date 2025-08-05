@@ -1683,7 +1683,7 @@ export default function GardenOverview() {
                               let scheduledTimes: { raw: string, resolved: string }[] = [];
                               if (Array.isArray(z.times)) {
                                 scheduledTimes = z.times.map((t: any, idx: number) => {
-                                  const timeCode = t.start_time || t.value;
+                                  const timeCode = t.start_time;
                                   const nextDate = getNextScheduledDate(z);
                                   const dateKey = nextDate ? nextDate.toISOString().slice(0, 10) : null;
                                   const resolvedTime = dateKey && dateSpecificResolvedTimes[dateKey]?.[timeCode] 

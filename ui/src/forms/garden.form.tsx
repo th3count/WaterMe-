@@ -15,6 +15,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ZoneForm from './zones.form';
 import LocationItem from './location.item';
 import { getFormLayerStyle, getFormOverlayClassName, useClickOutside } from './utils';
+import { getApiBaseUrl } from '../utils';
 import { useFormLayer } from '../../../core/useFormLayer';
 import './forms.css';
 
@@ -254,6 +255,21 @@ export default function SmartPlacementForm({
         console.log('Zones data received:', zonesData);
         console.log('Sample zone structure:', typeof zonesData, Array.isArray(zonesData));
         console.log('All zones with cycles:', zonesData?.map((z: any) => ({ zone_id: z.zone_id, cycles: z.cycles, period: z.period })));
+        
+        // 🔍 CRITICAL DEBUG: Check duration values from API
+        console.log('🔍 FRONTEND DEBUG - Zone durations from API:');
+        zonesData?.forEach((zone: any) => {
+          if (zone.zone_id === 1) {
+            console.log(`  🎯 Zone ${zone.zone_id}:`, {
+              mode: zone.mode,
+              duration: zone.times?.[0]?.duration,
+              period: zone.period,
+              cycles: zone.cycles,
+              fullZoneData: zone
+            });
+          }
+        });
+        
         setZones(zonesData || []);
 
         // 4. Fetch locations list
@@ -327,6 +343,61 @@ export default function SmartPlacementForm({
               zoneId: bestMatch.zone_id.toString(),
               locationId: '' // Clear location since none support this zone
             }));
+          }
+          
+          // Calculate emitter for the auto-selected zone (always in smart mode during auto-selection)
+          console.log('Debug auto-emitter trigger:', { systemMode, zoneSelectionMode, bestMatchZone: bestMatch.zone_id });
+          if (systemMode === 'smart' || zoneSelectionMode === 'smart') {
+            console.log('Triggering auto-emitter calculation for zone', bestMatch.zone_id);
+            const calculateEmitterForZone = async () => {
+              try {
+                const response = await fetch(`${getApiBaseUrl()}/api/smart/validate-compatibility`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    plant_id: plant_id,
+                    library_book: library_book,
+                    zone_id: bestMatch.zone_id
+                  }),
+                });
+                
+                if (response.ok) {
+                  const result = await response.json();
+                  console.log('Auto-emitter API response:', result);
+                  if (result.status === 'success') {
+                    console.log('Auto-emitter calculation for zone', bestMatch.zone_id, ':', result.data.emitter_validation);
+                    
+                    // Update the recommendation with the new emitter calculation
+                    const updatedRecommendations = recommendationsData.map((rec: any) => {
+                      if (rec.zone_id === bestMatch.zone_id) {
+                        return {
+                          ...rec,
+                          emitter_analysis: result.data.emitter_validation.emitter_calculation
+                        };
+                      }
+                      return rec;
+                    });
+                    setRecommendations(updatedRecommendations);
+                    
+                    // CRITICAL: Update modalData.emitterSize with the recommended emitter
+                    setModalData(prev => ({
+                      ...prev,
+                      emitterSize: result.data.emitter_validation.emitter_calculation.recommended_emitter.toString()
+                    }));
+                  }
+                } else {
+                  console.error('Auto-emitter API failed with status:', response.status);
+                  const errorText = await response.text();
+                  console.error('Error response:', errorText);
+                }
+              } catch (error) {
+                console.error('Failed to calculate emitter for auto-selected zone', bestMatch.zone_id, ':', error);
+              }
+            };
+            
+            calculateEmitterForZone();
           }
         }
 
@@ -513,6 +584,56 @@ export default function SmartPlacementForm({
                         locationsWithZone,
                         locationsWithZoneLength: locationsWithZone.length
                       });
+                      
+                      // Calculate emitter size for the selected zone
+                      const calculateEmitterForZone = async () => {
+                        try {
+                          const response = await fetch(`${getApiBaseUrl()}/api/smart/validate-compatibility`, {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                              plant_id: plant_id,
+                              library_book: library_book,
+                              zone_id: zoneId
+                            }),
+                          });
+                          
+                          if (response.ok) {
+                            const result = await response.json();
+                            if (result.status === 'success') {
+                              console.log('Emitter calculation for zone', zoneId, ':', result.data.emitter_validation);
+                              
+                              // Update the recommendation with the new emitter calculation
+                              const updatedRecommendations = recommendations.map(rec => {
+                                if (rec.zone_id === zoneId) {
+                                  return {
+                                    ...rec,
+                                    emitter_analysis: result.data.emitter_validation.emitter_calculation
+                                  };
+                                }
+                                return rec;
+                              });
+                              setRecommendations(updatedRecommendations);
+                              
+                              // CRITICAL: Update modalData.emitterSize with the recommended emitter
+                              setModalData(prev => ({
+                                ...prev,
+                                emitterSize: result.data.emitter_validation.emitter_calculation.recommended_emitter.toString()
+                              }));
+                            }
+                          }
+                        } catch (error) {
+                          console.error('Failed to calculate emitter for zone', zoneId, ':', error);
+                        }
+                      };
+                      
+                      // Calculate emitter size when zone is selected
+                      if (zoneSelectionMode === 'smart') {
+                        calculateEmitterForZone();
+                      }
+                      
                       if (locationsWithZone.length > 0) {
                         setModalData({
                           ...modalData,

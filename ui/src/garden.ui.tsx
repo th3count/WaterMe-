@@ -1027,9 +1027,9 @@ export default function GardenOverview() {
               
               let codes: string[] = [];
               if (Array.isArray(zone.times)) {
-                codes = zone.times.map((t: any) => t.start_time || t.value).filter(Boolean);
-              } else if (zone.time && (zone.time.start_time || zone.time.value)) {
-                codes = [zone.time.start_time || zone.time.value];
+                codes = zone.times.map((t: any) => t.start_time).filter(Boolean);
+              } else if (zone.time && zone.time.start_time) {
+codes = [zone.time.start_time];
               }
               
               // Filter out HH:MM format times (they don't need resolution)
@@ -1078,7 +1078,7 @@ export default function GardenOverview() {
                 if (zone) {
                   if (Array.isArray(zone.times)) {
                     zone.times.forEach((t: any) => {
-                      const timeValue = t.start_time || t.value;
+                      const timeValue = t.start_time;
                       if (timeValue && timeValue.includes(':') && timeValue.length === 5) {
                         const [h, m] = timeValue.split(':').map(Number);
                         if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
@@ -1087,7 +1087,7 @@ export default function GardenOverview() {
                       }
                     });
                   } else if (zone.time) {
-                    const timeValue = zone.time.start_time || zone.time.value;
+                    const timeValue = zone.time.start_time;
                     if (timeValue && timeValue.includes(':') && timeValue.length === 5) {
                       const [h, m] = timeValue.split(':').map(Number);
                       if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
@@ -2015,7 +2015,7 @@ export default function GardenOverview() {
               
               // Get start times - check both times array and single time
               if (Array.isArray(zone.times)) {
-                const times = zone.times.map((t: any) => t.start_time || t.value).filter(Boolean);
+                const times = zone.times.map((t: any) => t.start_time).filter(Boolean);
                 if (times.length) {
                   // Try to get resolved times
                   const resolvedTimes = zoneResolvedTimes[zone.zone_id] || {};

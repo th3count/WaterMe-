@@ -1,11 +1,11 @@
 {
   "1": {
-    "plant_id": 2,
+    "plant_id": 1,
     "library_book": "fruitbushes",
     "zone_id": 1,
-    "location_id": 2,
+    "location_id": 1,
     "quantity": 1,
-    "emitter_size": 4,
+    "emitter_size": 0.2,
     "comments": "",
     "smart_overrides": {
       "zone_selection": "smart",
@@ -16,9 +16,9 @@
     "plant_id": 1,
     "library_book": "fruitbushes",
     "zone_id": 1,
-    "location_id": 2,
+    "location_id": 1,
     "quantity": 1,
-    "emitter_size": 4,
+    "emitter_size": 0.2,
     "comments": "",
     "smart_overrides": {
       "zone_selection": "smart",

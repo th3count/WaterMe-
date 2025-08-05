@@ -31,8 +31,8 @@ interface ScheduleZone {
   cycles?: number;
   duration?: string;
   comment?: string;
-  times?: { value: string; duration: string; start_time?: string }[];
-  time?: { value: string; duration: string; start_time?: string };
+  times?: { start_time: string; duration: string }[];
+  time?: { start_time: string; duration: string };
   startDay?: string;
   zone_id?: number; // Added zone_id to the interface
 }
@@ -264,7 +264,7 @@ export default function LocationsCreate() {
           let codes: string[] = [];
           let date = zone.startDay || new Date().toISOString().slice(0, 10);
           if (Array.isArray(zone.times)) {
-            codes = zone.times.map(t => t.start_time || t.value).filter(Boolean);
+            codes = zone.times.map(t => t.start_time).filter(Boolean);
           }
           if (codes.length) {
             try {
@@ -913,7 +913,7 @@ export default function LocationsCreate() {
                         if (!zoneResolvedTimes[zone.zone_id || idx]) {
                           zoneResolvedTimes[zone.zone_id || idx] = {};
                         }
-                        const timeCode = times[timeIdx].start_time || times[timeIdx].value;
+                        const timeCode = times[timeIdx].start_time;
                         zoneResolvedTimes[zone.zone_id || idx][timeCode] = resolved;
                       }
                     });

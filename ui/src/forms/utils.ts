@@ -80,11 +80,10 @@ export function getTomorrow(): string {
   return tomorrow.toISOString().split('T')[0];
 }
 
-export function defaultTime(): { start_time: string; duration: string; value?: string } {
+export function defaultTime(): { start_time: string; duration: string } {
   return {
     start_time: '06:00',
-    duration: '00:20:00',
-    value: '06:00'
+    duration: '00:20:00'
   };
 }
 

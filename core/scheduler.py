@@ -44,6 +44,7 @@ class WateringScheduler:
         self.schedule = {}  # Cached schedule
         self.settings = {}  # Cached settings
         self.solar_times_cache = {}  # Cache solar times by date
+        self._daily_refresh_done = set()  # Track completed daily refreshes
         self._load_schedule()
         self._load_settings()
         
@@ -1279,8 +1280,8 @@ class WateringScheduler:
             # Import plant manager for schedule calculation
             from .plant_manager import plant_manager
             
-            # Calculate the optimal duration first
-            duration_result = plant_manager.calculate_optimal_zone_duration(zone_id)
+            # Calculate the optimal duration first using scheduler's own method
+            duration_result = self.calculate_smart_zone_duration(zone_id, mock_mode=True)
             
             if not duration_result.get('success'):
                 return duration_result
@@ -1882,6 +1883,16 @@ class WateringScheduler:
             Dict with calculation results and new duration
         """
         try:
+            # CRITICAL DEBUG: Track all calls to this method
+            import traceback
+            call_stack = traceback.format_stack()
+            print(f"🚨 DURATION CALCULATION CALLED!")
+            print(f"  🎯 Zone ID: {zone_id}")
+            print(f"  🔧 Mock mode: {mock_mode}")
+            print(f"  📞 Called from:")
+            for line in call_stack[-3:-1]:  # Show last 2 stack frames
+                print(f"    {line.strip()}")
+            
             # Debug logging
             self._setup_logging()
             log_event(self.watering_logger, 'DEBUG', 'Starting smart zone duration calculation', 
@@ -1897,6 +1908,13 @@ class WateringScheduler:
                     'error': f'Zone is in {zone_mode} mode, smart calculation not applicable',
                     'calculated_duration': '00:20:00'  # Default 20 minutes
                 }
+            
+            # Get zone frequency and calculate cycles per week
+            zone_frequency = self._get_zone_frequency_from_schedule(zone_id)
+            cycles_per_week = self._calculate_cycles_per_week(zone_frequency)
+            
+            log_event(self.watering_logger, 'DEBUG', 'Zone frequency analysis', 
+                     zone_id=zone_id, zone_frequency=zone_frequency, cycles_per_week=cycles_per_week)
             
             # Get all plants in this zone from map.json
             zone_plants = self._get_zone_plants_from_map(zone_id)
@@ -1950,11 +1968,31 @@ class WateringScheduler:
                          water_optimal_in_week=water_optimal_in_week, root_area_sqft=root_area_sqft,
                          emitter_size=emitter_size, quantity=quantity)
                 
-                # Calculate volume needed per plant (gallons)
-                volume_per_plant = water_optimal_in_week * root_area_sqft * 0.623
+                # Calculate volume needed per plant per week (gallons)
+                weekly_volume_per_plant = water_optimal_in_week * root_area_sqft * 0.623
                 
-                # Calculate time needed per plant (seconds)
-                time_per_plant_seconds = (volume_per_plant / emitter_size) * 3600
+                # Calculate volume needed per plant per cycle (divide by cycles per week)
+                volume_per_plant_per_cycle = weekly_volume_per_plant / cycles_per_week
+                
+                # Calculate time needed per plant per cycle (seconds)
+                time_per_plant_seconds = (volume_per_plant_per_cycle / emitter_size) * 3600
+                
+                # Debug logging for volume calculations
+                log_event(self.watering_logger, 'DEBUG', 'Volume calculation breakdown', 
+                         instance_id=instance_id, plant_id=plant_id,
+                         weekly_volume_per_plant=weekly_volume_per_plant,
+                         volume_per_plant_per_cycle=volume_per_plant_per_cycle,
+                         cycles_per_week=cycles_per_week,
+                         time_per_plant_seconds=time_per_plant_seconds)
+                
+                # CRITICAL DEBUG: Print to console to trace the issue
+                print(f"🔍 SCHEDULER DEBUG - Zone {zone_id}, Plant {plant_id}:")
+                print(f"  📊 Weekly volume: {weekly_volume_per_plant:.6f} gallons")
+                print(f"  🔄 Cycles per week: {cycles_per_week}")
+                print(f"  📦 Per-cycle volume: {volume_per_plant_per_cycle:.6f} gallons")
+                print(f"  💧 Emitter size: {emitter_size} GPH")
+                print(f"  ⏱️  Time per plant: {time_per_plant_seconds:.2f} seconds ({time_per_plant_seconds/60:.2f} minutes)")
+                print(f"  🧮 Calculation: ({volume_per_plant_per_cycle:.6f} / {emitter_size}) * 3600 = {time_per_plant_seconds:.2f}")
                 
                 # Total time for all plants of this type
                 total_time_for_type = time_per_plant_seconds * quantity
@@ -1967,7 +2005,8 @@ class WateringScheduler:
                     'plant_name': plant_library_data.get('common_name', 'Unknown'),
                     'quantity': quantity,
                     'emitter_size': emitter_size,
-                    'volume_per_plant': volume_per_plant,
+                    'weekly_volume_per_plant': weekly_volume_per_plant,
+                    'volume_per_plant_per_cycle': volume_per_plant_per_cycle,
                     'time_per_plant_seconds': time_per_plant_seconds,
                     'total_time_for_type': total_time_for_type
                 })
@@ -1983,10 +2022,18 @@ class WateringScheduler:
             
             # Debug logging for final calculation
             log_event(self.watering_logger, 'DEBUG', 'Duration calculation summary', 
-                     zone_id=zone_id, total_seconds=total_seconds, total_plants=total_plants)
+                     zone_id=zone_id, total_seconds=total_seconds, total_plants=total_plants,
+                     cycles_per_week=cycles_per_week, zone_frequency=zone_frequency)
             
             # Calculate average seconds per plant
             average_seconds = total_seconds / total_plants
+            
+            # CRITICAL DEBUG: Print final calculation
+            print(f"🎯 FINAL DURATION CALCULATION:")
+            print(f"  🔢 Total seconds: {total_seconds:.2f}")
+            print(f"  👥 Total plants: {total_plants}")
+            print(f"  📊 Average seconds per plant: {average_seconds:.2f}")
+            print(f"  ⏰ Average minutes per plant: {average_seconds/60:.2f}")
             
             # Convert to HH:mm:ss format
             hours = int(average_seconds // 3600)
@@ -1994,6 +2041,7 @@ class WateringScheduler:
             seconds = int(average_seconds % 60)
             
             calculated_duration = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+            print(f"  ✅ Final duration: {calculated_duration}")
             
             # Update schedule if not in mock mode
             if not mock_mode:
@@ -2007,6 +2055,8 @@ class WateringScheduler:
                      average_seconds=average_seconds,
                      calculated_duration=calculated_duration,
                      plant_count=len(plant_calculations),
+                     cycles_per_week=cycles_per_week,
+                     zone_frequency=zone_frequency,
                      mock_mode=mock_mode)
             
             return {
@@ -2016,6 +2066,8 @@ class WateringScheduler:
                 'average_seconds': average_seconds,
                 'total_plants': total_plants,
                 'plant_calculations': plant_calculations,
+                'cycles_per_week': cycles_per_week,
+                'zone_frequency': zone_frequency,
                 'mock_mode': mock_mode
             }
             
@@ -2053,6 +2105,64 @@ class WateringScheduler:
             log_event(self.error_logger, 'ERROR', 'Failed to get zone mode', 
                      zone_id=zone_id, error=str(e))
             return 'disabled'
+    
+    def _get_zone_frequency_from_schedule(self, zone_id: int) -> Optional[str]:
+        """Get the frequency setting for a zone from schedule data"""
+        try:
+            if hasattr(self, 'schedule') and self.schedule:
+                zone_key = str(zone_id)
+                if zone_key in self.schedule:
+                    zone = self.schedule[zone_key]
+                    period = zone.get('period')
+                    cycles = zone.get('cycles', 1)
+                    if period:
+                        return f"{period}{cycles}"
+            
+            # Fallback: Load schedule data directly
+            if os.path.exists(self.schedule_file):
+                with open(self.schedule_file, 'r') as f:
+                    schedule_data = json.load(f)
+                
+                zone_key = str(zone_id)
+                if zone_key in schedule_data:
+                    zone = schedule_data[zone_key]
+                    period = zone.get('period')
+                    cycles = zone.get('cycles', 1)
+                    if period:
+                        return f"{period}{cycles}"
+            
+            return None
+        except Exception as e:
+            self._setup_logging()
+            log_event(self.error_logger, 'ERROR', 'Failed to get zone frequency', 
+                     zone_id=zone_id, error=str(e))
+            return None
+    
+    def _calculate_cycles_per_week(self, zone_frequency: str) -> float:
+        """Calculate cycles per week for a zone frequency code"""
+        if not zone_frequency:
+            return 1.0  # Default to 1 cycle per week if unknown
+        
+        code = zone_frequency.upper()
+        if code.startswith('D'):
+            try:
+                cycles_per_day = int(code[1:])
+                return cycles_per_day * 7.0  # 7 days per week
+            except ValueError:
+                return 1.0
+        elif code.startswith('W'):
+            try:
+                cycles_per_week = int(code[1:])
+                return float(cycles_per_week)
+            except ValueError:
+                return 1.0
+        elif code.startswith('M'):
+            try:
+                cycles_per_month = int(code[1:])
+                return (cycles_per_month * 4.0) / 12.0  # Average weeks per month
+            except ValueError:
+                return 1.0
+        return 1.0
     
     def _get_zone_plants_from_map(self, zone_id: int) -> List[Dict[str, Any]]:
         """Get all plants in a specific zone from map.json"""

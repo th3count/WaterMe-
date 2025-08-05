@@ -10,6 +10,7 @@ import os
 import json
 from typing import Dict, List, Optional, Tuple, Any
 from datetime import datetime
+from flask import Blueprint, request, jsonify
 
 # Import unified logging system
 from .logging import setup_logger, log_event
@@ -27,6 +28,9 @@ LIBRARY_FILES = ['fruitbushes.json', 'fruittrees.json', 'vegetables.json', 'cust
 
 # Available emitter sizes (GPH)
 EMITTER_SIZES = [0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+
+# Flask Blueprint for Plant Manager API endpoints
+plant_bp = Blueprint('plant_manager', __name__)
 
 class PlantManager:
     """Manages plant instances, library data, and smart placement logic"""
@@ -103,23 +107,18 @@ class PlantManager:
                 with open(SCHEDULE_JSON_PATH, 'r', encoding='utf-8') as f:
                     raw_schedule_data = json.load(f)
                 
-                # Convert the schedule data structure to match what the plant manager expects
-                # The schedule.json has zone IDs as keys, but we need a zones array
-                zones_array = []
-                for zone_id_str, zone_data in raw_schedule_data.items():
-                    zone_data['zone_id'] = int(zone_id_str)
-                    zones_array.append(zone_data)
-                
-                self.schedule_data = {'zones': zones_array}
+                # Store the schedule data in its original format (zone IDs as keys)
+                # This matches the actual schedule.json structure
+                self.schedule_data = raw_schedule_data
                 
                 log_event(plants_logger, 'INFO', 'Schedule data loaded', 
-                         zone_count=len(zones_array))
+                         zone_count=len(raw_schedule_data))
             else:
-                self.schedule_data = {'zones': []}
+                self.schedule_data = {}
                 log_event(plants_logger, 'INFO', 'Schedule file not found, using empty schedule')
         except Exception as e:
             log_event(plants_logger, 'ERROR', 'Failed to load schedule data', error=str(e))
-            self.schedule_data = {'zones': []}
+            self.schedule_data = {}
     
     def reload_data(self):
         """Reload all data files"""
@@ -155,18 +154,34 @@ class PlantManager:
     
     def get_zone_duration_hours(self, zone_id: int) -> float:
         """Get zone duration in hours"""
+        # Handle the actual schedule.json structure where zones are direct keys
+        zone_key = str(zone_id)
+        if zone_key in self.schedule_data:
+            zone = self.schedule_data[zone_key]
+            # Check for times array (multiple watering events)
+            if 'times' in zone and isinstance(zone['times'], list) and len(zone['times']) > 0:
+                # Use the first time's duration as representative
+                duration_str = zone['times'][0].get('duration', '00:20:00')
+                return self._parse_duration_to_hours(duration_str)
+            # Check for single time
+            elif 'time' in zone and isinstance(zone['time'], dict):
+                duration_str = zone['time'].get('duration', '00:20:00')
+                return self._parse_duration_to_hours(duration_str)
+        
+        # Also check the legacy zones array structure for backward compatibility
         for zone in self.schedule_data.get('zones', []):
             if zone.get('zone_id') == zone_id:
                 # Check for times array (multiple watering events)
                 if 'times' in zone and isinstance(zone['times'], list) and len(zone['times']) > 0:
                     # Use the first time's duration as representative
-                    duration_str = zone['times'][0].get('duration', '000000')
+                    duration_str = zone['times'][0].get('duration', '00:20:00')
                     return self._parse_duration_to_hours(duration_str)
                 # Check for single time
                 elif 'time' in zone and isinstance(zone['time'], dict):
-                    duration_str = zone['time'].get('duration', '000000')
+                    duration_str = zone['time'].get('duration', '00:20:00')
                     return self._parse_duration_to_hours(duration_str)
-        return 0.5  # Default to 30 minutes if not found
+        
+        return 0.333  # Default to 20 minutes if not found
     
     def _parse_duration_to_hours(self, duration_str: str) -> float:
         """Parse HH:mm:ss or legacy HHmmss duration string to hours"""
@@ -211,6 +226,25 @@ class PlantManager:
                 'error': 'Plant not found in library'
             }
         
+        # Check zone mode first
+        zone_mode = self._get_zone_mode(zone_id)
+        if zone_mode != 'smart':
+            # Manual mode - return default 4 GPH
+            return {
+                'success': True,
+                'calculated_gph': 4.0,
+                'recommended_emitter': 4.0,
+                'actual_weekly_water': 0.0,  # Not calculated in manual mode
+                'is_within_tolerance': True,
+                'health_status': 'manual_mode',
+                'tolerance_delta': 0,
+                'tolerance_status': 'Manual mode - using default 4 GPH',
+                'calculation_details': {
+                    'zone_mode': zone_mode,
+                    'reason': 'Manual mode - no calculation performed'
+                }
+            }
+        
         zone_frequency = self.get_zone_frequency(zone_id)
         if not zone_frequency:
             return {
@@ -243,18 +277,14 @@ class PlantManager:
         zone_plants = self.get_zone_plants(zone_id)
         is_empty_zone = len(zone_plants) == 0
         
-        # For new plant placements in empty zones, target 20 minutes
-        if is_new_placement and is_empty_zone:
-            is_empty_zone = True
-        elif is_new_placement and not is_empty_zone:
-            # For new plant placements in non-empty zones, use existing duration
-            is_empty_zone = False
-        
+        # Smart mode duration logic:
+        # - Empty zone: Use 20-minute duration for emitter calculation
+        # - Non-empty zone: Use current zone duration for emitter calculation
         if is_empty_zone:
-            # For empty zones, target 20-minute duration
+            # For empty zones in smart mode, target 20-minute duration
             target_duration_hours = 20.0 / 60.0  # 20 minutes in hours
         else:
-            # For zones with plants, use current zone duration
+            # For zones with plants in smart mode, use current zone duration
             zone_duration_hours = self.get_zone_duration_hours(zone_id)
             if zone_duration_hours <= 0:
                 return {
@@ -269,8 +299,31 @@ class PlantManager:
         per_cycle_volume = weekly_water_volume / cycles_per_week  # gallons per cycle
         calculated_gph = per_cycle_volume / target_duration_hours  # gallons per hour
         
+        # Debug logging
+        log_event(plants_logger, 'DEBUG', 'Emitter calculation details', 
+                 zone_id=zone_id,
+                 zone_mode=zone_mode,
+                 water_optimal_in_week=water_optimal_in_week,
+                 root_area_sqft=root_area_sqft,
+                 zone_frequency=zone_frequency,
+                 cycles_per_week=cycles_per_week,
+                 target_duration_hours=target_duration_hours,
+                 weekly_water_volume=weekly_water_volume,
+                 per_cycle_volume=per_cycle_volume,
+                 calculated_gph=calculated_gph,
+                 is_empty_zone=is_empty_zone,
+                 is_new_placement=is_new_placement,
+                 plant_id=plant_data.get('plant_id'),
+                 library_book=plant_data.get('library_book'),
+                 plant_name=plant_library_data.get('common_name', 'Unknown'))
+        
         # Find nearest available emitter size
         nearest_emitter = min(EMITTER_SIZES, key=lambda x: abs(x - calculated_gph))
+        
+        log_event(plants_logger, 'DEBUG', 'Emitter selection', 
+                 calculated_gph=calculated_gph,
+                 nearest_emitter=nearest_emitter,
+                 available_emitters=EMITTER_SIZES)
         
         # Calculate actual water delivery with nearest emitter
         actual_weekly_water = (nearest_emitter * target_duration_hours * cycles_per_week) / (root_area_sqft * 0.623)
@@ -308,7 +361,8 @@ class PlantManager:
                 'weekly_water_volume': weekly_water_volume,
                 'per_cycle_volume': per_cycle_volume,
                 'tolerance_min_in_week': tolerance_min_in_week,
-                'tolerance_max_in_week': tolerance_max_in_week
+                'tolerance_max_in_week': tolerance_max_in_week,
+                'zone_mode': zone_mode
             }
         }
     
@@ -319,6 +373,20 @@ class PlantManager:
         Returns:
             Dict with validation results
         """
+        # Check zone mode first
+        zone_mode = self._get_zone_mode(zone_id)
+        if zone_mode != 'smart':
+            # Manual mode - always compatible (uses default 4 GPH)
+            return {
+                'compatible': True,
+                'reason': 'Manual mode - using default 4 GPH emitter',
+                'emitter_calculation': {
+                    'success': True,
+                    'recommended_emitter': 4.0,
+                    'zone_mode': zone_mode
+                }
+            }
+        
         emitter_calculation = self.calculate_optimal_emitter_size(plant_data, zone_id, is_new_placement=True)
         
         if not emitter_calculation.get('success'):
@@ -603,13 +671,32 @@ class PlantManager:
     
     def get_zone_frequency(self, zone_id: int) -> Optional[str]:
         """Get the frequency setting for a zone"""
+        # Handle the actual schedule.json structure where zones are direct keys
+        zone_key = str(zone_id)
+        if zone_key in self.schedule_data:
+            zone = self.schedule_data[zone_key]
+            period = zone.get('period')
+            cycles = zone.get('cycles', 1)
+            if period:
+                # Combine period and cycles to create frequency code (e.g., 'D1', 'W2', 'M3')
+                frequency = f"{period}{cycles}"
+                log_event(plants_logger, 'DEBUG', 'Zone frequency found', 
+                         zone_id=zone_id, period=period, cycles=cycles, frequency=frequency)
+                return frequency
+        
+        # Also check the legacy zones array structure for backward compatibility
         for zone in self.schedule_data.get('zones', []):
             if zone.get('zone_id') == zone_id:
                 period = zone.get('period')
                 cycles = zone.get('cycles', 1)
                 if period:
                     # Combine period and cycles to create frequency code (e.g., 'D1', 'W2', 'M3')
-                    return f"{period}{cycles}"
+                    frequency = f"{period}{cycles}"
+                    log_event(plants_logger, 'DEBUG', 'Zone frequency found (legacy)', 
+                             zone_id=zone_id, period=period, cycles=cycles, frequency=frequency)
+                    return frequency
+        
+        log_event(plants_logger, 'WARNING', 'Zone frequency not found', zone_id=zone_id)
         return None
 
     # Smart placement functions
@@ -762,6 +849,30 @@ class PlantManager:
         best_score = 0.0
         best_reason = "No compatible zones found"
         
+        # Handle the actual schedule.json structure where zones are direct keys
+        for zone_key, zone in self.schedule_data.items():
+            try:
+                zone_id = int(zone_key)
+            except ValueError:
+                continue  # Skip non-numeric keys
+            
+            # Skip disabled zones
+            if zone.get('mode') == 'disabled':
+                continue
+            
+            score = self.calculate_zone_compatibility_score(plant_data, zone_id)
+            if score > best_score:
+                best_score = score
+                best_zone = zone_id
+                
+                if score == 1.0:
+                    best_reason = "Perfect frequency match"
+                elif score == 0.8:
+                    best_reason = "Compatible frequency match"
+                elif score == 0.6:
+                    best_reason = "Adjacent frequency match"
+        
+        # Also check the legacy zones array structure for backward compatibility
         for zone in self.schedule_data.get('zones', []):
             zone_id = zone.get('zone_id')
             if not zone_id:
@@ -789,6 +900,28 @@ class PlantManager:
         """Get ranked zone recommendations for a plant"""
         recommendations = []
         
+        # Handle the actual schedule.json structure where zones are direct keys
+        for zone_key, zone in self.schedule_data.items():
+            try:
+                zone_id = int(zone_key)
+            except ValueError:
+                continue  # Skip non-numeric keys
+            
+            # Skip disabled zones
+            if zone.get('mode') == 'disabled':
+                continue
+            
+            score = self.calculate_zone_compatibility_score(plant_data, zone_id)
+            if score > 0.0:  # Only include compatible zones
+                recommendations.append({
+                    'zone_id': zone_id,
+                    'score': score,
+                    'period': zone.get('period'),
+                    'comment': zone.get('comment', ''),
+                    'mode': zone.get('mode', 'manual')
+                })
+        
+        # Also check the legacy zones array structure for backward compatibility
         for zone in self.schedule_data.get('zones', []):
             zone_id = zone.get('zone_id')
             if not zone_id:
@@ -842,8 +975,15 @@ class PlantManager:
         enhanced_recommendations = []
         for rec in recommendations:
             zone_id = rec['zone_id']
+            log_event(plants_logger, 'DEBUG', 'Calling emitter calculation for zone', 
+                     zone_id=zone_id, plant_id=plant_data.get('plant_id'))
+            
             emitter_analysis = self.calculate_optimal_emitter_size(plant_data, zone_id, is_new_placement=True)
             rec['emitter_analysis'] = emitter_analysis
+            
+            log_event(plants_logger, 'DEBUG', 'Emitter calculation result', 
+                     zone_id=zone_id, success=emitter_analysis.get('success'),
+                     recommended_emitter=emitter_analysis.get('recommended_emitter'))
             
             # Filter out zones that fail emitter sizing health check
             if emitter_analysis.get('success') and not emitter_analysis.get('is_within_tolerance'):
@@ -874,7 +1014,7 @@ class PlantManager:
             'optimal_score': optimal_score,
             'optimal_reason': optimal_reason,
             'recommendations': enhanced_recommendations,
-            'total_zones_checked': len(self.schedule_data.get('zones', [])),
+            'total_zones_checked': len(self.schedule_data),
             'compatible_zones_count': len(enhanced_recommendations),
             'optimal_emitter_analysis': optimal_emitter_analysis
         }
@@ -956,6 +1096,47 @@ class PlantManager:
         
         # Get all available zones (excluding disabled)
         available_zones = []
+        
+        # Handle the actual schedule.json structure where zones are direct keys
+        for zone_key, zone in self.schedule_data.items():
+            try:
+                zone_id = int(zone_key)
+            except ValueError:
+                continue  # Skip non-numeric keys
+            
+            if zone.get('mode') != 'disabled':
+                # Check both frequency and emitter compatibility
+                frequency_compatible = False
+                emitter_compatible = False
+                
+                # Check frequency compatibility
+                zone_frequency = self.get_zone_frequency(zone_id)
+                if zone_frequency:
+                    plant_frequencies = plant_library_data.get('watering_frequency', [])
+                    if not isinstance(plant_frequencies, list):
+                        plant_frequencies = [plant_frequencies]
+                    
+                    for plant_frequency in plant_frequencies:
+                        is_compatible, _ = self.is_frequency_compatible(plant_frequency, zone_frequency, plant_library_data)
+                        if is_compatible:
+                            frequency_compatible = True
+                            break
+                
+                # Check emitter compatibility
+                emitter_validation = self.validate_emitter_compatibility(plant_data, zone_id)
+                emitter_compatible = emitter_validation['compatible']
+                
+                available_zones.append({
+                    'zone_id': zone_id,
+                    'period': zone.get('period'),
+                    'comment': zone.get('comment', ''),
+                    'mode': zone.get('mode', 'manual'),
+                    'frequency_compatible': frequency_compatible,
+                    'emitter_compatible': emitter_compatible,
+                    'emitter_analysis': emitter_validation.get('emitter_calculation', {})
+                })
+        
+        # Also check the legacy zones array structure for backward compatibility
         for zone in self.schedule_data.get('zones', []):
             zone_id = zone.get('zone_id')
             if zone_id and zone.get('mode') != 'disabled':
@@ -1024,63 +1205,78 @@ class PlantManager:
             'suggestions': suggestions
         }
 
-    def calculate_optimal_zone_duration(self, zone_id: int) -> Dict[str, Any]:
-        """
-        Calculate optimal watering duration for a zone based on installed plants
-        
-        NOTE: This method now calls the scheduler's smart duration calculation
-        
-        Returns:
-            Dict with calculation results and new duration
-        """
-        try:
-            # Import scheduler to call the new smart duration calculation method
-            from .scheduler import scheduler
-            
-            log_event(plants_logger, 'DEBUG', 'Calling scheduler for smart zone duration calculation', zone_id=zone_id)
-            
-            # Call the scheduler's smart duration calculation method
-            result = scheduler.calculate_smart_zone_duration(zone_id, mock_mode=True)
-            
-            log_event(plants_logger, 'DEBUG', 'Scheduler duration calculation result', 
-                     zone_id=zone_id, success=result.get('success'))
-            
-            return result
-            
-        except Exception as e:
-            log_event(plants_logger, 'ERROR', 'Failed to call scheduler for duration calculation', 
-                     zone_id=zone_id, error=str(e))
-            return {
-                'success': False,
-                'error': f'Scheduler call failed: {str(e)}',
-                'calculated_duration': '00:20:00'  # Default 20 minutes
-            }
+    # REMOVED: calculate_optimal_zone_duration method
+    # Duration calculations are now centralized in scheduler.py only
+    # Use scheduler.calculate_smart_zone_duration(zone_id, mock_mode=True) for mock calculations
+    # Use scheduler.calculate_smart_zone_duration(zone_id, mock_mode=False) to update schedule.json
     
     def _trigger_zone_smart_refresh(self, zone_id: int):
-        """Trigger smart duration refresh for a specific zone ONLY if it's in smart mode"""
+        """Trigger smart duration AND start time refresh for a specific zone ONLY if it's in smart mode"""
         try:
+            # CRITICAL DEBUG: Track PlantManager refresh calls
+            print(f"🌱 PLANT MANAGER: Triggering smart refresh for zone {zone_id}")
+            
             # Check if the zone is in smart mode before calculating
             zone_mode = self._get_zone_mode(zone_id)
+            print(f"🌱 PLANT MANAGER: Zone {zone_id} mode is '{zone_mode}'")
             
             if zone_mode != 'smart':
+                print(f"🌱 PLANT MANAGER: Skipping refresh - zone {zone_id} is not in smart mode")
                 log_event(plants_logger, 'DEBUG', 'Skipping smart refresh for zone - not in smart mode', 
                          zone_id=zone_id, zone_mode=zone_mode)
                 return
             
-            # Use a delayed import to avoid circular import issues
-            # We'll trigger the refresh via a simple flag that the scheduler can check
-            log_event(plants_logger, 'INFO', 'Plant change detected in smart zone - duration refresh needed', 
+            from .scheduler import scheduler
+            
+            # 1. Calculate smart duration
+            print(f"🌱 PLANT MANAGER: Calling scheduler for zone {zone_id} duration calculation (mock_mode=False)")
+            log_event(plants_logger, 'INFO', 'Plant change detected in smart zone - triggering duration refresh', 
                      zone_id=zone_id)
             
-            # For now, we'll skip the immediate refresh to avoid circular imports
-            # The scheduler will handle smart duration calculations during its normal operation
-            # This prevents the 500 errors while still maintaining smart functionality
+            duration_result = scheduler.calculate_smart_zone_duration(zone_id, mock_mode=False)
+            
+            if duration_result.get('success'):
+                log_event(plants_logger, 'INFO', 'Smart duration refresh completed', 
+                         zone_id=zone_id, new_duration=duration_result.get('calculated_duration'))
+            else:
+                log_event(plants_logger, 'ERROR', 'Smart duration refresh failed', 
+                         zone_id=zone_id, error=duration_result.get('error'))
+            
+            # 2. Calculate smart start times
+            print(f"🌱 PLANT MANAGER: Calling scheduler for zone {zone_id} start time calculation (mock_mode=False)")
+            log_event(plants_logger, 'INFO', 'Plant change detected in smart zone - triggering start time refresh', 
+                     zone_id=zone_id)
+            
+            start_time_result = scheduler.calculate_smart_zone_start_times(zone_id, mock_mode=False)
+            
+            if start_time_result.get('success'):
+                calculated_times = start_time_result.get('calculated_times', [])
+                start_times = [t.get('start_time') for t in calculated_times]
+                log_event(plants_logger, 'INFO', 'Smart start time refresh completed', 
+                         zone_id=zone_id, new_start_times=start_times, 
+                         plant_count=start_time_result.get('plant_count', 0))
+            else:
+                log_event(plants_logger, 'ERROR', 'Smart start time refresh failed', 
+                         zone_id=zone_id, error=start_time_result.get('error'))
             
         except Exception as e:
-            log_event(plants_logger, 'ERROR', 'Failed to trigger smart duration refresh', 
+            log_event(plants_logger, 'ERROR', 'Failed to trigger smart refresh', 
                      zone_id=zone_id, error=str(e))
     
-
+    def _get_zone_mode(self, zone_id: int) -> str:
+        """Get the mode setting for a zone"""
+        # Handle the actual schedule.json structure where zones are direct keys
+        zone_key = str(zone_id)
+        if zone_key in self.schedule_data:
+            zone = self.schedule_data[zone_key]
+            return zone.get('mode', 'manual')
+        
+        # Also check the legacy zones array structure for backward compatibility
+        for zone in self.schedule_data.get('zones', []):
+            if zone.get('zone_id') == zone_id:
+                return zone.get('mode', 'manual')
+        
+        return 'manual'  # Default mode
     
     def debug_plant_map(self) -> Dict[str, Any]:
         """Debug method to show current plant map structure"""
@@ -1117,8 +1313,9 @@ class PlantManager:
                     'calculated_duration': '00:20:00'  # Default 20 minutes
                 }
             
-            # Calculate optimal duration first
-            duration_result = self.calculate_optimal_zone_duration(zone_id)
+            # Calculate optimal duration first using scheduler
+            from .scheduler import scheduler
+            duration_result = scheduler.calculate_smart_zone_duration(zone_id, mock_mode=True)
             if not duration_result.get('success'):
                 return duration_result
             
@@ -1222,4 +1419,159 @@ class PlantManager:
         }
 
 # Create global instance
-plant_manager = PlantManager() 
+plant_manager = PlantManager()
+
+@plant_bp.route('/api/smart/validate-compatibility', methods=['POST'])
+def validate_plant_zone_compatibility():
+    """
+    API endpoint for validating plant-zone compatibility and calculating optimal emitter size
+    
+    Request JSON:
+    {
+        "plant_id": 1,
+        "library_book": "fruitbushes",
+        "zone_id": 1
+    }
+    
+    Response JSON:
+    {
+        "status": "success",
+        "data": {
+            "emitter_validation": {
+                "compatible": true,
+                "reason": "Emitter sizing within tolerance",
+                "emitter_calculation": {
+                    "success": true,
+                    "calculated_gph": 0.63,
+                    "recommended_emitter": 0.5,
+                    "actual_weekly_water": 1.19,
+                    "is_within_tolerance": true,
+                    "health_status": "healthy",
+                    "tolerance_delta": 0,
+                    "tolerance_status": "Within tolerance",
+                    "calculation_details": {...}
+                }
+            }
+        }
+    }
+    """
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "Plant data and zone_id required"}), 400
+        
+        # Handle both formats: plant_data object or plant_id/library_book
+        plant_data = data.get('plant_data')
+        if not plant_data:
+            # Build plant_data from plant_id and library_book
+            plant_id = data.get('plant_id')
+            library_book = data.get('library_book')
+            if plant_id is not None and library_book:
+                plant_data = {
+                    'plant_id': plant_id,
+                    'library_book': library_book
+                }
+        
+        zone_id = data.get('zone_id')
+        
+        if not zone_id or not plant_data:
+            return jsonify({"error": "plant_id, library_book, and zone_id required"}), 400
+        
+        log_event(plants_logger, 'DEBUG', 'API: Emitter compatibility validation requested', 
+                 plant_id=plant_data.get('plant_id'), 
+                 library_book=plant_data.get('library_book'),
+                 zone_id=zone_id)
+        
+        # Use PlantManager to validate compatibility and calculate emitter size
+        validation = plant_manager.validate_emitter_compatibility(plant_data, zone_id)
+        
+        log_event(plants_logger, 'DEBUG', 'API: Emitter compatibility validation completed', 
+                 zone_id=zone_id, 
+                 compatible=validation.get('compatible'),
+                 recommended_emitter=validation.get('emitter_calculation', {}).get('recommended_emitter'))
+        
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'emitter_validation': validation
+            }
+        })
+        
+    except Exception as e:
+        log_event(plants_logger, 'ERROR', 'API: Emitter compatibility validation failed', error=str(e))
+        return jsonify({'error': str(e)}), 500
+
+@plant_bp.route('/api/smart/calculate-emitter', methods=['POST'])
+def calculate_emitter_size():
+    """
+    Dedicated API endpoint for calculating optimal emitter size
+    
+    Request JSON:
+    {
+        "plant_id": 1,
+        "library_book": "fruitbushes",
+        "zone_id": 1,
+        "is_new_placement": true
+    }
+    
+    Response JSON:
+    {
+        "status": "success",
+        "data": {
+            "emitter_calculation": {
+                "success": true,
+                "calculated_gph": 0.63,
+                "recommended_emitter": 0.5,
+                "actual_weekly_water": 1.19,
+                "is_within_tolerance": true,
+                "health_status": "healthy",
+                "tolerance_delta": 0,
+                "tolerance_status": "Within tolerance",
+                "calculation_details": {...}
+            }
+        }
+    }
+    """
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "Plant data and zone_id required"}), 400
+        
+        # Build plant_data from request
+        plant_id = data.get('plant_id')
+        library_book = data.get('library_book')
+        zone_id = data.get('zone_id')
+        is_new_placement = data.get('is_new_placement', True)
+        
+        if plant_id is None or not library_book or zone_id is None:
+            return jsonify({"error": "plant_id, library_book, and zone_id required"}), 400
+        
+        plant_data = {
+            'plant_id': plant_id,
+            'library_book': library_book
+        }
+        
+        log_event(plants_logger, 'DEBUG', 'API: Emitter calculation requested', 
+                 plant_id=plant_id, 
+                 library_book=library_book,
+                 zone_id=zone_id,
+                 is_new_placement=is_new_placement)
+        
+        # Calculate optimal emitter size
+        calculation = plant_manager.calculate_optimal_emitter_size(plant_data, zone_id, is_new_placement)
+        
+        log_event(plants_logger, 'DEBUG', 'API: Emitter calculation completed', 
+                 zone_id=zone_id, 
+                 success=calculation.get('success'),
+                 recommended_emitter=calculation.get('recommended_emitter'))
+        
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'emitter_calculation': calculation
+            }
+        })
+        
+    except Exception as e:
+        log_event(plants_logger, 'ERROR', 'API: Emitter calculation failed', error=str(e))
+        return jsonify({'error': str(e)}), 500 

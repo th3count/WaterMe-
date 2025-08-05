@@ -12,7 +12,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 # Logging System
-def setup_logger(name, log_file, level=logging.INFO):
+def setup_logger(name, log_file, level=logging.DEBUG):
     """Setup a logger with rotating file handler"""
     # Ensure logs directory exists
     logs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")

@@ -619,18 +619,8 @@ const LibraryForm: React.FC<LibraryFormProps> = ({
                 )}
               </div>
               <div className="form-data-field">
-                <div className="form-data-label">Alternative Name:</div>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={displayPlant.alternative_name || ''}
-                    onChange={(e) => handlePlantInputChange('alternative_name', e.target.value)}
-                    className="form-input form-input--compact"
-                    placeholder="Alternative name"
-                  />
-                ) : (
-                  <div className="form-data-value">{displayPlant.alternative_name || '—'}</div>
-                )}
+                <div className="form-data-label">Plant ID:</div>
+                <div className="form-data-value">{displayPlant.plant_id}</div>
               </div>
               <div className="form-data-field">
                 <div className="form-data-label">Latin Name:</div>
@@ -649,6 +639,20 @@ const LibraryForm: React.FC<LibraryFormProps> = ({
               <div className="form-data-field">
                 <div className="form-data-label">Library:</div>
                 <div className="form-data-value">{library_book?.replace('.json', '') || displayInstance?.library_book?.replace('.json', '') || '—'}</div>
+              </div>
+              <div className="form-data-field">
+                <div className="form-data-label">Alternative Name:</div>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={displayPlant.alternative_name || ''}
+                    onChange={(e) => handlePlantInputChange('alternative_name', e.target.value)}
+                    className="form-input form-input--compact"
+                    placeholder="Alternative name"
+                  />
+                ) : (
+                  <div className="form-data-value">{displayPlant.alternative_name || '—'}</div>
+                )}
               </div>
               <div className="form-data-field form-span-2">
                 <div className="form-data-label">Description:</div>

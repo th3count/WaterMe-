@@ -49,8 +49,8 @@ export interface Zone {
   cycles: number;
   mode?: string;
   scheduleMode?: string;
-  times?: { start_time: string; duration: string; value?: string }[];
-  time?: { start_time: string; duration: string; value?: string };
+  times?: { start_time: string; duration: string }[];
+  time?: { start_time: string; duration: string };
   startDay?: string;
   pin?: number;
 }

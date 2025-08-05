@@ -1,122 +1,21 @@
-[2025-08-01 23:07:43] [INFO] [PLANTS] Plant placement analysis requested | plant_id=6 library_book=fruitbushes common_name=Currant, Red
-[2025-08-01 23:07:43] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Currant, Red has_compatible_zones=True optimal_zone=1
-[2025-08-01 23:07:43] [INFO] [PLANTS] Plant placement analysis requested | plant_id=6 library_book=fruitbushes.json common_name=None
-[2025-08-01 23:07:43] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Currant, Red has_compatible_zones=True optimal_zone=1
-[2025-08-01 23:07:43] [INFO] [PLANTS] Plant placement analysis requested | plant_id=6 library_book=fruitbushes.json common_name=None
-[2025-08-01 23:07:43] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Currant, Red has_compatible_zones=True optimal_zone=1
-[2025-08-03 01:39:19] [INFO] [PLANTS] Plant map loaded | instance_count=8
-[2025-08-03 01:39:19] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
-[2025-08-03 01:39:19] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
-[2025-08-03 01:39:19] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
-[2025-08-03 01:39:19] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
-[2025-08-03 01:39:19] [INFO] [PLANTS] Plant library loaded | total_plants=93
-[2025-08-03 01:39:19] [INFO] [PLANTS] Schedule data loaded | zone_count=8
-[2025-08-03 01:47:28] [INFO] [PLANTS] Plant map loaded | instance_count=8
-[2025-08-03 01:47:28] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
-[2025-08-03 01:47:28] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
-[2025-08-03 01:47:28] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
-[2025-08-03 01:47:28] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
-[2025-08-03 01:47:28] [INFO] [PLANTS] Plant library loaded | total_plants=93
-[2025-08-03 01:47:28] [INFO] [PLANTS] Schedule data loaded | zone_count=8
-[2025-08-03 01:47:59] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruitbushes.json common_name=None
-[2025-08-03 01:47:59] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=True optimal_zone=1
-[2025-08-03 01:47:59] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruitbushes.json common_name=None
-[2025-08-03 01:47:59] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=True optimal_zone=1
-[2025-08-03 01:48:09] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruitbushes.json common_name=None
-[2025-08-03 01:48:09] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=True optimal_zone=1
-[2025-08-03 01:48:09] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruitbushes.json common_name=None
-[2025-08-03 01:48:09] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=True optimal_zone=1
-[2025-08-03 01:55:08] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruitbushes.json common_name=None
-[2025-08-03 01:55:08] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=True optimal_zone=1
-[2025-08-03 01:55:08] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruitbushes.json common_name=None
-[2025-08-03 01:55:08] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=True optimal_zone=1
-[2025-08-03 02:27:32] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruitbushes common_name=Blackberry
-[2025-08-03 02:27:32] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Blackberry has_compatible_zones=True optimal_zone=1
-[2025-08-03 02:27:32] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruitbushes.json common_name=None
-[2025-08-03 02:27:32] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Blackberry has_compatible_zones=True optimal_zone=1
-[2025-08-03 02:27:32] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruitbushes.json common_name=None
-[2025-08-03 02:27:32] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Blackberry has_compatible_zones=True optimal_zone=1
-[2025-08-03 02:28:58] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruitbushes.json common_name=None
-[2025-08-03 02:28:58] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Blackberry has_compatible_zones=True optimal_zone=1
-[2025-08-03 02:29:55] [INFO] [PLANTS] Plant instance added | instance_id=9 plant_id=3 location_id=5 zone=None quantity=1
-[2025-08-03 02:29:55] [ERROR] [PLANTS] Failed to trigger smart duration refresh | zone_id=1 error='PlantManager' object has no attribute '_get_zone_mode'
-[2025-08-03 02:30:10] [INFO] [PLANTS] Plant instance deleted | instance_id=9 plant_id=3 location_id=5 zone=None quantity=1
-[2025-08-03 02:30:10] [ERROR] [PLANTS] Failed to trigger smart duration refresh | zone_id=1 error='PlantManager' object has no attribute '_get_zone_mode'
-[2025-08-03 02:30:30] [INFO] [PLANTS] Plant instance deleted | instance_id=8 plant_id=8 location_id=2 zone=None quantity=1
-[2025-08-03 02:30:30] [ERROR] [PLANTS] Failed to trigger smart duration refresh | zone_id=2 error='PlantManager' object has no attribute '_get_zone_mode'
-[2025-08-03 02:30:40] [INFO] [PLANTS] Plant instance deleted | instance_id=7 plant_id=19 location_id=2 zone=None quantity=1
-[2025-08-03 02:30:40] [ERROR] [PLANTS] Failed to trigger smart duration refresh | zone_id=1 error='PlantManager' object has no attribute '_get_zone_mode'
-[2025-08-03 02:30:47] [INFO] [PLANTS] Plant instance deleted | instance_id=6 plant_id=3 location_id=2 zone=None quantity=1
-[2025-08-03 02:30:47] [ERROR] [PLANTS] Failed to trigger smart duration refresh | zone_id=1 error='PlantManager' object has no attribute '_get_zone_mode'
-[2025-08-03 02:30:50] [INFO] [PLANTS] Plant instance deleted | instance_id=5 plant_id=12 location_id=2 zone=None quantity=1
-[2025-08-03 02:30:50] [ERROR] [PLANTS] Failed to trigger smart duration refresh | zone_id=1 error='PlantManager' object has no attribute '_get_zone_mode'
-[2025-08-03 02:30:53] [INFO] [PLANTS] Plant instance deleted | instance_id=2 plant_id=2 location_id=2 zone=None quantity=1
-[2025-08-03 02:30:53] [ERROR] [PLANTS] Failed to trigger smart duration refresh | zone_id=1 error='PlantManager' object has no attribute '_get_zone_mode'
-[2025-08-03 02:31:09] [INFO] [PLANTS] Plant instance deleted | instance_id=4 plant_id=8 location_id=2 zone=None quantity=1
-[2025-08-03 02:31:09] [ERROR] [PLANTS] Failed to trigger smart duration refresh | zone_id=2 error='PlantManager' object has no attribute '_get_zone_mode'
-[2025-08-03 02:31:14] [INFO] [PLANTS] Plant instance deleted | instance_id=3 plant_id=3 location_id=2 zone=None quantity=1
-[2025-08-03 02:31:14] [ERROR] [PLANTS] Failed to trigger smart duration refresh | zone_id=2 error='PlantManager' object has no attribute '_get_zone_mode'
-[2025-08-03 02:31:20] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruittrees common_name=Granny Smith Apple
-[2025-08-03 02:31:20] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Granny Smith Apple has_compatible_zones=True optimal_zone=2
-[2025-08-03 02:31:20] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruittrees.json common_name=None
-[2025-08-03 02:31:20] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Granny Smith Apple has_compatible_zones=True optimal_zone=2
-[2025-08-03 02:31:20] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruittrees.json common_name=None
-[2025-08-03 02:31:20] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Granny Smith Apple has_compatible_zones=True optimal_zone=2
-[2025-08-03 02:31:26] [INFO] [PLANTS] Plant instance added | instance_id=2 plant_id=3 location_id=2 zone=None quantity=1
-[2025-08-03 02:31:26] [ERROR] [PLANTS] Failed to trigger smart duration refresh | zone_id=2 error='PlantManager' object has no attribute '_get_zone_mode'
-[2025-08-03 02:31:41] [INFO] [PLANTS] Schedule data loaded | zone_count=8
-[2025-08-03 02:31:48] [INFO] [PLANTS] Plant instance deleted | instance_id=2 plant_id=3 location_id=2 zone=None quantity=1
-[2025-08-03 02:31:48] [ERROR] [PLANTS] Failed to trigger smart duration refresh | zone_id=2 error='PlantManager' object has no attribute '_get_zone_mode'
-[2025-08-03 02:31:56] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruittrees common_name=Granny Smith Apple
-[2025-08-03 02:31:56] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Granny Smith Apple has_compatible_zones=False optimal_zone=None
-[2025-08-03 02:31:56] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruittrees.json common_name=None
-[2025-08-03 02:31:56] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Granny Smith Apple has_compatible_zones=False optimal_zone=None
-[2025-08-03 02:31:56] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruittrees.json common_name=None
-[2025-08-03 02:31:56] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Granny Smith Apple has_compatible_zones=False optimal_zone=None
-[2025-08-03 02:32:02] [INFO] [PLANTS] Schedule data loaded | zone_count=8
-[2025-08-03 02:32:04] [INFO] [PLANTS] Schedule data loaded | zone_count=8
-[2025-08-03 02:32:04] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruittrees.json common_name=None
-[2025-08-03 02:32:04] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Granny Smith Apple has_compatible_zones=False optimal_zone=None
-[2025-08-03 02:32:14] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruittrees common_name=Granny Smith Apple
-[2025-08-03 02:32:14] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Granny Smith Apple has_compatible_zones=False optimal_zone=None
-[2025-08-03 02:32:14] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruittrees.json common_name=None
-[2025-08-03 02:32:14] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Granny Smith Apple has_compatible_zones=False optimal_zone=None
-[2025-08-03 02:32:14] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruittrees.json common_name=None
-[2025-08-03 02:32:14] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Granny Smith Apple has_compatible_zones=False optimal_zone=None
-[2025-08-03 02:32:34] [INFO] [PLANTS] Schedule data loaded | zone_count=8
-[2025-08-03 02:32:35] [INFO] [PLANTS] Schedule data loaded | zone_count=8
-[2025-08-03 02:32:36] [INFO] [PLANTS] Schedule data loaded | zone_count=8
-[2025-08-03 02:32:36] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruittrees.json common_name=None
-[2025-08-03 02:32:36] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Granny Smith Apple has_compatible_zones=True optimal_zone=3
-[2025-08-03 02:32:37] [INFO] [PLANTS] Schedule data loaded | zone_count=8
-[2025-08-03 02:32:37] [INFO] [PLANTS] Plant placement analysis requested | plant_id=3 library_book=fruittrees.json common_name=None
-[2025-08-03 02:32:37] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Granny Smith Apple has_compatible_zones=True optimal_zone=3
-[2025-08-03 02:32:42] [INFO] [PLANTS] Plant instance added | instance_id=2 plant_id=3 location_id=2 zone=None quantity=1
-[2025-08-03 02:32:42] [ERROR] [PLANTS] Failed to trigger smart duration refresh | zone_id=3 error='PlantManager' object has no attribute '_get_zone_mode'
-[2025-08-03 02:33:15] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruittrees common_name=Gala Apple
-[2025-08-03 02:33:15] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Gala Apple has_compatible_zones=True optimal_zone=3
-[2025-08-03 02:33:15] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruittrees.json common_name=None
-[2025-08-03 02:33:15] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Gala Apple has_compatible_zones=True optimal_zone=3
-[2025-08-03 02:33:15] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruittrees.json common_name=None
-[2025-08-03 02:33:15] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Gala Apple has_compatible_zones=True optimal_zone=3
-[2025-08-03 02:33:34] [INFO] [PLANTS] Plant instance deleted | instance_id=2 plant_id=3 location_id=2 zone=None quantity=1
-[2025-08-03 02:33:34] [ERROR] [PLANTS] Failed to trigger smart duration refresh | zone_id=3 error='PlantManager' object has no attribute '_get_zone_mode'
-[2025-08-03 02:33:50] [INFO] [PLANTS] Plant instance deleted | instance_id=1 plant_id=2 location_id=2 zone=None quantity=1
-[2025-08-03 02:33:50] [ERROR] [PLANTS] Failed to trigger smart duration refresh | zone_id=1 error='PlantManager' object has no attribute '_get_zone_mode'
-[2025-08-03 02:33:54] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruitbushes common_name=Raspberry, Red
-[2025-08-03 02:33:54] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=True optimal_zone=1
-[2025-08-03 02:33:55] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruitbushes.json common_name=None
-[2025-08-03 02:33:55] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=True optimal_zone=1
-[2025-08-03 02:33:55] [INFO] [PLANTS] Plant placement analysis requested | plant_id=2 library_book=fruitbushes.json common_name=None
-[2025-08-03 02:33:55] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Raspberry, Red has_compatible_zones=True optimal_zone=1
-[2025-08-03 02:33:58] [INFO] [PLANTS] Plant instance added | instance_id=1 plant_id=2 location_id=2 zone=None quantity=1
-[2025-08-03 02:33:58] [ERROR] [PLANTS] Failed to trigger smart duration refresh | zone_id=1 error='PlantManager' object has no attribute '_get_zone_mode'
-[2025-08-03 02:34:20] [INFO] [PLANTS] Schedule data loaded | zone_count=8
-[2025-08-03 02:34:28] [INFO] [PLANTS] Plant placement analysis requested | plant_id=1 library_book=fruitbushes common_name=Strawberry, Red
-[2025-08-03 02:34:28] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Strawberry, Red has_compatible_zones=True optimal_zone=1
-[2025-08-03 02:34:28] [INFO] [PLANTS] Plant placement analysis requested | plant_id=1 library_book=fruitbushes.json common_name=None
-[2025-08-03 02:34:28] [INFO] [PLANTS] Plant placement analysis requested | plant_id=1 library_book=fruitbushes.json common_name=None
-[2025-08-03 02:34:28] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Strawberry, Red has_compatible_zones=True optimal_zone=1
-[2025-08-03 02:34:28] [INFO] [PLANTS] Plant placement analysis completed | plant_name=Strawberry, Red has_compatible_zones=True optimal_zone=1
-[2025-08-03 02:34:30] [INFO] [PLANTS] Plant instance added | instance_id=2 plant_id=1 location_id=2 zone=None quantity=1
-[2025-08-03 02:34:30] [ERROR] [PLANTS] Failed to trigger smart duration refresh | zone_id=1 error='PlantManager' object has no attribute '_get_zone_mode'
+[2025-08-04 21:55:20] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 21:55:20] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 21:55:20] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 21:55:20] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 21:55:20] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 21:55:20] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 21:55:20] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 21:55:22] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 21:55:22] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 21:55:22] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 21:55:22] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 21:55:22] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 21:55:22] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 21:55:22] [INFO] [PLANTS] Schedule data loaded | zone_count=8
+[2025-08-04 21:55:22] [INFO] [PLANTS] Plant map loaded | instance_count=2
+[2025-08-04 21:55:22] [INFO] [PLANTS] Library file loaded | filename=fruitbushes.json plant_count=20
+[2025-08-04 21:55:22] [INFO] [PLANTS] Library file loaded | filename=fruittrees.json plant_count=20
+[2025-08-04 21:55:22] [INFO] [PLANTS] Library file loaded | filename=vegetables.json plant_count=50
+[2025-08-04 21:55:22] [INFO] [PLANTS] Library file loaded | filename=custom.json plant_count=3
+[2025-08-04 21:55:22] [INFO] [PLANTS] Plant library loaded | total_plants=93
+[2025-08-04 21:55:22] [INFO] [PLANTS] Schedule data loaded | zone_count=8

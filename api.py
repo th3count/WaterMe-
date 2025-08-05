@@ -110,6 +110,10 @@ def after_request(response):
     # This prevents duplicate headers that cause CORS errors
     return response
 
+# Register Plant Manager Blueprint (import here to avoid circular imports)
+from core.plant_manager import plant_bp
+app.register_blueprint(plant_bp)
+
 SETTINGS_PATH = os.path.join(os.path.dirname(__file__), "config", "settings.cfg")
 GPIO_PATH = os.path.join(os.path.dirname(__file__), "config", "gpio.cfg")
 SCHEDULE_JSON_PATH = os.path.join(os.path.dirname(__file__), "data", "schedule.json")
@@ -1063,6 +1067,19 @@ def get_settings_cfg():
 def get_schedule():
     from core.scheduler import scheduler
     zones = scheduler.get_schedule_data()
+    
+    # 🔍 CRITICAL DEBUG: Check what duration data we're sending to frontend
+    print(f"🌐 API DEBUG - Sending schedule data to frontend:")
+    for zone in zones:
+        if zone.get('zone_id') == 1:
+            print(f"  🎯 Zone {zone.get('zone_id')}:", {
+                'mode': zone.get('mode'),
+                'duration': zone.get('times', [{}])[0].get('duration') if zone.get('times') else None,
+                'period': zone.get('period'),
+                'cycles': zone.get('cycles'),
+                'times_array': zone.get('times')
+            })
+    
     return jsonify(zones)
 
 @app.route('/api/schedule', methods=['POST'])
@@ -1313,24 +1330,8 @@ def save_map():
     if success:
         # Trigger smart duration refresh for the zone if it's in smart mode
         zone_id = data.get('zone_id')
-        if zone_id:
-            try:
-                from core.scheduler import scheduler
-                # Check if zone is in smart mode
-                schedule_file = os.path.join(os.path.dirname(__file__), 'data', 'schedule.json')
-                if os.path.exists(schedule_file):
-                    with open(schedule_file, 'r') as f:
-                        schedule_data = json.load(f)
-                    
-                    zone_key = str(zone_id)
-                    if zone_key in schedule_data:
-                        zone_mode = schedule_data[zone_key].get('mode', 'disabled')
-                        if zone_mode == 'smart':
-                            print(f"API: Triggering smart refresh for zone {zone_id} after plant addition")
-                            scheduler.calculate_and_update_zone_duration(zone_id)
-            except Exception as e:
-                print(f"API: Failed to trigger smart refresh after plant addition: {e}")
-                # Don't fail the plant addition if smart refresh fails
+        # Smart duration refresh is now handled by PlantManager._trigger_zone_smart_refresh()
+        # No need for duplicate API-level refresh
         
         return jsonify({"status": "success", "instance_id": instance_id})
     else:
@@ -1340,6 +1341,8 @@ def save_map():
 
 @app.route('/api/map', methods=['GET'])
 def get_map():
+    # Reload data from file to ensure fresh data
+    plant_manager.reload_data()
     data = plant_manager.get_plant_instances()
     return jsonify(data)
 
@@ -1359,36 +1362,8 @@ def reassign_plant(instance_id):
         success, message = plant_manager.reassign_plant(instance_id, location_id, zone_id)
         
         if success:
-            # Trigger smart duration refresh for affected zones if they're in smart mode
-            try:
-                from core.scheduler import scheduler
-                # Get the old zone from the plant data
-                plant_data = plant_manager.get_plant_instances().get(instance_id, {})
-                old_zone_id = plant_data.get('zone_id')
-                
-                # Check both old and new zones for smart mode
-                schedule_file = os.path.join(os.path.dirname(__file__), 'data', 'schedule.json')
-                if os.path.exists(schedule_file):
-                    with open(schedule_file, 'r') as f:
-                        schedule_data = json.load(f)
-                    
-                    zones_to_refresh = []
-                    if old_zone_id and str(old_zone_id) in schedule_data:
-                        if schedule_data[str(old_zone_id)].get('mode') == 'smart':
-                            zones_to_refresh.append(old_zone_id)
-                    
-                    if zone_id and str(zone_id) in schedule_data:
-                        if schedule_data[str(zone_id)].get('mode') == 'smart':
-                            zones_to_refresh.append(zone_id)
-                    
-                    # Trigger refresh for each smart zone
-                    for refresh_zone_id in zones_to_refresh:
-                        print(f"API: Triggering smart refresh for zone {refresh_zone_id} after plant reassignment")
-                        scheduler.calculate_and_update_zone_duration(refresh_zone_id)
-                        
-            except Exception as e:
-                print(f"API: Failed to trigger smart refresh after plant reassignment: {e}")
-                # Don't fail the reassignment if smart refresh fails
+            # Smart duration refresh is now handled by PlantManager.reassign_plant()
+            # No need for duplicate API-level refresh
             
             return jsonify({'status': 'success', 'message': message})
         else:
@@ -1429,6 +1404,8 @@ def update_plant_instance(instance_id):
 @app.route('/api/map/<instance_id>', methods=['DELETE'])
 def delete_plant_instance(instance_id):
     try:
+        # Reload data to ensure fresh plant data
+        plant_manager.reload_data()
         # Get the zone from the plant data BEFORE deletion
         plant_data = plant_manager.get_plant_instances().get(instance_id, {})
         zone_id = plant_data.get('zone_id')
@@ -1440,41 +1417,8 @@ def delete_plant_instance(instance_id):
         
         if success:
             print(f"API: Plant {instance_id} deleted successfully")
-            # Trigger smart duration refresh for the zone if it's in smart mode
-            try:
-                from core.scheduler import scheduler
-                
-                print(f"API: Checking zone {zone_id} for smart refresh after plant deletion")
-                
-                if zone_id:
-                    # Check if zone is in smart mode
-                    schedule_file = os.path.join(os.path.dirname(__file__), 'data', 'schedule.json')
-                    if os.path.exists(schedule_file):
-                        with open(schedule_file, 'r') as f:
-                            schedule_data = json.load(f)
-                        
-                        zone_key = str(zone_id)
-                        if zone_key in schedule_data:
-                            zone_mode = schedule_data[zone_key].get('mode', 'disabled')
-                            print(f"API: Zone {zone_id} mode is {zone_mode}")
-                            if zone_mode == 'smart':
-                                print(f"API: Triggering smart refresh for zone {zone_id} after plant deletion")
-                                result = scheduler.calculate_and_update_zone_duration(zone_id)
-                                print(f"API: Smart refresh result: {result}")
-                            else:
-                                print(f"API: Zone {zone_id} is not in smart mode, skipping refresh")
-                        else:
-                            print(f"API: Zone {zone_id} not found in schedule data")
-                    else:
-                        print(f"API: Schedule file not found")
-                else:
-                    print(f"API: No zone_id found for deleted plant")
-                                
-            except Exception as e:
-                import traceback
-                print(f"API: Failed to trigger smart refresh after plant deletion: {e}")
-                print(f"API: Traceback: {traceback.format_exc()}")
-                # Don't fail the deletion if smart refresh fails
+            # Smart duration refresh is now handled by PlantManager.delete_plant_instance()
+            # No need for duplicate API-level refresh
             
             return jsonify({'status': 'success', 'message': message})
         else:
@@ -1545,28 +1489,7 @@ def get_zone_recommendations():
         log_event(error_logger, 'ERROR', 'Zone recommendations failed', error=str(e))
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/smart/validate-compatibility', methods=['POST'])
-def validate_plant_zone_compatibility():
-    """Validate if a plant can be placed in a specific zone"""
-    try:
-        data = request.json
-        if not data:
-            return jsonify({"error": "Plant data and zone_id required"}), 400
-        
-        plant_data = data.get('plant_data', {})
-        zone_id = data.get('zone_id')
-        
-        if not zone_id:
-            return jsonify({"error": "zone_id required"}), 400
-        
-        # Use PlantManager to validate compatibility
-        validation = plant_manager.validate_plant_zone_compatibility(plant_data, zone_id)
-        
-        return jsonify(validation)
-        
-    except Exception as e:
-        log_event(error_logger, 'ERROR', 'Compatibility validation failed', error=str(e))
-        return jsonify({'error': str(e)}), 500
+# Moved to plant_manager.py - /api/smart/validate-compatibility endpoint
 
 @app.route('/api/smart/no-compatible-zone', methods=['POST'])
 def handle_no_compatible_zone():
@@ -2720,6 +2643,8 @@ def debug_plant_map():
     """Debug endpoint to check plant map structure"""
     try:
         from core.plant_manager import plant_manager
+        # Reload data to ensure fresh data
+        plant_manager.reload_data()
         debug_info = plant_manager.debug_plant_map()
         return jsonify(debug_info)
     except Exception as e:
@@ -2732,6 +2657,8 @@ def debug_zone_plants(zone_id):
     """Debug endpoint to check plants in a specific zone"""
     try:
         from core.plant_manager import plant_manager
+        # Reload data to ensure fresh data
+        plant_manager.reload_data()
         zone_plants = plant_manager.get_zone_plants(zone_id)
         zone_mode = plant_manager._get_zone_mode(zone_id)
         return jsonify({
@@ -2750,6 +2677,8 @@ def test_plant_manager():
     """Test endpoint to check if plant manager is working"""
     try:
         from core.plant_manager import plant_manager
+        # Reload data to ensure fresh data
+        plant_manager.reload_data()
         debug_info = plant_manager.debug_plant_map()
         return jsonify({
             'success': True,
