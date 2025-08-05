@@ -66,6 +66,9 @@ NODE_MIN_VERSION="18"
 ENABLE_SERVICE=false
 GIT_REPO="https://github.com/th3count/WaterMe-.git"
 GIT_BRANCH="main"
+GIT_PULL=false
+GIT_UPGRADE=false
+UNINSTALL=false
 
 # Logging
 LOG_FILE="/tmp/waterme_install.log"
