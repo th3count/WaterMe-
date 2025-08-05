@@ -64,6 +64,8 @@ NODE_MIN_VERSION="18"
 
 # Default settings
 ENABLE_SERVICE=false
+GIT_REPO="https://github.com/th3count/WaterMe-.git"
+GIT_BRANCH="main"
 
 # Logging
 LOG_FILE="/tmp/waterme_install.log"
@@ -110,6 +112,14 @@ parse_arguments() {
                 set -x  # Enable debug mode
                 shift
                 ;;
+            --git-pull)
+                GIT_PULL=true
+                shift
+                ;;
+            --git-upgrade)
+                GIT_UPGRADE=true
+                shift
+                ;;
             -h|--help)
                 echo "WaterMe! Installation Script"
                 echo ""
@@ -119,12 +129,16 @@ parse_arguments() {
                 echo "  --service-enable    Install with systemd service (production)"
                 echo "  --service-disable   Install without systemd service (default, manual)"
                 echo "  --debug             Enable verbose debugging output"
+                echo "  --git-pull          Pull latest code from repository"
+                echo "  --git-upgrade       Full upgrade: pull code + reinstall dependencies"
                 echo "  -h, --help          Show this help message"
                 echo ""
                 echo "Examples:"
                 echo "  sudo ./install.sh                    # Manual mode (default)"
                 echo "  sudo ./install.sh --service-enable   # Service mode"
                 echo "  sudo ./install.sh --debug            # With debugging"
+                echo "  sudo ./install.sh --git-pull         # Pull latest code"
+                echo "  sudo ./install.sh --git-upgrade      # Full upgrade"
                 echo ""
                 exit 0
                 ;;
@@ -346,6 +360,94 @@ EOF
             echo "DEBUG: Check requirements.txt for missing packages"
         fi
     fi
+}
+
+git_pull_latest() {
+    print_step "Pulling latest code from repository..."
+    
+    if [[ "$DEBUG" == "true" ]]; then
+        echo "DEBUG: GIT_REPO=$GIT_REPO"
+        echo "DEBUG: GIT_BRANCH=$GIT_BRANCH"
+        echo "DEBUG: WATERME_HOME=$WATERME_HOME"
+    fi
+    
+    # Check if we're in a git repository
+    if [[ -d "$WATERME_HOME/.git" ]]; then
+        print_step "Updating existing repository..."
+        cd "$WATERME_HOME"
+        
+        # Stash any local changes
+        if git status --porcelain | grep -q .; then
+            print_warning "Local changes detected, stashing..."
+            git stash
+        fi
+        
+        # Pull latest changes
+        if git pull origin "$GIT_BRANCH"; then
+            print_success "Code updated successfully"
+        else
+            print_error "Failed to pull latest code"
+            return 1
+        fi
+        
+        # Restore stashed changes if any
+        if git stash list | grep -q .; then
+            print_warning "Restoring stashed changes..."
+            git stash pop
+        fi
+    else
+        print_step "Cloning repository to $WATERME_HOME..."
+        
+        # Remove existing directory if it exists
+        if [[ -d "$WATERME_HOME" ]]; then
+            rm -rf "$WATERME_HOME"
+        fi
+        
+        # Clone the repository
+        if git clone -b "$GIT_BRANCH" "$GIT_REPO" "$WATERME_HOME"; then
+            print_success "Repository cloned successfully"
+        else
+            print_error "Failed to clone repository"
+            return 1
+        fi
+        
+        # Set ownership
+        chown -R "$WATERME_USER:$WATERME_USER" "$WATERME_HOME"
+    fi
+}
+
+git_upgrade_system() {
+    print_step "Performing full system upgrade..."
+    
+    # Pull latest code
+    git_pull_latest
+    
+    # Reinstall Python dependencies
+    print_step "Reinstalling Python dependencies..."
+    cd "$WATERME_HOME"
+    if sudo -u "$WATERME_USER" python3 -m pip install --user --quiet -r requirements.txt 2>/dev/null; then
+        print_success "Python dependencies updated"
+    else
+        print_warning "Some Python dependencies may need manual installation"
+    fi
+    
+    # Reinstall UI dependencies
+    print_step "Reinstalling UI dependencies..."
+    if [[ -f "$WATERME_HOME/ui/package.json" ]]; then
+        cd "$WATERME_HOME/ui"
+        sudo -u "$WATERME_USER" npm install --silent
+        print_success "UI dependencies updated"
+    else
+        print_warning "UI package.json not found"
+    fi
+    
+    # Restart service if enabled
+    if [[ "$ENABLE_SERVICE" == true ]]; then
+        print_step "Restarting service..."
+        systemctl restart "$WATERME_SERVICE" 2>/dev/null || print_warning "Service restart failed"
+    fi
+    
+    print_success "System upgrade completed"
 }
 
 install_ui_dependencies() {
@@ -893,6 +995,25 @@ main() {
         print_step "Debug mode: ENABLED"
         echo "DEBUG: Installation started at $(date)"
         echo "DEBUG: Script arguments: $@"
+    fi
+    
+    # Handle git operations
+    if [[ "$GIT_PULL" == true ]]; then
+        print_header
+        print_step "Git pull mode - updating code only"
+        check_root
+        git_pull_latest
+        print_completion
+        exit 0
+    fi
+    
+    if [[ "$GIT_UPGRADE" == true ]]; then
+        print_header
+        print_step "Git upgrade mode - full system upgrade"
+        check_root
+        git_upgrade_system
+        print_completion
+        exit 0
     fi
     
     check_root
