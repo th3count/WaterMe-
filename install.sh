@@ -338,6 +338,60 @@ EOF
     print_success "Python dependencies installed"
 }
 
+install_ui_dependencies() {
+    print_step "Installing UI dependencies..."
+    
+    if [[ "$DEBUG" == "true" ]]; then
+        echo "DEBUG: Installing npm dependencies for UI"
+    fi
+    
+    # Check if UI directory exists and has package.json
+    if [[ -f "$WATERME_HOME/ui/package.json" ]]; then
+        print_step "Installing npm dependencies from existing package.json..."
+        cd "$WATERME_HOME/ui"
+        sudo -u "$WATERME_USER" npm install --silent
+        print_success "UI dependencies installed"
+    else
+        print_step "Creating basic UI package.json..."
+        
+        # Create a basic package.json for the UI
+        cat > "$WATERME_HOME/ui/package.json" << 'EOF'
+{
+  "name": "waterme-ui",
+  "version": "1.0.0",
+  "description": "WaterMe! Smart Garden Irrigation System UI",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "luxon": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "eslint": "^8.0.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.0",
+    "typescript": "^5.0.0",
+    "vite": "^4.0.0"
+  }
+}
+EOF
+
+        # Install the basic dependencies
+        cd "$WATERME_HOME/ui"
+        sudo -u "$WATERME_USER" npm install --silent
+        print_success "Basic UI dependencies installed"
+    fi
+}
+
 setup_gpio_permissions() {
     print_step "Configuring GPIO permissions..."
     
@@ -469,11 +523,7 @@ Your WaterMe! system has been installed successfully!
    - Copy your WaterMe! source code to `/opt/waterme/`
    - Ensure all files are owned by the waterme user: `sudo chown -R waterme:waterme /opt/waterme/`
 
-3. **Install UI dependencies:**
-   ```bash
-   cd /opt/waterme/ui
-   sudo -u waterme npm install
-   ```
+3. **UI dependencies are automatically installed** during the installation process.
 
 4. **Start the system:**
    
@@ -794,7 +844,7 @@ print_completion() {
     echo "1. Copy your WaterMe! source code to $WATERME_HOME"
     echo "2. Configure your system: waterme config"
     echo "3. Configure GPIO pins: waterme gpio"
-    echo "4. Install UI dependencies: cd $WATERME_HOME/ui && npm install"
+    echo "4. UI dependencies are automatically installed"
     if [[ "$ENABLE_SERVICE" == true ]]; then
         echo "5. Enable service: waterme enable"
         echo "6. Start service: waterme start"
@@ -843,6 +893,7 @@ main() {
     create_user
     setup_directories
     install_python_dependencies
+    install_ui_dependencies
     setup_gpio_permissions
     create_config_templates
     install_waterme_code
