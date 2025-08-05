@@ -57,7 +57,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 WATERME_USER="waterme"
-WATERME_HOME="/home/waterme/WaterMe"
+WATERME_HOME="/home/waterme"
 WATERME_SERVICE="waterme"
 PYTHON_MIN_VERSION="3.9"
 NODE_MIN_VERSION="18"
@@ -777,15 +777,39 @@ install_waterme_code() {
     else
         print_step "Cloning repository to $WATERME_HOME..."
         
-        # Remove existing directory if it exists
-        if [[ -d "$WATERME_HOME" ]]; then
-            rm -rf "$WATERME_HOME"
-        fi
-        
         # Clone the repository (use absolute path and change to safe directory)
         cd /tmp
-        if git clone -b "$GIT_BRANCH" "$GIT_REPO" "$WATERME_HOME"; then
-            print_success "Repository cloned successfully"
+        
+                # If the home directory already exists, we'll clone into it
+        if [[ -d "$WATERME_HOME" ]]; then
+            # Check if it's already a git repo
+            if [[ -d "$WATERME_HOME/.git" ]]; then
+                print_step "Home directory is already a git repository, updating..."
+                cd "$WATERME_HOME"
+                if git pull origin "$GIT_BRANCH"; then
+                    print_success "Repository updated successfully"
+                else
+                    print_error "Failed to update repository"
+                    return 1
+                fi
+            else
+                print_step "Home directory exists but is not a git repo, initializing..."
+                cd "$WATERME_HOME"
+                git init
+                git remote add origin "$GIT_REPO"
+                git fetch origin
+                git checkout -b "$GIT_BRANCH" origin/"$GIT_BRANCH"
+                print_success "Repository initialized successfully"
+            fi
+        else
+            # Clone fresh repository
+            if git clone -b "$GIT_BRANCH" "$GIT_REPO" "$WATERME_HOME"; then
+                print_success "Repository cloned successfully"
+            else
+                print_error "Failed to clone repository"
+                return 1
+            fi
+        fi
         else
             print_error "Failed to clone repository"
             return 1
