@@ -716,58 +716,51 @@ EOF
 install_waterme_code() {
     print_step "Installing WaterMe! application code..."
     
-    # Note: In a real deployment, this would clone from a git repository
-    # For now, we'll create placeholder files that need to be populated
+    # Clone the repository to the installation directory
+    if [[ -d "$WATERME_HOME/.git" ]]; then
+        print_step "Updating existing repository..."
+        cd "$WATERME_HOME"
+        
+        # Stash any local changes
+        if git status --porcelain | grep -q .; then
+            print_warning "Local changes detected, stashing..."
+            git stash
+        fi
+        
+        # Pull latest changes
+        if git pull origin "$GIT_BRANCH"; then
+            print_success "Code updated successfully"
+        else
+            print_error "Failed to pull latest code"
+            return 1
+        fi
+        
+        # Restore stashed changes if any
+        if git stash list | grep -q .; then
+            print_warning "Restoring stashed changes..."
+            git stash pop
+        fi
+    else
+        print_step "Cloning repository to $WATERME_HOME..."
+        
+        # Remove existing directory if it exists
+        if [[ -d "$WATERME_HOME" ]]; then
+            rm -rf "$WATERME_HOME"
+        fi
+        
+        # Clone the repository
+        if git clone -b "$GIT_BRANCH" "$GIT_REPO" "$WATERME_HOME"; then
+            print_success "Repository cloned successfully"
+        else
+            print_error "Failed to clone repository"
+            return 1
+        fi
+    fi
     
-    cat > "$WATERME_HOME/README.md" << 'EOF'
-# WaterMe! Installation Complete
-
-Your WaterMe! system has been installed successfully!
-
-## Next Steps:
-
-1. **Configure your system:**
-   - Edit `/opt/waterme/config/settings.cfg` with your location and timezone
-   - Edit `/opt/waterme/config/gpio.cfg` with your GPIO pin assignments
-
-2. **Application code is automatically installed to:**
-   - `/home/waterme/WaterMe/`
-   - All files are owned by the waterme user
-
-3. **UI dependencies are automatically installed** during the installation process.
-
-4. **Start the system:**
-   
-   **For service mode (--service-enable):**
-   ```bash
-   waterme enable    # Enable auto-start
-   waterme start     # Start service
-   ```
-   
-   **For manual mode (default):**
-   ```bash
-   sudo -u waterme python3 /home/waterme/WaterMe/waterme.py
-   # OR
-   waterme start     # Helper script
-   ```
-
-## Access URLs:
-- Backend API: http://your-pi-ip:5000
-- Frontend UI: http://your-pi-ip:3000
-
-## Logs:
-- **Service mode**: `waterme logs` or `sudo journalctl -u waterme -f`
-- **Manual mode**: `waterme logs` or `tail -f /home/waterme/WaterMe/logs/*.log`
-- Application logs: `/home/waterme/WaterMe/logs/`
-
-## Configuration:
-- GPIO settings: `/home/waterme/WaterMe/config/gpio.cfg`
-- Garden settings: `/home/waterme/WaterMe/config/settings.cfg`
-- Runtime config: `/home/waterme/WaterMe/config/waterme.json`
-EOF
-
-    chown "$WATERME_USER:$WATERME_USER" "$WATERME_HOME/README.md"
-    print_success "Installation guide created"
+    # Set ownership
+    chown -R "$WATERME_USER:$WATERME_USER" "$WATERME_HOME"
+    
+    print_success "WaterMe! code installed successfully"
 }
 
 
@@ -1052,18 +1045,17 @@ print_completion() {
     fi
     echo
     echo "📋 Next steps:"
-    echo "1. Copy your WaterMe! source code to $WATERME_HOME"
-    echo "2. Configure your system: waterme config"
-    echo "3. Configure GPIO pins: waterme gpio"
-    echo "4. UI dependencies are automatically installed"
+    echo "1. Configure your system: waterme config"
+    echo "2. Configure GPIO pins: waterme gpio"
+    echo "3. UI dependencies are automatically installed"
     if [[ "$ENABLE_SERVICE" == true ]]; then
-        echo "5. Enable service: waterme enable"
-        echo "6. Start service: waterme start"
-        echo "7. Check status: waterme status"
+        echo "4. Enable service: waterme enable"
+        echo "5. Start service: waterme start"
+        echo "6. Check status: waterme status"
     else
-        echo "5. Start manually: python3 $WATERME_HOME/waterme.py"
-        echo "6. Or use helper: waterme start"
-        echo "7. Check status: waterme status"
+        echo "4. Start manually: python3 $WATERME_HOME/waterme.py"
+        echo "5. Or use helper: waterme start"
+        echo "6. Check status: waterme status"
     fi
     echo
     echo "🌐 Once running, access your system at:"
