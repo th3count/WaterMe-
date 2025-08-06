@@ -1,30 +1,10 @@
-[2025-08-06 16:11:08] [ERROR] [ERROR] Failed to get system time | error=File contains no section headers.
-file: 'C:\\Users\\Th3Count\\WaterMe!\\backend\\config\\settings.cfg', line: 2
-'test = value\n'
-[2025-08-06 16:11:09] [ERROR] [ERROR] Failed to get system time | error=File contains no section headers.
-file: 'C:\\Users\\Th3Count\\WaterMe!\\backend\\config\\settings.cfg', line: 2
-'test = value\n'
-[2025-08-06 16:11:10] [ERROR] [ERROR] Failed to get system time | error=File contains no section headers.
-file: 'C:\\Users\\Th3Count\\WaterMe!\\backend\\config\\settings.cfg', line: 2
-'test = value\n'
-[2025-08-06 16:11:11] [ERROR] [ERROR] Failed to get system time | error=File contains no section headers.
-file: 'C:\\Users\\Th3Count\\WaterMe!\\backend\\config\\settings.cfg', line: 2
-'test = value\n'
-[2025-08-06 16:11:12] [ERROR] [ERROR] Failed to get system time | error=File contains no section headers.
-file: 'C:\\Users\\Th3Count\\WaterMe!\\backend\\config\\settings.cfg', line: 2
-'test = value\n'
-[2025-08-06 16:11:13] [ERROR] [ERROR] Failed to get system time | error=File contains no section headers.
-file: 'C:\\Users\\Th3Count\\WaterMe!\\backend\\config\\settings.cfg', line: 2
-'test = value\n'
-[2025-08-06 16:11:14] [ERROR] [ERROR] Failed to get system time | error=File contains no section headers.
-file: 'C:\\Users\\Th3Count\\WaterMe!\\backend\\config\\settings.cfg', line: 2
-'test = value\n'
-[2025-08-06 16:11:15] [ERROR] [ERROR] Failed to get system time | error=File contains no section headers.
-file: 'C:\\Users\\Th3Count\\WaterMe!\\backend\\config\\settings.cfg', line: 2
-'test = value\n'
-[2025-08-06 16:11:16] [ERROR] [ERROR] Failed to get system time | error=File contains no section headers.
-file: 'C:\\Users\\Th3Count\\WaterMe!\\backend\\config\\settings.cfg', line: 2
-'test = value\n'
-[2025-08-06 16:11:17] [ERROR] [ERROR] Failed to get system time | error=File contains no section headers.
-file: 'C:\\Users\\Th3Count\\WaterMe!\\backend\\config\\settings.cfg', line: 2
-'test = value\n'
+[2025-08-06 17:10:51] [ERROR] [ERROR] Error creating backup: name 'tz' is not defined
+[2025-08-06 17:10:51] [ERROR] [ERROR] Error creating backup: name 'tz' is not defined
+[2025-08-06 17:12:31] [ERROR] [ERROR] Error creating backup: name 'tz' is not defined
+[2025-08-06 17:12:31] [ERROR] [ERROR] Error creating backup: name 'tz' is not defined
+[2025-08-06 17:13:19] [ERROR] [ERROR] Error creating backup: name 'tz' is not defined
+[2025-08-06 17:13:19] [ERROR] [ERROR] Error creating backup: name 'tz' is not defined
+[2025-08-06 17:13:47] [ERROR] [ERROR] Error creating backup: name 'tz' is not defined
+[2025-08-06 17:13:47] [ERROR] [ERROR] Error creating backup: name 'tz' is not defined
+[2025-08-06 17:14:43] [ERROR] [ERROR] Error creating backup: name 'sys' is not defined
+[2025-08-06 17:14:43] [ERROR] [ERROR] Error creating backup: name 'sys' is not defined

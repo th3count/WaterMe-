@@ -2161,13 +2161,20 @@ def create_backup():
                     shutil.copy2(source_path, full_backup_path)
             
             # Create metadata file
+            try:
+                settings = load_ini_settings()
+                timezone = settings.get('timezone', 'UTC')
+                tz = pytz.timezone(timezone)
+            except:
+                tz = pytz.UTC
+                
             metadata = {
                 'backup_date': datetime.now(tz).isoformat(),
                 'version': '1.0.0',
                 'files_backed_up': list(backup_files.keys()),
                 'system_info': {
                     'platform': os.name,
-                    'python_version': os.sys.version
+                    'python_version': '3.x'
                 }
             }
             
@@ -2263,21 +2270,41 @@ def restore_backup(backup_data):
 def create_backup_endpoint():
     """Create a backup of all configuration and data"""
     try:
+        print("DEBUG: Backup endpoint called")
         backup_data = create_backup()
+        print(f"DEBUG: Backup data created, size: {len(backup_data)} bytes")
         
         # Generate filename with timestamp
+        try:
+            print("DEBUG: Loading settings for timezone")
+            settings = load_ini_settings()
+            timezone = settings.get('timezone', 'UTC')
+            print(f"DEBUG: Using timezone: {timezone}")
+            tz = pytz.timezone(timezone)
+        except Exception as tz_error:
+            print(f"DEBUG: Error loading timezone, using UTC: {tz_error}")
+            tz = pytz.UTC
+        
         timestamp = datetime.now(tz).strftime('%Y%m%d_%H%M%S')
         filename = f'waterme_backup_{timestamp}.zip'
+        print(f"DEBUG: Generated filename: {filename}")
         
+        print("DEBUG: Logging backup event")
         log_event(system_logger, 'INFO', 'System backup created', backup_file=filename)
         
-        return send_file(
+        print("DEBUG: Creating send_file response")
+        response = send_file(
             io.BytesIO(backup_data),
             mimetype='application/zip',
             as_attachment=True,
             download_name=filename
         )
+        print("DEBUG: Response created successfully")
+        return response
     except Exception as e:
+        print(f"DEBUG: Error in backup endpoint: {e}")
+        import traceback
+        traceback.print_exc()
         error_logger.error(f"Error creating backup: {e}")
         return jsonify({'error': 'Failed to create backup'}), 500
 

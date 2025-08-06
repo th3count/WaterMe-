@@ -34,7 +34,7 @@ interface GpioConfig {
 }
 
 interface BackupInfo {
-  files: { [key: string]: any };
+  directories: { [key: string]: any };
   total_size_mb: number;
   backup_version: string;
 }
@@ -1502,7 +1502,7 @@ export default function Settings() {
                 }}>
                   <div>Total backup size: {backupInfo.total_size_mb} MB</div>
                   <div>Backup version: {backupInfo.backup_version}</div>
-                  <div>Files to backup: {Object.keys(backupInfo.files).filter(f => backupInfo.files[f].exists).length}</div>
+                  <div>Directories to backup: {Object.keys(backupInfo.directories || {}).filter(d => backupInfo.directories[d].exists).length}</div>
                 </div>
               </div>
             )}
