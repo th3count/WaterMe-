@@ -191,10 +191,13 @@ export default function Settings() {
       setSaving(true);
       setError('');
       setSuccess('');
-      // Convert channels to pins array
-      const pins = Object.keys(gpioConfig.channels || {})
-        .sort((a, b) => parseInt(a) - parseInt(b))
-        .map(key => gpioConfig.channels?.[key]);
+      // Convert channels to pins array, ensuring it matches zoneCount
+      const zoneCount = gpioConfig.zoneCount ?? 8;
+      const pins = [];
+      for (let i = 1; i <= zoneCount; i++) {
+        const pin = gpioConfig.channels?.[i.toString()] || 0;
+        pins.push(pin);
+      }
       const payload = {
         pins,
         zoneCount: gpioConfig.zoneCount ?? 8,
@@ -1242,7 +1245,11 @@ export default function Settings() {
                 </label>
                 <select
                   value={gpioConfig.zoneCount}
-                  onChange={(e) => setGpioConfig({...gpioConfig, zoneCount: parseInt(e.target.value) || 8})}
+                  onChange={(e) => {
+                    const newZoneCount = parseInt(e.target.value) || 8;
+                    const newPumpIndex = gpioConfig.pumpIndex && gpioConfig.pumpIndex > newZoneCount ? newZoneCount : gpioConfig.pumpIndex;
+                    setGpioConfig({...gpioConfig, zoneCount: newZoneCount, pumpIndex: newPumpIndex});
+                  }}
                   style={{
                     width: '100%',
                     background: '#2d3748',

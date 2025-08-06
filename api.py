@@ -266,15 +266,18 @@ def validate_gpio_config(config):
     if not isinstance(pins, list) or len(pins) != zone_count:
         errors.append('Pin count must match zone count')
     
-    # Check for unique pins
-    if len(set(pins)) != len(pins):
-        errors.append('Each zone must use a unique GPIO pin')
+    # Check for unique pins (excluding 0 for unconfigured zones)
+    configured_pins = [pin for pin in pins if pin != 0]
+    if len(set(configured_pins)) != len(configured_pins):
+        errors.append('Each configured zone must use a unique GPIO pin')
     
     # Validate pin numbers
     valid_pins = list(range(2, 28))  # GPIO 2-27
     for i, pin in enumerate(pins):
-        if not isinstance(pin, int) or pin not in valid_pins:
-            errors.append(f'Zone {i+1}: Invalid GPIO pin {pin} (must be 2-27)')
+        if not isinstance(pin, int):
+            errors.append(f'Zone {i+1}: Pin must be a number')
+        elif pin != 0 and pin not in valid_pins:
+            errors.append(f'Zone {i+1}: Invalid GPIO pin {pin} (must be 2-27 or 0 for unconfigured)')
     
     # Pump index validation
     pump_index = config.get('pumpIndex', 0)
@@ -583,18 +586,10 @@ def load_ini_settings():
                     'mode': garden.get('mode', 'manual'),
                     'timezone': garden.get('timezone', 'UTC'),
                     'timer_multiplier': garden.getfloat('timer_multiplier', 1.0),
-                    'smart_features_enabled': garden.getboolean('smart_features_enabled', False),
                     'simulate': garden.getboolean('simulate', False)
                 })
             
-            # Load Well_Water section
-            if 'Well_Water' in config:
-                well = config['Well_Water']
-                settings.update({
-                    'max_flow_rate_gph': well.getint('max_flow_rate_gph', 0),
-                    'reservoir_size_gallons': well.getint('reservoir_size_gallons', 0),
-                    'recharge_time_minutes': well.getint('recharge_time_minutes', 0)
-                })
+
                 
         except Exception as e:
             print(f"Error loading INI settings: {e}")
@@ -609,11 +604,7 @@ def load_ini_settings():
                 'mode': 'manual',
                 'timezone': 'America/Regina',
                 'timer_multiplier': 1.0,
-                'smart_features_enabled': False,
-                'simulate': False,
-                'max_flow_rate_gph': 0,
-                'reservoir_size_gallons': 0,
-                'recharge_time_minutes': 0
+                'simulate': False
             }
     
     return settings
@@ -637,13 +628,7 @@ def save_ini_settings(settings_data):
                 'mode': str(settings_data.get('mode', 'manual')),
                 'timezone': str(settings_data.get('timezone', 'UTC')),
                 'timer_multiplier': str(settings_data.get('timer_multiplier', 1.0)),
-                'smart_features_enabled': str(settings_data.get('smart_features_enabled', False)),
                 'simulate': str(settings_data.get('simulate', False))
-            },
-            'Well_Water': {
-                'max_flow_rate_gph': str(settings_data.get('max_flow_rate_gph', 0)),
-                'reservoir_size_gallons': str(settings_data.get('reservoir_size_gallons', 0)),
-                'recharge_time_minutes': str(settings_data.get('recharge_time_minutes', 0))
             }
         }
         
@@ -686,29 +671,10 @@ def save_ini_settings(settings_data):
                 "# 1.0 = normal watering, 2.0 = double water, 0.5 = half water\n",
                 "timer_multiplier = 1.0\n",
                 "\n",
-                "# Smart Features\n",
-                "# Enable intelligent plant placement and zone optimization\n",
-                "smart_features_enabled = false\n",
-                "\n",
+
                 "# Simulation Mode\n",
                 "# Enable mock GPIO for development/testing (no real relays)\n",
-                "simulate = false\n",
-                "\n",
-                "# Well Water Management Settings (Future Feature)\n",
-                "# These settings will help manage water flow for well systems\n",
-                "# by limiting total GPH usage and tracking reservoir capacity\n",
-                "[Well_Water]\n",
-                "# Maximum gallons per hour your well can safely provide\n",
-                "# 0 = disabled (no limit)\n",
-                "max_flow_rate_gph = 0\n",
-                "\n",
-                "# Capacity of your water storage tank in gallons\n",
-                "# 0 = disabled (no reservoir tracking)\n",
-                "reservoir_size_gallons = 0\n",
-                "\n",
-                "# Time needed for reservoir to refill after depletion (minutes)\n",
-                "# 0 = disabled (no recharge time tracking)\n",
-                "recharge_time_minutes = 0\n"
+                "simulate = false\n"
             ]
         
         for line in lines:
@@ -1002,6 +968,7 @@ def save_gpio():
     # Validate the data
     errors = validate_gpio_config(data)
     if errors:
+        print(f"GPIO validation errors: {errors}")
         log_event(system_logger, 'WARN', f'GPIO config save failed - validation errors', errors=errors)
         return jsonify({'status': 'error', 'message': 'Validation failed', 'details': errors}), 400
     

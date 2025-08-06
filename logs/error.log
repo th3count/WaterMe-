@@ -1,2 +1,30 @@
-[2025-08-04 23:11:05] [ERROR] [ERROR] Direct GPIO test exception | zone_id=2 error=name 'logger' is not defined
-[2025-08-04 23:11:08] [ERROR] [error] Failed to stop expired zone | zone_id=2
+[2025-08-06 16:11:08] [ERROR] [ERROR] Failed to get system time | error=File contains no section headers.
+file: 'C:\\Users\\Th3Count\\WaterMe!\\backend\\config\\settings.cfg', line: 2
+'test = value\n'
+[2025-08-06 16:11:09] [ERROR] [ERROR] Failed to get system time | error=File contains no section headers.
+file: 'C:\\Users\\Th3Count\\WaterMe!\\backend\\config\\settings.cfg', line: 2
+'test = value\n'
+[2025-08-06 16:11:10] [ERROR] [ERROR] Failed to get system time | error=File contains no section headers.
+file: 'C:\\Users\\Th3Count\\WaterMe!\\backend\\config\\settings.cfg', line: 2
+'test = value\n'
+[2025-08-06 16:11:11] [ERROR] [ERROR] Failed to get system time | error=File contains no section headers.
+file: 'C:\\Users\\Th3Count\\WaterMe!\\backend\\config\\settings.cfg', line: 2
+'test = value\n'
+[2025-08-06 16:11:12] [ERROR] [ERROR] Failed to get system time | error=File contains no section headers.
+file: 'C:\\Users\\Th3Count\\WaterMe!\\backend\\config\\settings.cfg', line: 2
+'test = value\n'
+[2025-08-06 16:11:13] [ERROR] [ERROR] Failed to get system time | error=File contains no section headers.
+file: 'C:\\Users\\Th3Count\\WaterMe!\\backend\\config\\settings.cfg', line: 2
+'test = value\n'
+[2025-08-06 16:11:14] [ERROR] [ERROR] Failed to get system time | error=File contains no section headers.
+file: 'C:\\Users\\Th3Count\\WaterMe!\\backend\\config\\settings.cfg', line: 2
+'test = value\n'
+[2025-08-06 16:11:15] [ERROR] [ERROR] Failed to get system time | error=File contains no section headers.
+file: 'C:\\Users\\Th3Count\\WaterMe!\\backend\\config\\settings.cfg', line: 2
+'test = value\n'
+[2025-08-06 16:11:16] [ERROR] [ERROR] Failed to get system time | error=File contains no section headers.
+file: 'C:\\Users\\Th3Count\\WaterMe!\\backend\\config\\settings.cfg', line: 2
+'test = value\n'
+[2025-08-06 16:11:17] [ERROR] [ERROR] Failed to get system time | error=File contains no section headers.
+file: 'C:\\Users\\Th3Count\\WaterMe!\\backend\\config\\settings.cfg', line: 2
+'test = value\n'

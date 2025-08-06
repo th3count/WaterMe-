@@ -150,6 +150,10 @@
 **Focus: Advanced Raspberry Pi hardware integration and enhanced UI features**
 - [ ] Advanced GPIO diagnostics and hardware monitoring
 - [ ] Hardware health monitoring (voltage, temperature, etc.)
+- [ ] **Well Water Management System**: Flow rate monitoring, reservoir capacity tracking, and recharge time management
+- [ ] **Low Flow Rate Support**: Intelligent scheduling for well systems with limited water flow capacity
+- [ ] **Water Usage Analytics**: Track and optimize water consumption across all zones
+- [ ] **Flow Rate Limiting**: Prevent exceeding well capacity by managing simultaneous zone operations
 - [ ] UI: Change system time functionality
 - [ ] UI: WiFi setup and configuration
 - [ ] System admin panel for device/network management
