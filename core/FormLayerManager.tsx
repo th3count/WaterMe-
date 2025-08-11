@@ -103,7 +103,9 @@ export const FormLayerProvider: React.FC<FormLayerProviderProps> = ({ children }
           }}
         >
           {(() => {
+            console.log('🔵 FormLayerManager rendering layers:', layers.map(l => ({id: l.id, type: l.type, isActive: l.isActive})));
             const topLayer = layers[layers.length - 1];
+            console.log('🔵 Rendering top layer:', topLayer.id);
             const Component = topLayer.component;
             return <Component {...topLayer.props} />;
           })()}

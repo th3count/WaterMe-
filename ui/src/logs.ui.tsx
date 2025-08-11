@@ -141,33 +141,7 @@ export default function Logs() {
     }
   };
 
-  // Download log file
-  const downloadLogFile = async (filename: string) => {
-    try {
-      if (filename === 'all.log') {
-        setError('Cannot download combined logs. Please select a specific log file.');
-        return;
-      }
-      
-      const response = await fetch(`${getApiBaseUrl()}/api/logs/download/${filename}`);
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      } else {
-        setError('Failed to download log file');
-      }
-    } catch (err) {
-      setError('Error downloading log file');
-      console.error('Error downloading log file:', err);
-    }
-  };
+
 
   // Clear old logs
   const clearOldLogs = async (days: number = 30) => {
@@ -318,25 +292,7 @@ export default function Logs() {
               >
                 Refresh
               </button>
-              <button
-                onClick={() => downloadLogFile(selectedFile)}
-                style={{
-                  background: '#28a745',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  padding: '8px 16px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  minWidth: 80,
-                  marginLeft: 4,
-                  transition: 'background 0.2s'
-                }}
-                onMouseOver={e => (e.currentTarget.style.background = '#218838')}
-                onMouseOut={e => (e.currentTarget.style.background = '#28a745')}
-              >
-                Download
-              </button>
+
               <button
                 onClick={() => clearOldLogs(30)}
                 style={{

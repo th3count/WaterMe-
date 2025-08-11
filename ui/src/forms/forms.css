@@ -926,6 +926,32 @@
   cursor: not-allowed;
 }
 
+/* Centered select for time pickers - aggressive centering approach */
+.form-select--centered {
+  text-align: center !important;
+  text-align-last: center !important;
+  text-indent: 0 !important;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300bcd4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 12px;
+  padding: 8px 28px 8px 12px !important;
+  direction: ltr;
+  font-family: monospace;
+}
+
+/* Alternative approach: Use transform to center text visually */
+.form-select--time-centered {
+  text-align: center;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+  font-family: monospace;
+  letter-spacing: 1px;
+}
+
 /* Action Buttons */
 .form-actions {
   display: flex;
@@ -1779,6 +1805,21 @@
 .form-time-picker--compact .form-flex.form-gap-4.form-justify-center {
   justify-content: center;
   align-items: center;
+}
+
+/* Ensure centering also applies when using gap-8 in compact time picker */
+.form-time-picker--compact .form-flex.form-gap-8.form-justify-center {
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* Generic full-width centering row for picker content */
+.form-center-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
 }
 
 /* Use existing done button styling for time picker buttons */

@@ -1,0 +1,9 @@
+[2025-08-09 20:29:34] [INFO] [LOCATIONS] Locations saved | location_count=2
+[2025-08-09 20:39:30] [INFO] [LOCATIONS] Locations saved | location_count=3
+[2025-08-09 20:41:29] [INFO] [LOCATIONS] Locations saved | location_count=4
+[2025-08-09 20:42:11] [INFO] [LOCATIONS] Locations saved | location_count=3
+[2025-08-09 20:42:14] [INFO] [LOCATIONS] Locations saved | location_count=2
+[2025-08-09 20:45:38] [INFO] [LOCATIONS] Locations saved | location_count=1
+[2025-08-09 20:45:40] [WARNING] [LOCATIONS] Locations save failed - invalid data
+[2025-08-09 20:45:43] [WARNING] [LOCATIONS] Locations save failed - invalid data
+[2025-08-09 20:45:46] [WARNING] [LOCATIONS] Locations save failed - invalid data

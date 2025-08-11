@@ -278,7 +278,7 @@ export default function Settings() {
 
       if (response.ok) {
         const result = await response.json();
-        setSuccess(`Backup restored successfully! ${result.restored_files.length} files restored.`);
+        setSuccess(`Backup restored successfully! ${result.restored_directories.length} directories restored.`);
         setSelectedFile(null);
         // Reload settings after restore
         setTimeout(() => loadSettings(), 1000);

@@ -1,5 +1,121 @@
+/**
+ * 🔗 SYSTEM DOCUMENTATION: See /rules/ directory for comprehensive guides
+ * 📖 Primary Reference: /rules/form-system.md
+ * 🏗️ Architecture: /rules/project-structure.md
+ * 
+ * COMPONENT PURPOSE
+ * =================
+ * Time picker component for selecting solar times or clock times.
+ * Designed as a small picker item that integrates with the layer system.
+ */
+
 import React, { useState, useRef, useEffect } from 'react';
 import './forms.css';
+
+// Custom dropdown component for centered text
+interface CustomSelectProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+  width?: string;
+  label?: string;
+}
+
+const CustomSelect: React.FC<CustomSelectProps> = ({ value, onChange, options, width = '80px', label }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={dropdownRef} style={{ position: 'relative', width }}>
+      <div
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          width: '100%',
+          height: '36px',
+          background: 'var(--form-bg-primary)',
+          border: '1px solid var(--form-border-primary)',
+          borderRadius: '6px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          fontSize: '14px',
+          color: 'var(--form-text-primary)',
+          fontFamily: 'monospace',
+          fontWeight: 'bold'
+        }}
+      >
+        {value}
+        <span style={{ 
+          position: 'absolute', 
+          right: '8px',
+          fontSize: '12px',
+          color: '#00bcd4'
+        }}>▼</span>
+      </div>
+      
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          right: 0,
+          background: 'var(--form-bg-primary)',
+          border: '1px solid var(--form-border-primary)',
+          borderRadius: '6px',
+          maxHeight: '200px',
+          overflowY: 'auto',
+          zIndex: 10000,
+          marginTop: '2px'
+        }}>
+          {options.map((option) => (
+            <div
+              key={option}
+              onClick={() => {
+                onChange(option);
+                setIsOpen(false);
+              }}
+              style={{
+                padding: '8px 12px',
+                cursor: 'pointer',
+                textAlign: 'center',
+                fontSize: '14px',
+                color: 'var(--form-text-primary)',
+                fontFamily: 'monospace',
+                fontWeight: 'bold',
+                background: option === value ? 'var(--form-text-accent)' : 'transparent',
+                color: option === value ? '#000' : 'var(--form-text-primary)'
+              }}
+              onMouseEnter={(e) => {
+                if (option !== value) {
+                  e.currentTarget.style.background = 'var(--form-hover-bg)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (option !== value) {
+                  e.currentTarget.style.background = 'transparent';
+                }
+              }}
+            >
+              {option}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface TimePickerProps {
   isVisible: boolean;
@@ -16,6 +132,7 @@ const TimePicker: React.FC<TimePickerProps> = ({
   initialSolarMode = true,
   isModal = false
 }) => {
+  console.log('🔵 TimePicker rendered with props:', { isVisible, initialSolarMode, isModal });
   const [solarMode, setSolarMode] = useState(initialSolarMode);
   const [selectedSolarTime, setSelectedSolarTime] = useState<string | null>(null);
   const [selectedHour, setSelectedHour] = useState('06');
@@ -68,31 +185,37 @@ const TimePicker: React.FC<TimePickerProps> = ({
     onCancel();
   };
 
-  if (!isVisible) return null;
+  if (!isVisible) {
+    console.log('🔵 TimePicker returning null because isVisible is false');
+    return null;
+  }
+  console.log('🔵 TimePicker rendering UI because isVisible is true');
+
+  // Choose the appropriate container class based on context
+  // Always use form-container for layer system rendering
+  const containerClass = "form-container form-container--small";
 
   return (
     <div 
       ref={timePickerRef} 
-      className={`form-time-picker-modal form-time-picker--compact ${isModal ? 'form-time-picker--modal' : ''}`}
-      style={isModal ? {
-        position: 'static',
-        top: 'auto',
-        left: 'auto',
-        zIndex: 'auto',
-        width: '100%',
-        maxWidth: 'none'
-      } : {}}
+      className={containerClass}
+      style={{
+        minWidth: '320px',
+        maxWidth: '400px',
+        minHeight: '300px',
+        overflow: 'visible'
+      }}
     >
       {solarMode ? (
         <>
           {/* Solar Time Selection Header */}
           <div className="form-flex form-gap-12 form-justify-between form-items-center form-mb-12">
-            <p className="form-section-title">
+            <p className="unified-section-title">
               Select Solar Time
             </p>
             <div className="form-flex form-gap-8 form-items-center">
               <div
-                className={`form-toggle ${solarMode ? 'form-toggle--solar' : ''}`}
+                className={`unified-toggle-slider ${solarMode ? 'form-toggle--solar' : ''}`}
                 onClick={() => {
                   setSolarMode(!solarMode);
                   setSelectedSolarTime(null);
@@ -156,7 +279,7 @@ const TimePicker: React.FC<TimePickerProps> = ({
 
                 {/* Custom Offset Input */}
                 <div className="form-data-field">
-                  <label className="form-section-title">Custom Offset (minutes)</label>
+                  <label className="unified-section-title">Custom Offset (minutes)</label>
                   <input
                     type="number"
                     placeholder="±120"
@@ -206,12 +329,12 @@ const TimePicker: React.FC<TimePickerProps> = ({
         <>
           {/* Clock Time Selection Header */}
           <div className="form-flex form-gap-12 form-justify-between form-items-center form-mb-12">
-            <p className="form-section-title">
+            <p className="unified-section-title">
               Clock Time
             </p>
             <div className="form-flex form-gap-8 form-items-center">
               <div
-                className={`form-toggle ${solarMode ? 'form-toggle--solar' : ''}`}
+                className={`unified-toggle-slider ${solarMode ? 'form-toggle--solar' : ''}`}
                 onClick={() => {
                   setSolarMode(!solarMode);
                   setSelectedSolarTime(null);
@@ -225,24 +348,18 @@ const TimePicker: React.FC<TimePickerProps> = ({
             </div>
           </div>
           
-          <div className="form-flex form-gap-4 form-justify-center">
+          <div className="form-center-row form-gap-8">
             {/* Hours */}
             <div className="form-flex form-flex-column form-items-center form-gap-2">
               <div className="form-text-muted form-font-600 form-text-12">
                 Hour
               </div>
-              <select
+              <CustomSelect
                 value={selectedHour}
-                onChange={(e) => setSelectedHour(e.target.value)}
-                className="form-select"
-                style={{ width: '80px' }}
-              >
-                {Array.from({ length: 24 }, (_, i) => (
-                  <option key={i} value={i.toString().padStart(2, '0')}>
-                    {i.toString().padStart(2, '0')}
-                  </option>
-                ))}
-              </select>
+                onChange={setSelectedHour}
+                options={Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'))}
+                width="80px"
+              />
             </div>
 
             {/* Minutes */}
@@ -250,18 +367,12 @@ const TimePicker: React.FC<TimePickerProps> = ({
               <div className="form-text-muted form-font-600 form-text-12">
                 Minute
               </div>
-              <select
+              <CustomSelect
                 value={selectedMinute}
-                onChange={(e) => setSelectedMinute(e.target.value)}
-                className="form-select"
-                style={{ width: '80px' }}
-              >
-                {Array.from({ length: 60 }, (_, i) => (
-                  <option key={i} value={i.toString().padStart(2, '0')}>
-                    {i.toString().padStart(2, '0')}
-                  </option>
-                ))}
-              </select>
+                onChange={setSelectedMinute}
+                options={Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'))}
+                width="80px"
+              />
             </div>
           </div>
 

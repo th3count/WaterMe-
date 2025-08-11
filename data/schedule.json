@@ -5,15 +5,25 @@
     "cycles": 1,
     "times": [
       {
-        "start_time": "06:51",
-        "duration": "00:18:01"
+        "start_time": "06:00",
+        "duration": "00:20:00"
       }
     ],
-    "startDay": "2025-08-06",
+    "startDay": "2025-08-12",
     "comment": ""
   },
   "2": {
-    "mode": "disabled"
+    "mode": "smart",
+    "period": "W",
+    "cycles": 1,
+    "times": [
+      {
+        "start_time": "07:02",
+        "duration": "00:16:49"
+      }
+    ],
+    "startDay": "2025-08-12",
+    "comment": ""
   },
   "3": {
     "mode": "disabled"

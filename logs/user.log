@@ -1,1 +1,18 @@
 [2025-08-06 17:10:47] [INFO] [USER] All logs cleared manually - 8 files affected
+[2025-08-06 19:15:41] [INFO] [user] Shutdown stop executed | zones_stopped=0
+[2025-08-06 19:15:41] [INFO] [user] Shutdown stop executed | zones_stopped=0
+[2025-08-09 20:26:52] [INFO] [USER] Manual timer started | zone_id=1 duration=1200
+[2025-08-09 20:29:13] [INFO] [user] Zone updated and caches reloaded | zone_id=2 mode=smart period=W times_count=1
+[2025-08-09 20:29:15] [INFO] [user] Zone updated and caches reloaded | zone_id=2 mode=smart period=W times_count=1
+[2025-08-09 20:40:02] [INFO] [USER] Manual timer stopped | zone_id=1
+[2025-08-09 20:40:28] [INFO] [user] Zone updated and caches reloaded | zone_id=3 mode=smart period=W times_count=1
+[2025-08-09 20:40:30] [INFO] [user] Zone updated and caches reloaded | zone_id=3 mode=smart period=W times_count=1
+[2025-08-09 20:40:43] [INFO] [user] Zone updated and caches reloaded | zone_id=4 mode=smart period=W times_count=1
+[2025-08-09 20:40:45] [INFO] [user] Zone updated and caches reloaded | zone_id=4 mode=smart period=W times_count=1
+[2025-08-11 14:13:21] [INFO] [user] Zone updated and caches reloaded | zone_id=4 mode=disabled period=W times_count=1
+[2025-08-11 14:13:26] [INFO] [user] Zone updated and caches reloaded | zone_id=3 mode=disabled period=W times_count=1
+[2025-08-11 14:13:34] [INFO] [user] Zone updated and caches reloaded | zone_id=2 mode=disabled period=W times_count=1
+[2025-08-11 14:13:38] [INFO] [user] Zone updated and caches reloaded | zone_id=1 mode=disabled period=D times_count=1
+[2025-08-11 14:13:45] [INFO] [user] Zone updated and caches reloaded | zone_id=1 mode=smart period=D times_count=1
+[2025-08-11 14:48:08] [INFO] [user] Zone updated and caches reloaded | zone_id=2 mode=smart period=W times_count=1
+[2025-08-11 14:48:10] [INFO] [user] Zone updated and caches reloaded | zone_id=2 mode=smart period=W times_count=1

@@ -13,9 +13,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import type { Zone, FormProps } from './types';
-import { formatDuration, defaultTime, getTomorrow, getFormLayerStyle, getFormOverlayClassName, useClickOutside } from './utils';
+import { formatDuration, defaultTime, getTomorrow, useClickOutside } from './utils';
 import { getApiBaseUrl } from '../utils';
 import { useFormLayer } from '../../../core/useFormLayer';
+import TimePicker from './timepicker.item';
+import DurationPicker from './durationpicker.item';
 import './forms.css';
 
 interface ZoneFormProps extends FormProps {
@@ -34,6 +36,15 @@ const PERIODS = [
   { code: 'M', label: 'Monthly', maxCycles: 3, disabled: false }
 ];
 
+// Module-level flag to persist across component remounts
+let globalHasAppliedGardenSettings = false;
+
+// Module-level variable to persist user's mode selection across remounts
+let globalUserModeSelection: string | null = null;
+
+// Module-level variable to persist user's time selections across remounts
+let globalUserTimeSelections: { [key: number]: { start_time?: string; duration?: string } } = {};
+
 export default function ZoneForm({ 
   initialData, 
   zone_id, // Add zone_id parameter
@@ -48,11 +59,10 @@ export default function ZoneForm({
   // onLayerChange removed as unused
   // isAutoCreate = false // removed as unused
 }: ZoneFormProps) {
+  console.log('🔵 ZoneForm component props:', { initialData, zone_id, isTopLayer });
   const FORM_ID = 'zone-form';
   const formRef = useRef<HTMLDivElement>(null);
-  const timePickerRef = useRef<HTMLDivElement>(null);
-  const durationPickerRef = useRef<HTMLDivElement>(null);
-  const { addLayer, removeLayer, isAnyFormAbove } = useFormLayer();
+  const { addLayer, removeLayer } = useFormLayer();
   
   // Function to parse watering frequency from plant data
   const parseWateringFrequency = (frequency: string): { period: string; cycles: number } => {
@@ -102,26 +112,68 @@ export default function ZoneForm({
     return 'manual'; // Default fallback
   };
 
-  const [zoneData, setZoneData] = useState<Partial<Zone>>({
-    zone_id: zone_id || 1, // Use zone_id prop if provided
-    mode: 'active', // Default to active/enabled mode
-    period: 'D',
-    cycles: 1,
-    times: [defaultTime()],
-    startDay: getTomorrow(),
-    comment: '',
-    ...initialData
+  const [zoneData, setZoneData] = useState<Partial<Zone>>(() => {
+    console.log('🔵 zoneData useState initialization. initialData:', initialData);
+    
+    // Initialize with proper priority: schedule.json mode >> settings.cfg mode
+    const baseData = {
+      zone_id: zone_id || 1,
+      mode: 'manual', // Will be set by garden settings effect if no existing mode
+      period: 'D',
+      cycles: 1,
+      times: [defaultTime()],
+      startDay: getTomorrow(),
+      comment: '',
+      ...initialData
+    };
+    
+    // Apply user's persisted time selections if they exist
+    if (Object.keys(globalUserTimeSelections).length > 0) {
+      baseData.times = baseData.times.map((time, index) => ({
+        ...time,
+        ...globalUserTimeSelections[index]
+      }));
+      console.log('🔵 Applied globalUserTimeSelections:', globalUserTimeSelections);
+    }
+    
+    // Check for user's manual selection first (highest priority)
+    if (globalUserModeSelection && ['smart', 'manual', 'disabled'].includes(globalUserModeSelection)) {
+      baseData.mode = globalUserModeSelection;
+      console.log('🔵 Using globalUserModeSelection:', globalUserModeSelection);
+    }
+    // Then check for scheduleMode (from zones.ui.tsx transformation)
+    else if (initialData?.scheduleMode && ['smart', 'manual', 'disabled'].includes(initialData.scheduleMode)) {
+      baseData.mode = initialData.scheduleMode;
+      console.log('🔵 Using initialData.scheduleMode:', initialData.scheduleMode);
+    }
+    // Then check for direct mode (fallback)
+    else if (initialData?.mode && ['smart', 'manual', 'disabled'].includes(initialData.mode)) {
+      baseData.mode = initialData.mode;
+      console.log('🔵 Using initialData.mode:', initialData.mode);
+    } else {
+      console.log('🔵 No valid initialData mode, using default:', baseData.mode);
+    }
+    
+    console.log('🔵 Final zoneData initialization:', baseData);
+    return baseData;
   });
 
-  // Track zone status separately from schedule mode for auto-create scenarios
-  const [zoneStatus, setZoneStatus] = useState<'active' | 'disabled'>(
-    initialData?.mode === 'disabled' ? 'disabled' : 'active'
-  );
+  // Track zone status separately from schedule mode
+  // Zone status is about whether the zone is enabled/disabled
+  // Schedule mode is about smart/manual when enabled
+  const [zoneStatus, setZoneStatus] = useState<'active' | 'disabled'>(() => {
+    // If the zone mode is 'disabled', then zone status is disabled
+    // If the zone mode is 'smart' or 'manual', then zone status is active
+    // If no mode exists (new zone), default to active
+    if (initialData?.mode === 'disabled') {
+      return 'disabled';
+    }
+    return 'active';
+  });
 
-  const [showTimePicker, setShowTimePicker] = useState<number | null>(null);
-  const [showDurationPicker, setShowDurationPicker] = useState<number | null>(null);
-  const [solarMode, setSolarMode] = useState(false);
-  const [selectedSolarTime, setSelectedSolarTime] = useState<string | null>(null);
+  // Layer system state for pickers
+  const [activeTimePicker, setActiveTimePicker] = useState<number | null>(null);
+  const [activeDurationPicker, setActiveDurationPicker] = useState<number | null>(null);
   // const [solarOffset, setSolarOffset] = useState(0); // removed as unused
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [saveMessage, setSaveMessage] = useState<string>('');
@@ -147,47 +199,60 @@ export default function ZoneForm({
     applyPlantWateringFrequency();
   }, [plant_id, library_book]);
 
-  // Fetch garden settings and set default mode for new zones
+  // Fetch garden settings and set default mode for new zones only
   useEffect(() => {
     const applyGardenSettings = async () => {
-      // Only apply garden settings for zones that are 'active' (new zones)
-      if (zoneData.mode === 'active') {
+      console.log('🟢 Garden settings effect running:', {
+        hasAppliedGardenSettings: globalHasAppliedGardenSettings,
+        initialDataMode: initialData?.mode,
+        currentZoneDataMode: zoneData.mode
+      });
+      
+      // Only apply garden settings once, and only for NEW zones (no existing valid mode from schedule.json)
+      const hasValidExistingMode = (initialData?.scheduleMode && ['smart', 'manual', 'disabled'].includes(initialData.scheduleMode)) ||
+                                   (initialData?.mode && ['smart', 'manual', 'disabled'].includes(initialData.mode));
+      
+      if (!globalHasAppliedGardenSettings && !hasValidExistingMode) {
         const defaultMode = await fetchGardenSettings();
-        console.log('Setting default mode from garden settings:', defaultMode);
-        setZoneData(prev => ({
-          ...prev,
-          mode: defaultMode
-        }));
+        console.log('🟢 Setting default mode from garden settings for NEW zone:', defaultMode);
+        setZoneData(prev => {
+          console.log('🟢 setZoneData called by garden settings. Previous mode:', prev.mode, 'New mode:', defaultMode);
+          return {
+            ...prev,
+            mode: defaultMode
+          };
+        });
+        globalHasAppliedGardenSettings = true;
+        console.log('🟢 Global flag set to true, should not run again');
+      } else if (hasValidExistingMode) {
+        const existingMode = initialData?.scheduleMode || initialData?.mode;
+        console.log('🟢 Zone has existing mode from schedule.json, keeping:', existingMode);
+        globalHasAppliedGardenSettings = true; // Mark as applied to prevent future runs
       } else {
-        console.log('Zone already has mode, keeping existing:', zoneData.mode);
+        console.log('🟢 Zone already processed, skipping. Global flag:', globalHasAppliedGardenSettings);
       }
     };
 
     applyGardenSettings();
-  }, [zoneData.mode]);
+  }, []); // Empty dependency array - only run once on mount
+
+  // Debug effect to track zoneData changes
+  useEffect(() => {
+    console.log('🔵 zones.form re-rendered. Current state:', {
+      zoneDataMode: zoneData.mode,
+      zoneDataTimes: zoneData.times,
+      zoneStatus: zoneStatus
+    });
+  }); // No dependency array to log on every re-render for debugging
 
   // Handle click outside to close
   useClickOutside(formRef, () => {
+    globalUserModeSelection = null; // Clear user mode selection
+    globalUserTimeSelections = {}; // Clear user time selections
     if (onCancel) {
       onCancel();
     }
-  }, !isAnyFormAbove()); // Only enable when this is the top layer
-
-  // Handle click outside time picker to close
-  useClickOutside(timePickerRef, () => {
-    if (showTimePicker !== null) {
-      setShowTimePicker(null);
-      setSelectedSolarTime(null);
-      setSolarMode(false);
-    }
-  }, showTimePicker !== null);
-
-  // Handle click outside duration picker to close
-  useClickOutside(durationPickerRef, () => {
-    if (showDurationPicker !== null) {
-      setShowDurationPicker(null);
-    }
-  }, showDurationPicker !== null);
+  }, true); // Always enable for form-level click outside
 
   const calculateSmartDuration = async (zoneId: number) => {
     try {
@@ -220,8 +285,6 @@ export default function ZoneForm({
       }
       
       // Remove UI-specific fields that shouldn't be saved
-      delete zoneToSave.showDurationPicker;
-      delete zoneToSave.showTimePicker;
       delete zoneToSave.originalIndex;
       
       console.log('Zone form sending directly to scheduler:', zoneToSave);
@@ -251,10 +314,12 @@ export default function ZoneForm({
             }
           }
           
-          // Close the form
-          if (onCancel) {
-            onCancel();
-          }
+                                // Clear user selections and close the form
+            globalUserModeSelection = null;
+            globalUserTimeSelections = {};
+            if (onCancel) {
+              onCancel();
+            }
         }, 2000);
       } else {
         const errorData = await response.json().catch(() => ({}));
@@ -335,22 +400,84 @@ export default function ZoneForm({
   };
 
   const updateTimeAtIndex = (timeIdx: number, field: string, value: string) => {
+    console.log('🔵 updateTimeAtIndex called:', { timeIdx, field, value, currentMode: zoneData.mode });
+    
+    // Persist user's time selection across remounts
+    if (!globalUserTimeSelections[timeIdx]) {
+      globalUserTimeSelections[timeIdx] = {};
+    }
+    globalUserTimeSelections[timeIdx][field] = value;
+    console.log('🔵 Saved to globalUserTimeSelections:', globalUserTimeSelections);
+    
     const newTimes = [...(zoneData.times || [])];
     newTimes[timeIdx] = { 
       ...newTimes[timeIdx], 
       [field]: value
     };
-    setZoneData(prev => ({ ...prev, times: newTimes }));
+    setZoneData(prev => {
+      console.log('🔵 setZoneData in updateTimeAtIndex. Previous mode:', prev.mode, 'New times:', newTimes);
+      return { ...prev, times: newTimes };
+    });
+  };
+
+  // Layer system functions for opening pickers
+  const openTimePicker = (timeIdx: number) => {
+    console.log('🔵 openTimePicker called for timeIdx:', timeIdx);
+    setActiveTimePicker(timeIdx);
+    const layerId = `time-picker-${timeIdx}`;
+    console.log('🔵 Adding TimePicker layer:', layerId);
+    addLayer(layerId, 'picker', TimePicker, {
+      isVisible: true,
+      initialSolarMode: true,
+      onTimeSelect: (time: string) => {
+        console.log('🔵 TimePicker onTimeSelect:', time);
+        updateTimeAtIndex(timeIdx, 'start_time', time);
+        removeLayer(layerId);
+        setActiveTimePicker(null);
+      },
+      onCancel: () => {
+        console.log('🔵 TimePicker onCancel');
+        removeLayer(layerId);
+        setActiveTimePicker(null);
+      }
+    });
+  };
+
+  const openDurationPicker = (timeIdx: number) => {
+    console.log('🟡 openDurationPicker called for timeIdx:', timeIdx);
+    setActiveDurationPicker(timeIdx);
+    const layerId = `duration-picker-${timeIdx}`;
+    console.log('🟡 Adding DurationPicker layer:', layerId);
+    addLayer(layerId, 'picker', DurationPicker, {
+      value: zoneData.times[timeIdx]?.duration || '00:20:00',
+      isVisible: true,
+      zone_id: zone_id || 1,
+      onChange: (duration: string) => {
+        console.log('🟡 DurationPicker onChange:', duration);
+        updateTimeAtIndex(timeIdx, 'duration', duration);
+        removeLayer(layerId);
+        setActiveDurationPicker(null);
+      },
+      onClose: () => {
+        console.log('🟡 DurationPicker onClose');
+        removeLayer(layerId);
+        setActiveDurationPicker(null);
+      },
+      onStop: () => {
+        console.log('🟡 DurationPicker onStop');
+        removeLayer(layerId);
+        setActiveDurationPicker(null);
+      }
+    });
   };
 
   const isPumpZone = pumpIndex === (zoneData.zone_id || 1) - 1;
 
   return (
-            <div className={getFormOverlayClassName(isTopLayer)} style={getFormLayerStyle(isTopLayer)}>
-      <div 
-        ref={formRef}
-        className="form-container form-container--small"
-      >
+    <div 
+      ref={formRef}
+      className="form-container form-container--small"
+    >
         {zoneData && (
           <>
             <div className="form-flex form-gap-12 form-justify-between form-items-center form-mb-20">
@@ -493,10 +620,12 @@ export default function ZoneForm({
                         </span>
                         <div 
                           className="form-toggle"
-                          onClick={() => {
-                            const newMode = zoneData.mode === 'manual' ? 'smart' : 'manual';
-                            setZoneData(prev => ({ ...prev, mode: newMode }));
-                          }}
+                                                     onClick={() => {
+                             const newMode = zoneData.mode === 'manual' ? 'smart' : 'manual';
+                             console.log('🔴 User clicked toggle. Changing mode from', zoneData.mode, 'to', newMode);
+                             globalUserModeSelection = newMode; // Persist user's selection
+                             setZoneData(prev => ({ ...prev, mode: newMode }));
+                           }}
                         >
                           <div className={`form-toggle-handle ${zoneData.mode === 'smart' ? 'form-toggle-handle--active' : 'form-toggle-handle--inactive'}`} />
                         </div>
@@ -533,191 +662,10 @@ export default function ZoneForm({
                                 placeholder="Time (HH:MM or SUNRISE/SUNSET)"
                                 value={time.start_time || ''}
                                 onChange={(e) => updateTimeAtIndex(timeIdx, 'start_time', e.target.value)}
-                                onFocus={() => setShowTimePicker(timeIdx)}
+                                onFocus={() => openTimePicker(timeIdx)}
                                 className="form-input form-input--full-width form-font-mono form-cursor-pointer"
+                                readOnly
                               />
-                              
-                                                          {/* Advanced Time Picker Modal */}
-                            {showTimePicker === timeIdx && (
-                              <div ref={timePickerRef} className="form-time-picker-modal">
-                                {/* Solar Time Selection */}
-                                <div className="form-text-accent form-text-center form-font-600 form-mb-8 form-text-14">
-                                  Select Solar Time
-                                </div>
-                                
-                                <div className="form-flex form-gap-4 form-justify-center form-mb-12">
-                                  {['SUNRISE', 'SUNSET', 'ZENITH'].map((solarTime) => (
-                                    <button
-                                      key={solarTime}
-                                      onClick={() => {
-                                        const isCurrentlySelected = selectedSolarTime === solarTime && solarMode;
-                                        if (isCurrentlySelected) {
-                                          // Turn off solar mode
-                                          setSelectedSolarTime(null);
-                                          setSolarMode(false);
-                                        } else {
-                                          // Turn on solar mode and select this time
-                                          setSelectedSolarTime(solarTime);
-                                          setSolarMode(true);
-                                        }
-                                      }}
-                                      className={`form-select-button form-select-button--solar ${selectedSolarTime === solarTime && solarMode ? 'form-select-button--selected' : ''}`}
-                                    >
-                                      <span>{solarTime === 'SUNRISE' ? '🌅' : 
-                                       solarTime === 'SUNSET' ? '🌇' : '☀️'}</span>
-                                      <span>{solarTime}</span>
-                                    </button>
-                                  ))}
-                                </div>
-                                
-                                {/* Offset Options - Only show when solar time is selected */}
-                                {solarMode && selectedSolarTime && (
-                                  <div className="form-flex form-flex-column form-gap-6">
-                                    <div className="form-text-accent form-text-center form-font-600 form-text-12">
-                                      Offset Options
-                                    </div>
-                                    
-                                    {/* Exact Time Button */}
-                                    <button
-                                      onClick={() => {
-                                        updateTimeAtIndex(timeIdx, 'start_time', selectedSolarTime || '');
-                                        setShowTimePicker(null);
-                                        setSelectedSolarTime(null);
-                                        setSolarMode(false);
-                                      }}
-                                      className="form-select-button form-select-button--offset"
-                                    >
-                                      Exact {selectedSolarTime}
-                                    </button>
-                                    
-                                    {/* Offset Presets */}
-                                    <div className="form-button-grid">
-                                      {[-60, -30, -15, -5, 5, 15, 30, 60].map(offset => (
-                                        <button
-                                          key={offset}
-                                          onClick={() => {
-                                            const sign = offset > 0 ? '+' : '';
-                                            updateTimeAtIndex(timeIdx, 'start_time', `${selectedSolarTime}${sign}${offset}`);
-                                            setShowTimePicker(null);
-                                            setSelectedSolarTime(null);
-                                            setSolarMode(false);
-                                          }}
-                                          className="form-select-button form-select-button--offset form-select-button--small"
-                                        >
-                                          {offset > 0 ? '+' : ''}{offset}m
-                                        </button>
-                                      ))}
-                                    </div>
-                                    
-                                    {/* Custom Offset Input */}
-                                    <div className="form-flex form-gap-4 form-items-center form-justify-center">
-                                      <input
-                                        type="number"
-                                        placeholder="Custom ±min"
-                                        min="-120"
-                                        max="120"
-                                        className="form-input form-input--custom"
-                                        style={{ width: '120px' }}
-                                        onKeyDown={(e) => {
-                                          if (e.key === 'Enter') {
-                                            const offset = e.currentTarget.value;
-                                            if (offset && offset !== '0') {
-                                              const sign = parseInt(offset) > 0 ? '+' : '';
-                                              updateTimeAtIndex(timeIdx, 'start_time', `${selectedSolarTime}${sign}${offset}`);
-                                              setShowTimePicker(null);
-                                              setSelectedSolarTime(null);
-                                              setSolarMode(false);
-                                            }
-                                          }
-                                        }}
-                                      />
-                                      <button
-                                        onClick={(e) => {
-                                          const offsetInput = e.currentTarget.previousElementSibling as HTMLInputElement;
-                                          const offset = offsetInput.value;
-                                          if (offset && offset !== '0') {
-                                            const sign = parseInt(offset) > 0 ? '+' : '';
-                                            updateTimeAtIndex(timeIdx, 'start_time', `${selectedSolarTime}${sign}${offset}`);
-                                            setShowTimePicker(null);
-                                            setSelectedSolarTime(null);
-                                            setSolarMode(false);
-                                          }
-                                        }}
-                                        className="form-btn form-btn--outline form-btn--small"
-                                      >
-                                        Apply
-                                      </button>
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {/* Clock Time Selection - Only show when no solar time is selected */}
-                                {!solarMode && (
-                                  <div className="form-flex form-flex-column form-gap-6">
-                                    <div className="form-text-accent form-text-center form-font-600 form-text-12">
-                                      Clock Time
-                                    </div>
-                                    
-                                    <div className="form-flex form-gap-4 form-justify-center">
-                                      {/* Hours */}
-                                      <div className="form-flex form-flex-column form-items-center form-gap-2">
-                                        <div className="form-text-muted form-font-600 form-text-12">
-                                          Hour
-                                        </div>
-                                        <select
-                                          value={time.start_time ? parseInt(time.start_time.split(':')[0]) : 6}
-                                          onChange={(e) => {
-                                            const hours = e.target.value.padStart(2, '0');
-                                            const currentTime = time.start_time || '06:00';
-                                            const minutes = currentTime.split(':')[1] || '00';
-                                            const newTime = `${hours}:${minutes}`;
-                                            updateTimeAtIndex(timeIdx, 'start_time', newTime);
-                                          }}
-                                          className="form-select"
-                                          style={{ width: '80px' }}
-                                        >
-                                          {Array.from({ length: 24 }, (_, i) => (
-                                            <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
-                                          ))}
-                                        </select>
-                                      </div>
-                                      
-                                      {/* Minutes */}
-                                      <div className="form-flex form-flex-column form-items-center form-gap-2">
-                                        <div className="form-text-muted form-font-600 form-text-12">
-                                          Minute
-                                        </div>
-                                        <select
-                                          value={time.start_time ? parseInt(time.start_time.split(':')[1]) : 0}
-                                          onChange={(e) => {
-                                            const currentTime = time.start_time || '06:00';
-                                            const hours = currentTime.split(':')[0] || '06';
-                                            const minutes = e.target.value.padStart(2, '0');
-                                            const newTime = `${hours}:${minutes}`;
-                                            updateTimeAtIndex(timeIdx, 'start_time', newTime);
-                                          }}
-                                          className="form-select"
-                                          style={{ width: '80px' }}
-                                        >
-                                          {Array.from({ length: 60 }, (_, i) => (
-                                            <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
-                                          ))}
-                                        </select>
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="form-flex form-justify-center form-done-button">
-                                      <button
-                                        onClick={() => setShowTimePicker(null)}
-                                        className="form-btn form-btn--outline form-btn--small"
-                                      >
-                                        Done
-                                      </button>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
                             </div>
                             
                             <div className="form-relative">
@@ -725,102 +673,10 @@ export default function ZoneForm({
                                 type="text"
                                 placeholder="Duration"
                                 value={formatDuration(time.duration || '00:20:00')}
-                                onClick={() => setShowDurationPicker(timeIdx)}
+                                onClick={() => openDurationPicker(timeIdx)}
                                 readOnly
                                 className="form-input form-font-mono form-w-120 form-cursor-pointer"
                               />
-                              
-                              {/* Duration Picker Modal */}
-                              {showDurationPicker === timeIdx && (
-                                <div ref={durationPickerRef} className="form-duration-picker-modal">
-                                  <div className="form-text-accent form-text-center form-font-600 form-mb-12 form-text-14">
-                                    Set Duration
-                                  </div>
-                                  
-                                  <div className="form-flex form-gap-12 form-justify-center">
-                                    {/* Hours */}
-                                    <div className="form-flex form-flex-column form-items-center form-gap-4">
-                                      <div className="form-text-muted form-font-600 form-text-12">
-                                        Hours
-                                      </div>
-                                      <select
-                                        value={parseInt(formatDuration(time.duration || '00:20:00').substring(0, 2))}
-                                        onChange={(e) => {
-                                          const hours = e.target.value.padStart(2, '0');
-                                          const currentDuration = formatDuration(time.duration || '00:20:00');
-                                          const minutes = currentDuration.substring(3, 5);
-                                          const seconds = currentDuration.substring(6, 8);
-                                          const newDuration = `${hours}:${minutes}:${seconds}`;
-                                          updateTimeAtIndex(timeIdx, 'duration', newDuration);
-                                        }}
-                                        className="form-select"
-                                        style={{ width: '80px' }}
-                                      >
-                                        {Array.from({ length: 24 }, (_, i) => (
-                                          <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
-                                        ))}
-                                      </select>
-                                    </div>
-                                    
-                                    {/* Minutes */}
-                                    <div className="form-flex form-flex-column form-items-center form-gap-4">
-                                      <div className="form-text-muted form-font-600 form-text-12">
-                                        Minutes
-                                      </div>
-                                      <select
-                                        value={parseInt(formatDuration(time.duration || '00:20:00').substring(3, 5))}
-                                        onChange={(e) => {
-                                          const currentDuration = formatDuration(time.duration || '00:20:00');
-                                          const hours = currentDuration.substring(0, 2);
-                                          const minutes = e.target.value.padStart(2, '0');
-                                          const seconds = currentDuration.substring(6, 8);
-                                          const newDuration = `${hours}:${minutes}:${seconds}`;
-                                          updateTimeAtIndex(timeIdx, 'duration', newDuration);
-                                        }}
-                                        className="form-select"
-                                        style={{ width: '80px' }}
-                                      >
-                                        {Array.from({ length: 60 }, (_, i) => (
-                                          <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
-                                        ))}
-                                      </select>
-                                    </div>
-                                    
-                                    {/* Seconds */}
-                                    <div className="form-flex form-flex-column form-items-center form-gap-4">
-                                      <div className="form-text-muted form-font-600 form-text-12">
-                                        Seconds
-                                      </div>
-                                      <select
-                                        value={parseInt(formatDuration(time.duration || '00:20:00').substring(6, 8))}
-                                        onChange={(e) => {
-                                          const currentDuration = formatDuration(time.duration || '00:20:00');
-                                          const hours = currentDuration.substring(0, 2);
-                                          const minutes = currentDuration.substring(3, 5);
-                                          const seconds = e.target.value.padStart(2, '0');
-                                          const newDuration = `${hours}:${minutes}:${seconds}`;
-                                          updateTimeAtIndex(timeIdx, 'duration', newDuration);
-                                        }}
-                                        className="form-select"
-                                        style={{ width: '80px' }}
-                                      >
-                                        {Array.from({ length: 60 }, (_, i) => (
-                                          <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
-                                        ))}
-                                      </select>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="form-flex form-justify-center form-done-button">
-                                    <button
-                                      onClick={() => setShowDurationPicker(null)}
-                                      className="form-btn form-btn--outline form-btn--small"
-                                    >
-                                      Done
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
                             </div>
                           </div>
                         ))}
@@ -895,6 +751,5 @@ export default function ZoneForm({
           </>
         )}
       </div>
-    </div>
   );
 } 

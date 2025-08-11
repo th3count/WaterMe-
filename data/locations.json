@@ -1,9 +1,11 @@
 {
-  "1": {
-    "name": "permiter",
-    "description": "perimiter",
+  "3": {
+    "assignedPlants": [],
+    "description": "North Fence",
+    "name": "North Fence",
     "zones": [
-      1
+      1,
+      2
     ]
   }
 }

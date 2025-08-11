@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getApiBaseUrl } from './utils';
+import { useFormLayer } from '../../core/useFormLayer';
 import ZoneForm from './forms/zones.form';
 
 const PERIODS = [
@@ -50,9 +51,9 @@ export default function ZoneSchedule() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [globalSmartMode, setGlobalSmartMode] = useState(false);
-  const [showZoneForm, setShowZoneForm] = useState(false);
   const [selectedZone, setSelectedZone] = useState<any | null>(null);
   const navigate = useNavigate();
+  const { addLayer, removeLayer } = useFormLayer();
 
   const loadZoneData = async () => {
       try {
@@ -84,25 +85,46 @@ export default function ZoneSchedule() {
           const scheduleData = await scheduleResp.json();
           console.log('Loaded schedule data:', scheduleData);
           
-          // Convert backend mode system to new UI system
-          const convertedZones = scheduleData.map((zone: any) => {
-            if (zone.mode === 'disabled') {
-              return { ...zone, mode: 'disabled' };
-            } else if (zone.mode === 'smart' || zone.mode === 'manual') {
-              return { 
-                ...zone, 
-                mode: 'active',
-                scheduleMode: zone.mode // 'smart' or 'manual'
-              };
-            } else {
-              // Handle any other modes (like 'active') by defaulting to manual
-              return { 
-                ...zone, 
-                mode: 'active',
-                scheduleMode: 'manual'
-              };
+          // Convert backend mode system to new UI system and filter by zoneCount
+          const convertedZones = scheduleData
+            .filter((zone: any) => zone.zone_id <= zoneCount) // Only show zones within zoneCount limit
+            .map((zone: any) => {
+              if (zone.mode === 'disabled') {
+                return { ...zone, mode: 'disabled' };
+              } else if (zone.mode === 'smart' || zone.mode === 'manual') {
+                return { 
+                  ...zone, 
+                  mode: 'active',
+                  scheduleMode: zone.mode // 'smart' or 'manual'
+                };
+              } else {
+                // Handle any other modes (like 'active') by defaulting to manual
+                return { 
+                  ...zone, 
+                  mode: 'active',
+                  scheduleMode: 'manual'
+                };
+              }
+            });
+          
+          // If we have fewer zones than zoneCount, create the missing ones
+          const existingZoneIds = convertedZones.map((z: any) => z.zone_id);
+          for (let i = 1; i <= zoneCount; i++) {
+            if (!existingZoneIds.includes(i)) {
+              convertedZones.push({
+                zone_id: i,
+                mode: 'disabled',
+                period: PERIODS[0].code,
+                cycles: 1,
+                times: [defaultTime()],
+                startDay: getTomorrow(),
+                comment: '',
+              });
             }
-          });
+          }
+          
+          // Sort zones by zone_id to ensure proper order
+          convertedZones.sort((a: any, b: any) => a.zone_id - b.zone_id);
           
           setZones(convertedZones);
         } else {
@@ -113,7 +135,17 @@ export default function ZoneSchedule() {
             if (fileResp.ok) {
               const fileData = await fileResp.json();
               console.log('Loaded from file:', fileData);
-              setZones(fileData);
+              
+              // Filter file data to only show zones within zoneCount limit
+              const filteredZones = Object.entries(fileData)
+                .filter(([zoneId]) => parseInt(zoneId) <= zoneCount)
+                .map(([zoneId, zoneData]: [string, any]) => ({
+                  zone_id: parseInt(zoneId),
+                  ...zoneData
+                }))
+                .sort((a: any, b: any) => a.zone_id - b.zone_id);
+              
+              setZones(filteredZones);
             } else {
               console.log('File also failed, creating default zones');
               // If no schedule data exists, create default zones
@@ -181,15 +213,14 @@ export default function ZoneSchedule() {
   };
 
   const handleZoneFormSave = async (zoneData: any) => {
-    // This should never be called since the form handles saving directly
-    console.warn('handleZoneFormSave called - this should not happen as form is self-contained');
+    console.log('Zone form saved:', zoneData);
+    // Refresh the zones data after save
+    await loadZoneData();
+    removeLayer('zone-form');
   };
 
   const handleZoneFormCancel = () => {
-    setShowZoneForm(false);
-    setSelectedZone(null);
-    // Reload zone data to reflect any changes made in the form
-    loadZoneData();
+    removeLayer('zone-form');
   };
 
 
@@ -390,7 +421,16 @@ export default function ZoneSchedule() {
                   }}
                   onClick={() => {
                     setSelectedZone(zone);
-                    setShowZoneForm(true);
+                    addLayer('zone-form', 'form', ZoneForm, {
+                      initialData: zone,
+                      zone_id: zone.zone_id,
+                      pumpIndex: pumpIndex,
+                      onSave: handleZoneFormSave,
+                      onCancel: handleZoneFormCancel,
+                      loading: saving,
+                      error: error,
+                      isTopLayer: true
+                    });
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-2px)';
@@ -500,19 +540,7 @@ export default function ZoneSchedule() {
           </div>
         </div>
 
-        {/* Zone Configuration Form */}
-        {showZoneForm && selectedZone && (
-          <ZoneForm
-            initialData={selectedZone}
-            zone_id={selectedZone.zone_id}
-            pumpIndex={pumpIndex}
-            onSave={handleZoneFormSave}
-            onCancel={handleZoneFormCancel}
-            loading={saving}
-            error={error}
-            isTopLayer={true}
-          />
-        )}
+
         
       </div>
     </div>
