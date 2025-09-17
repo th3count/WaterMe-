@@ -250,6 +250,23 @@ def validate_garden_settings(settings):
     if not timezone or timezone not in pytz.all_timezones:
         errors.append('Valid timezone is required')
     
+    # Max duration threshold validation
+    max_duration = settings.get('max_duration_threshold', '02:00')
+    if max_duration:
+        # Validate HH:MM format
+        import re
+        if not re.match(r'^\d{1,2}:\d{2}$', max_duration):
+            errors.append('Max duration threshold must be in HH:MM format (e.g., 02:00)')
+        else:
+            try:
+                hours, minutes = max_duration.split(':')
+                hours_int = int(hours)
+                minutes_int = int(minutes)
+                if hours_int < 0 or hours_int > 23 or minutes_int < 0 or minutes_int > 59:
+                    errors.append('Max duration threshold must have valid hours (0-23) and minutes (0-59)')
+            except ValueError:
+                errors.append('Max duration threshold must be in HH:MM format (e.g., 02:00)')
+    
     return errors
 
 def validate_gpio_config(config):
@@ -586,7 +603,8 @@ def load_ini_settings():
                     'mode': garden.get('mode', 'manual'),
                     'timezone': garden.get('timezone', 'UTC'),
                     'timer_multiplier': garden.getfloat('timer_multiplier', 1.0),
-                    'simulate': garden.getboolean('simulate', False)
+                    'simulate': garden.getboolean('simulate', False),
+                    'max_duration_threshold': garden.get('max_duration_threshold', '02:00')
                 })
             
 
@@ -628,7 +646,8 @@ def save_ini_settings(settings_data):
                 'mode': str(settings_data.get('mode', 'manual')),
                 'timezone': str(settings_data.get('timezone', 'UTC')),
                 'timer_multiplier': str(settings_data.get('timer_multiplier', 1.0)),
-                'simulate': str(settings_data.get('simulate', False))
+                'simulate': str(settings_data.get('simulate', False)),
+                'max_duration_threshold': str(settings_data.get('max_duration_threshold', '02:00'))
             }
         }
         
@@ -1398,6 +1417,11 @@ def analyze_plant_placement():
                  library_book=data.get('library_book'),
                  common_name=data.get('common_name'))
         
+        # CRITICAL: Reload PlantManager data to ensure we have the latest zone information
+        # This is essential after zone creation/modification
+        plant_manager.reload_data()
+        log_event(plants_logger, 'DEBUG', 'PlantManager data reloaded before analysis')
+        
         # Use PlantManager to analyze placement
         analysis = plant_manager.analyze_plant_placement(data)
         
@@ -1429,6 +1453,9 @@ def get_zone_recommendations():
         if not data:
             return jsonify({"error": "Plant data required"}), 400
         
+        # CRITICAL: Reload PlantManager data to ensure we have the latest zone information
+        plant_manager.reload_data()
+        
         # Use PlantManager to get recommendations
         recommendations = plant_manager.get_zone_recommendations(data)
         
@@ -1451,6 +1478,9 @@ def handle_no_compatible_zone():
         data = request.json
         if not data:
             return jsonify({"error": "Plant data required"}), 400
+        
+        # CRITICAL: Reload PlantManager data to ensure we have the latest zone information
+        plant_manager.reload_data()
         
         # Use PlantManager to handle no compatible zone
         result = plant_manager.handle_no_compatible_zone(data)

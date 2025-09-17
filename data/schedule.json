@@ -26,7 +26,17 @@
     "comment": ""
   },
   "3": {
-    "mode": "disabled"
+    "mode": "smart",
+    "period": "W",
+    "cycles": 1,
+    "times": [
+      {
+        "start_time": "07:53",
+        "duration": "01:29:42"
+      }
+    ],
+    "startDay": "2025-09-18",
+    "comment": ""
   },
   "4": {
     "mode": "disabled"

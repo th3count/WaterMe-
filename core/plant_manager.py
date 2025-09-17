@@ -27,7 +27,7 @@ LIBRARY_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "library"
 LIBRARY_FILES = ['fruitbushes.json', 'fruittrees.json', 'vegetables.json', 'custom.json']
 
 # Available emitter sizes (GPH)
-EMITTER_SIZES = [0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0]
+EMITTER_SIZES = [0.2, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 15.0, 18.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0]
 
 # Flask Blueprint for Plant Manager API endpoints
 plant_bp = Blueprint('plant_manager', __name__)
@@ -209,6 +209,73 @@ class PlantManager:
         except ValueError:
             return 0.333  # Default 20 minutes
     
+    def calculate_flexible_duration_target(self, plant_data: Dict[str, Any], cycles_per_week: float, zone_id: int) -> Tuple[float, str, str]:
+        """
+        Calculate flexible duration target using 4-tier logic:
+        1. Target 15-25 minutes using 4-10 GPH emitters
+        2. Fallback to 10 GPH emitter if tier 1 fails
+        3. Use 25 GPH if duration > max_duration_threshold
+        4. Beyond threshold warning (yellow compatibility)
+        
+        Returns:
+            Tuple[target_duration_hours, emitter_tier, tier_reason]
+        """
+        water_optimal_in_week = plant_data.get('water_optimal_in_week', 0)
+        root_area_sqft = plant_data.get('root_area_sqft', 0)
+        
+        if water_optimal_in_week <= 0 or root_area_sqft <= 0:
+            return 20.0 / 60.0, "default", "Invalid plant data, using default 20 minutes"
+        
+        # Calculate required water volume
+        weekly_water_volume = water_optimal_in_week * root_area_sqft * 0.623  # gallons
+        per_cycle_volume = weekly_water_volume / cycles_per_week  # gallons per cycle
+        
+        # Get max duration threshold from settings
+        max_duration_threshold_hours = self.get_max_duration_threshold_hours()
+        
+        # Tier 1: Target 15-25 minutes using 4-10 GPH emitters
+        for target_minutes in [15, 20, 25]:
+            target_duration_hours = target_minutes / 60.0
+            required_gph = per_cycle_volume / target_duration_hours
+            
+            # Check if we can use 4-10 GPH emitters
+            if 4.0 <= required_gph <= 10.0:
+                return target_duration_hours, "tier1_optimal", f"Tier 1: {target_minutes} min with {required_gph:.1f} GPH (4-10 GPH range)"
+        
+        # Tier 2: Fallback to 10 GPH emitter
+        target_duration_hours = per_cycle_volume / 10.0
+        if target_duration_hours <= max_duration_threshold_hours:
+            return target_duration_hours, "tier2_fallback", f"Tier 2: {target_duration_hours*60:.1f} min with 10 GPH emitter"
+        
+        # Tier 3: Use 25 GPH if duration > threshold
+        target_duration_hours = per_cycle_volume / 25.0
+        if target_duration_hours <= max_duration_threshold_hours:
+            return target_duration_hours, "tier3_25gph", f"Tier 3: {target_duration_hours*60:.1f} min with 25 GPH emitter (under threshold)"
+        
+        # Tier 4: Beyond threshold warning
+        target_duration_hours = per_cycle_volume / 25.0
+        return target_duration_hours, "tier4_beyond_threshold", f"Tier 4: {target_duration_hours*60:.1f} min with 25 GPH emitter (BEYOND {max_duration_threshold_hours*60:.0f} min threshold)"
+    
+    def get_max_duration_threshold_hours(self) -> float:
+        """Get max duration threshold from settings, default 2 hours"""
+        try:
+            import sys
+            import os
+            sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+            from api import load_ini_settings
+            settings = load_ini_settings()
+            threshold_str = settings.get('max_duration_threshold', '02:00')
+            
+            # Parse HH:MM format
+            if ':' in threshold_str:
+                hours, minutes = threshold_str.split(':')
+                return float(hours) + float(minutes) / 60.0
+            else:
+                return float(threshold_str)  # Assume hours if no colon
+        except Exception as e:
+            log_event(plants_logger, 'WARNING', 'Failed to load max_duration_threshold, using default', error=str(e))
+            return 2.0  # Default 2 hours
+    
     def calculate_optimal_emitter_size(self, plant_data: Dict[str, Any], zone_id: int, is_new_placement: bool = False) -> Dict[str, Any]:
         """
         Calculate optimal emitter size for a plant in a specific zone
@@ -277,12 +344,12 @@ class PlantManager:
         zone_plants = self.get_zone_plants(zone_id)
         is_empty_zone = len(zone_plants) == 0
         
-        # Smart mode duration logic:
-        # - Empty zone: Use 20-minute duration for emitter calculation
-        # - Non-empty zone: Use current zone duration for emitter calculation
+        # Smart mode duration logic with 4-tier flexible targeting:
         if is_empty_zone:
-            # For empty zones in smart mode, target 20-minute duration
-            target_duration_hours = 20.0 / 60.0  # 20 minutes in hours
+            # For empty zones, use flexible duration targeting
+            target_duration_hours, emitter_tier, tier_reason = self.calculate_flexible_duration_target(
+                plant_library_data, cycles_per_week, zone_id
+            )
         else:
             # For zones with plants in smart mode, use current zone duration
             zone_duration_hours = self.get_zone_duration_hours(zone_id)
@@ -292,12 +359,30 @@ class PlantManager:
                     'error': 'Invalid zone schedule configuration'
                 }
             target_duration_hours = zone_duration_hours
+            emitter_tier = "existing_zone"
+            tier_reason = "Using existing zone duration"
         
         # Calculate optimal emitter size
         # Formula: (water_optimal_in_week × root_area_sqft × 0.623) ÷ (cycles_per_week × target_duration_hours)
         weekly_water_volume = water_optimal_in_week * root_area_sqft * 0.623  # gallons
         per_cycle_volume = weekly_water_volume / cycles_per_week  # gallons per cycle
         calculated_gph = per_cycle_volume / target_duration_hours  # gallons per hour
+        
+        # For flexible targeting, use the tier-specific emitter size
+        if is_empty_zone and emitter_tier != "existing_zone":
+            if emitter_tier == "tier1_optimal":
+                # Use calculated GPH (should be 4-10 range)
+                target_emitter_gph = calculated_gph
+            elif emitter_tier == "tier2_fallback":
+                # Use 10 GPH emitter
+                target_emitter_gph = 10.0
+            elif emitter_tier in ["tier3_25gph", "tier4_beyond_threshold"]:
+                # Use 25 GPH emitter
+                target_emitter_gph = 25.0
+            else:
+                target_emitter_gph = calculated_gph
+        else:
+            target_emitter_gph = calculated_gph
         
         # Debug logging
         log_event(plants_logger, 'DEBUG', 'Emitter calculation details', 
@@ -317,8 +402,21 @@ class PlantManager:
                  library_book=plant_data.get('library_book'),
                  plant_name=plant_library_data.get('common_name', 'Unknown'))
         
-        # Find nearest available emitter size
-        nearest_emitter = min(EMITTER_SIZES, key=lambda x: abs(x - calculated_gph))
+        # For existing zones, use current emitter size instead of calculating new one
+        if emitter_tier == "existing_zone":
+            current_emitter = self.get_current_zone_emitter_size(zone_id)
+            if current_emitter is not None:
+                nearest_emitter = current_emitter
+                log_event(plants_logger, 'DEBUG', 'Using existing zone emitter', 
+                         zone_id=zone_id,
+                         current_emitter=current_emitter,
+                         calculated_optimal=calculated_gph)
+            else:
+                # Fallback if no current emitter found (shouldn't happen)
+                nearest_emitter = min(EMITTER_SIZES, key=lambda x: abs(x - target_emitter_gph))
+        else:
+            # Find nearest available emitter size for new zones
+            nearest_emitter = min(EMITTER_SIZES, key=lambda x: abs(x - target_emitter_gph))
         
         log_event(plants_logger, 'DEBUG', 'Emitter selection', 
                  calculated_gph=calculated_gph,
@@ -328,9 +426,36 @@ class PlantManager:
         # Calculate actual water delivery with nearest emitter
         actual_weekly_water = (nearest_emitter * target_duration_hours * cycles_per_week) / (root_area_sqft * 0.623)
         
-        # Health validation
+        # Health validation with tier-based logic
         is_within_tolerance = tolerance_min_in_week <= actual_weekly_water <= tolerance_max_in_week
-        health_status = "healthy" if is_within_tolerance else "unhealthy"
+        
+        # Adjust health status based on emitter tier
+        if emitter_tier == "tier4_beyond_threshold":
+            health_status = "warning_beyond_threshold"
+            is_within_tolerance = True  # Allow but warn
+        elif emitter_tier == "tier3_25gph":
+            health_status = "acceptable_25gph"
+        elif emitter_tier == "tier2_fallback":
+            health_status = "acceptable_10gph"
+        elif emitter_tier == "tier1_optimal":
+            health_status = "optimal_4to10gph"
+        else:
+            health_status = "healthy" if is_within_tolerance else "unhealthy"
+        
+        # Enhanced debugging for tolerance calculation
+        log_event(plants_logger, 'DEBUG', 'Tolerance validation', 
+                 plant_name=plant_library_data.get('common_name'),
+                 zone_id=zone_id,
+                 actual_weekly_water=actual_weekly_water,
+                 tolerance_min=tolerance_min_in_week,
+                 tolerance_max=tolerance_max_in_week,
+                 is_within_tolerance=is_within_tolerance,
+                 health_status=health_status,
+                 calculated_gph=calculated_gph,
+                 nearest_emitter=nearest_emitter,
+                 target_duration_hours=target_duration_hours,
+                 cycles_per_week=cycles_per_week,
+                 root_area_sqft=root_area_sqft)
         
         # Calculate tolerance delta
         if actual_weekly_water < tolerance_min_in_week:
@@ -346,12 +471,15 @@ class PlantManager:
         return {
             'success': True,
             'calculated_gph': calculated_gph,
+            'target_emitter_gph': target_emitter_gph,
             'recommended_emitter': nearest_emitter,
             'actual_weekly_water': actual_weekly_water,
             'is_within_tolerance': is_within_tolerance,
             'health_status': health_status,
             'tolerance_delta': tolerance_delta,
             'tolerance_status': tolerance_status,
+            'emitter_tier': emitter_tier,
+            'tier_reason': tier_reason,
             'calculation_details': {
                 'water_optimal_in_week': water_optimal_in_week,
                 'root_area_sqft': root_area_sqft,
@@ -669,6 +797,15 @@ class PlantManager:
                 })
         return zone_plants
     
+    def get_current_zone_emitter_size(self, zone_id: int) -> Optional[float]:
+        """Get the current emitter size for a zone if it has plants"""
+        for instance_id, plant_data in self.plant_map.items():
+            if plant_data.get('zone_id') == zone_id:
+                emitter_size = plant_data.get('emitter_size')
+                if emitter_size is not None:
+                    return float(emitter_size)
+        return None
+    
     def get_zone_frequency(self, zone_id: int) -> Optional[str]:
         """Get the frequency setting for a zone"""
         # Handle the actual schedule.json structure where zones are direct keys
@@ -681,8 +818,15 @@ class PlantManager:
                 # Combine period and cycles to create frequency code (e.g., 'D1', 'W2', 'M3')
                 frequency = f"{period}{cycles}"
                 log_event(plants_logger, 'DEBUG', 'Zone frequency found', 
-                         zone_id=zone_id, period=period, cycles=cycles, frequency=frequency)
+                         zone_id=zone_id, period=period, cycles=cycles, frequency=frequency, 
+                         zone_mode=zone.get('mode'), zone_comment=zone.get('comment', ''))
                 return frequency
+            else:
+                log_event(plants_logger, 'WARNING', 'Zone found but no period set', 
+                         zone_id=zone_id, zone_data=zone)
+        else:
+            log_event(plants_logger, 'DEBUG', 'Zone not found in schedule data', 
+                     zone_id=zone_id, available_zones=list(self.schedule_data.keys()))
         
         # Also check the legacy zones array structure for backward compatibility
         for zone in self.schedule_data.get('zones', []):
@@ -822,7 +966,8 @@ class PlantManager:
         if not isinstance(plant_frequencies, list):
             plant_frequencies = [plant_frequencies]
         
-        best_score = 0.0
+        # Step 1: Calculate frequency compatibility score
+        frequency_score = 0.0
         for plant_frequency in plant_frequencies:
             is_compatible, level = self.is_frequency_compatible(plant_frequency, zone_frequency, plant_library_data)
             if is_compatible:
@@ -834,9 +979,74 @@ class PlantManager:
                     score = 0.6
                 else:
                     score = 0.0
-                best_score = max(best_score, score)
+                frequency_score = max(frequency_score, score)
         
-        return best_score
+        # If frequency is not compatible, return 0
+        if frequency_score == 0.0:
+            return 0.0
+        
+        # Step 2: Check emitter/duration compatibility for existing zones with plants
+        emitter_analysis = self.calculate_optimal_emitter_size(plant_data, zone_id, is_new_placement=True)
+        
+        if not emitter_analysis.get('success'):
+            log_event(plants_logger, 'DEBUG', 'Zone compatibility reduced - emitter analysis failed', 
+                     zone_id=zone_id, plant_name=plant_library_data.get('common_name'))
+            return 0.0
+        
+        # Step 3: Apply emitter tier penalties to the frequency score
+        emitter_tier = emitter_analysis.get('emitter_tier', '')
+        health_status = emitter_analysis.get('health_status', '')
+        is_within_tolerance = emitter_analysis.get('is_within_tolerance', False)
+        
+        # If the plant cannot be grown within tolerance, mark as incompatible
+        if not is_within_tolerance and emitter_tier != "tier4_beyond_threshold":
+            log_event(plants_logger, 'DEBUG', 'Zone marked incompatible - outside tolerance', 
+                     zone_id=zone_id, 
+                     plant_name=plant_library_data.get('common_name'),
+                     emitter_tier=emitter_tier,
+                     health_status=health_status)
+            return 0.0
+        
+        # Apply tier-based score modifiers
+        if emitter_tier == "tier1_optimal":
+            # Perfect emitter match - keep full frequency score
+            final_score = frequency_score
+        elif emitter_tier == "tier2_fallback":
+            # Acceptable fallback - keep full score (still optimal)
+            final_score = frequency_score
+        elif emitter_tier == "tier3_25gph":
+            # High flow emitter needed - moderate penalty
+            final_score = frequency_score * 0.8
+        elif emitter_tier == "tier4_beyond_threshold":
+            # Beyond threshold - significant penalty (yellow warning)
+            final_score = frequency_score * 0.5
+        elif emitter_tier == "existing_zone":
+            # Existing zone with plants - check if it can accommodate new plant
+            if is_within_tolerance:
+                # Can accommodate with existing duration - small penalty for complexity
+                final_score = frequency_score * 0.9
+            else:
+                # Cannot accommodate with existing duration - FILTER OUT COMPLETELY
+                log_event(plants_logger, 'DEBUG', 'Zone filtered out - existing zone cannot meet tolerance', 
+                         zone_id=zone_id, 
+                         plant_name=plant_library_data.get('common_name'),
+                         is_within_tolerance=is_within_tolerance,
+                         emitter_tier=emitter_tier)
+                return 0.0
+        else:
+            # Unknown tier - default penalty
+            final_score = frequency_score * 0.7
+        
+        log_event(plants_logger, 'DEBUG', 'Zone compatibility calculated with emitter analysis', 
+                 zone_id=zone_id,
+                 plant_name=plant_library_data.get('common_name'),
+                 frequency_score=frequency_score,
+                 emitter_tier=emitter_tier,
+                 health_status=health_status,
+                 is_within_tolerance=is_within_tolerance,
+                 final_score=final_score)
+        
+        return final_score
     
     def find_optimal_zone_for_plant(self, plant_data: Dict[str, Any]) -> Tuple[Optional[int], float, str]:
         """
@@ -912,6 +1122,12 @@ class PlantManager:
                 continue
             
             score = self.calculate_zone_compatibility_score(plant_data, zone_id)
+            log_event(plants_logger, 'DEBUG', 'Zone compatibility score calculated', 
+                     zone_id=zone_id, 
+                     score=score, 
+                     period=zone.get('period'),
+                     mode=zone.get('mode'),
+                     plant_name=plant_data.get('common_name'))
             if score > 0.0:  # Only include compatible zones
                 recommendations.append({
                     'zone_id': zone_id,
@@ -986,9 +1202,22 @@ class PlantManager:
                      recommended_emitter=emitter_analysis.get('recommended_emitter'))
             
             # Filter out zones that fail emitter sizing health check
-            if emitter_analysis.get('success') and not emitter_analysis.get('is_within_tolerance'):
+            # Allow tier 4 (beyond threshold) zones but mark them as warnings
+            emitter_tier = emitter_analysis.get('emitter_tier', '')
+            if emitter_analysis.get('success') and not emitter_analysis.get('is_within_tolerance') and emitter_tier != "tier4_beyond_threshold":
+                log_event(plants_logger, 'DEBUG', 'Zone filtered out due to emitter sizing', 
+                         zone_id=zone_id, 
+                         plant_name=plant_library_data.get('common_name'),
+                         is_within_tolerance=emitter_analysis.get('is_within_tolerance'),
+                         health_status=emitter_analysis.get('health_status'),
+                         tolerance_status=emitter_analysis.get('tolerance_status'),
+                         emitter_tier=emitter_tier)
                 continue  # Skip this zone due to emitter sizing incompatibility
             
+            # Add tier information to the recommendation
+            rec['emitter_tier'] = emitter_analysis.get('emitter_tier', 'unknown')
+            rec['tier_reason'] = emitter_analysis.get('tier_reason', '')
+            rec['health_status'] = emitter_analysis.get('health_status', 'unknown')
             enhanced_recommendations.append(rec)
         
         # Update optimal zone if it fails emitter sizing
@@ -1006,7 +1235,7 @@ class PlantManager:
                     optimal_score = 0.0
                     optimal_reason = "No zones with compatible emitter sizing"
         
-        return {
+        result = {
             'success': True,
             'plant_data': plant_library_data,
             'has_compatible_zones': len(enhanced_recommendations) > 0,
@@ -1018,6 +1247,17 @@ class PlantManager:
             'compatible_zones_count': len(enhanced_recommendations),
             'optimal_emitter_analysis': optimal_emitter_analysis
         }
+        
+        # Enhanced debugging for final analysis result
+        log_event(plants_logger, 'DEBUG', 'Final analysis result', 
+                 plant_name=plant_library_data.get('common_name'),
+                 has_compatible_zones=result['has_compatible_zones'],
+                 compatible_zones_count=result['compatible_zones_count'],
+                 optimal_zone=result['optimal_zone'],
+                 optimal_reason=result['optimal_reason'],
+                 total_recommendations=len(enhanced_recommendations))
+        
+        return result
     
     def validate_plant_zone_compatibility(self, plant_data: Dict[str, Any], zone_id: int) -> Dict[str, Any]:
         """

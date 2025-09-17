@@ -58,9 +58,23 @@ export default function SmartPlacementForm({
   isTopLayer = true
   // onLayerChange removed as unused
 }: SmartPlacementFormProps) {
+  console.log('🌱 GARDEN.FORM: SmartPlacementForm initialized with props:', { 
+    plant_id, 
+    library_book, 
+    isTopLayer,
+    onCancel: !!onCancel,
+    onSuccess: !!onSuccess
+  });
+  
   const FORM_ID = 'smart-placement-form';
   const formRef = useRef<HTMLDivElement>(null);
   const { addLayer, removeLayer, isAnyFormAbove } = useFormLayer();
+  
+  console.log('🌱 GARDEN.FORM: Layer system hooks initialized:', { 
+    addLayer: !!addLayer, 
+    removeLayer: !!removeLayer, 
+    isAnyFormAbove: !!isAnyFormAbove 
+  });
 
   // Internal state
   const [plantData, setPlantData] = useState<PlantEntry | null>(null);
@@ -70,6 +84,7 @@ export default function SmartPlacementForm({
   const [zoneSelectionMode, setZoneSelectionMode] = useState<'smart' | 'manual'>('smart');
   const [systemMode, setSystemMode] = useState<'smart' | 'manual'>('smart'); // Track system mode from settings
   const [emitterSizingMode, setEmitterSizingMode] = useState<'smart' | 'manual'>('smart');
+  const [smartRecommendedEmitter, setSmartRecommendedEmitter] = useState<string | null>(null);
   const [modalData, setModalData] = useState({
     quantity: '1',
     emitterSize: '4', // Set smart recommendation by default (normalized format)
@@ -202,62 +217,75 @@ export default function SmartPlacementForm({
 
   // Fetch all required data on mount
   useEffect(() => {
+    let isMounted = true;
+    const abortController = new AbortController();
+    
     const fetchData = async () => {
       try {
+        console.log('🌱 GARDEN.FORM: Starting data fetch for plant:', plant_id, 'from book:', library_book);
+        if (!isMounted) return;
         setLoading(true);
         
         // 1. Fetch plant data from library
-        console.log('Fetching plant data from:', `/api/library/${library_book}/${plant_id}`);
+        console.log('🌱 GARDEN.FORM: Fetching plant data from:', `/api/library/${library_book}/${plant_id}`);
         const plantResponse = await fetch(`/api/library/${library_book}/${plant_id}`, {
-          signal: AbortSignal.timeout(5000) // 5 second timeout
+          signal: abortController.signal
         });
-        console.log('Plant response status:', plantResponse.status);
+        console.log('🌱 GARDEN.FORM: Plant response status:', plantResponse.status);
         if (!plantResponse.ok) {
           const errorText = await plantResponse.text();
-          console.error('Plant API error:', errorText);
+          console.error('🌱 GARDEN.FORM: Plant API error:', errorText);
           throw new Error(`Failed to fetch plant data: ${plantResponse.status} ${plantResponse.statusText}`);
         }
         const plant = await plantResponse.json();
-        console.log('Plant data received:', plant);
+        console.log('🌱 GARDEN.FORM: Plant data received:', plant);
+        if (!isMounted) return;
         setPlantData(plant);
 
         // 2. Fetch zone recommendations from smart placement API
-        console.log('Fetching zone analysis from:', '/api/smart/analyze-placement');
+        console.log('🌱 GARDEN.FORM: Fetching zone analysis from:', '/api/smart/analyze-placement');
+        const analysisData = {
+          plant_id,
+          library_book: library_book.replace('.json', ''), // Remove .json extension if present
+          common_name: plant.common_name
+        };
+        console.log('🌱 GARDEN.FORM: Sending analysis data:', analysisData);
         const analysisResponse = await fetch('/api/smart/analyze-placement', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ plant_id, library_book }),
-          signal: AbortSignal.timeout(10000) // 10 second timeout for analysis
+          body: JSON.stringify(analysisData),
+          signal: abortController.signal
         });
-        console.log('Analysis response status:', analysisResponse.status);
+        console.log('🌱 GARDEN.FORM: Analysis response status:', analysisResponse.status);
         if (!analysisResponse.ok) {
           const errorText = await analysisResponse.text();
-          console.error('Analysis API error:', errorText);
+          console.error('🌱 GARDEN.FORM: Analysis API error:', errorText);
           throw new Error(`Failed to fetch zone analysis: ${analysisResponse.status} ${analysisResponse.statusText}`);
         }
         const analysis = await analysisResponse.json();
-        console.log('Analysis data received:', analysis);
-        console.log('Sample recommendation structure:', analysis.recommendations?.[0]);
+        console.log('🌱 GARDEN.FORM: Analysis data received:', analysis);
+        console.log('🌱 GARDEN.FORM: Sample recommendation structure:', analysis.recommendations?.[0]);
+        if (!isMounted) return;
         setRecommendations(analysis.recommendations || []);
         
         // 3. Fetch zones list from schedule API
-        console.log('Fetching zones from:', '/api/schedule');
+        console.log('🌱 GARDEN.FORM: Fetching zones from:', '/api/schedule');
         const zonesResponse = await fetch('/api/schedule', {
-          signal: AbortSignal.timeout(5000) // 5 second timeout
+          signal: abortController.signal
         });
-        console.log('Zones response status:', zonesResponse.status);
+        console.log('🌱 GARDEN.FORM: Zones response status:', zonesResponse.status);
         if (!zonesResponse.ok) {
           const errorText = await zonesResponse.text();
-          console.error('Zones API error:', errorText);
+          console.error('🌱 GARDEN.FORM: Zones API error:', errorText);
           throw new Error(`Failed to fetch zones: ${zonesResponse.status} ${zonesResponse.statusText}`);
         }
         const zonesData = await zonesResponse.json();
-        console.log('Zones data received:', zonesData);
-        console.log('Sample zone structure:', typeof zonesData, Array.isArray(zonesData));
-        console.log('All zones with cycles:', zonesData?.map((z: any) => ({ zone_id: z.zone_id, cycles: z.cycles, period: z.period })));
+        console.log('🌱 GARDEN.FORM: Zones data received:', zonesData);
+        console.log('🌱 GARDEN.FORM: Sample zone structure:', typeof zonesData, Array.isArray(zonesData));
+        console.log('🌱 GARDEN.FORM: All zones with cycles:', zonesData?.map((z: any) => ({ zone_id: z.zone_id, cycles: z.cycles, period: z.period })));
         
         // 🔍 CRITICAL DEBUG: Check duration values from API
-        console.log('🔍 FRONTEND DEBUG - Zone durations from API:');
+        console.log('🔍 GARDEN.FORM DEBUG - Zone durations from API:');
         zonesData?.forEach((zone: any) => {
           if (zone.zone_id === 1) {
             console.log(`  🎯 Zone ${zone.zone_id}:`, {
@@ -270,23 +298,24 @@ export default function SmartPlacementForm({
           }
         });
         
+        if (!isMounted) return;
         setZones(zonesData || []);
 
         // 4. Fetch locations list
-        console.log('Fetching locations from:', '/api/locations');
+        console.log('🌱 GARDEN.FORM: Fetching locations from:', '/api/locations');
         const locationsResponse = await fetch('/api/locations', {
           signal: AbortSignal.timeout(5000) // 5 second timeout
         });
-        console.log('Locations response status:', locationsResponse.status);
+        console.log('🌱 GARDEN.FORM: Locations response status:', locationsResponse.status);
         if (!locationsResponse.ok) {
           const errorText = await locationsResponse.text();
-          console.error('Locations API error:', errorText);
+          console.error('🌱 GARDEN.FORM: Locations API error:', errorText);
           throw new Error(`Failed to fetch locations: ${locationsResponse.status} ${locationsResponse.statusText}`);
         }
         const locationsData = await locationsResponse.json();
-        console.log('Locations data received:', locationsData);
-        console.log('Locations data structure:', typeof locationsData, Array.isArray(locationsData));
-        console.log('Sample location:', locationsData.locations?.[0] || locationsData[Object.keys(locationsData)[0]]);
+        console.log('🌱 GARDEN.FORM: Locations data received:', locationsData);
+        console.log('🌱 GARDEN.FORM: Locations data structure:', typeof locationsData, Array.isArray(locationsData));
+        console.log('🌱 GARDEN.FORM: Sample location:', locationsData.locations?.[0] || locationsData[Object.keys(locationsData)[0]]);
         
         // Convert object structure to array if needed
         let locationsArray = [];
@@ -304,44 +333,79 @@ export default function SmartPlacementForm({
           }));
         }
         
-        console.log('Processed locations array:', locationsArray);
+        console.log('🌱 GARDEN.FORM: Processed locations array:', locationsArray);
         setLocations(locationsArray);
 
         // 5. Read zone selection mode from settings
-        console.log('Fetching settings from:', '/config/settings.cfg');
+        console.log('🌱 GARDEN.FORM: Fetching settings from:', '/config/settings.cfg');
         const settingsResponse = await fetch('/config/settings.cfg', {
           signal: AbortSignal.timeout(5000) // 5 second timeout
         });
-        console.log('Settings response status:', settingsResponse.status);
+        console.log('🌱 GARDEN.FORM: Settings response status:', settingsResponse.status);
         if (settingsResponse.ok) {
           const settingsText = await settingsResponse.text();
-          console.log('Settings text received:', settingsText.substring(0, 200) + '...');
+          console.log('🌱 GARDEN.FORM: Settings text received:', settingsText.substring(0, 200) + '...');
           // Parse INI format to find mode
           const modeMatch = settingsText.match(/mode\s*=\s*(\w+)/);
           if (modeMatch) {
-            setZoneSelectionMode(modeMatch[1] === 'smart' ? 'smart' : 'manual');
-            setSystemMode(modeMatch[1] === 'smart' ? 'smart' : 'manual'); // Set system mode from settings
+            const mode = modeMatch[1] === 'smart' ? 'smart' : 'manual';
+            console.log('🌱 GARDEN.FORM: Setting zone selection mode to:', mode);
+            setZoneSelectionMode(mode);
+            setSystemMode(mode); // Set system mode from settings
+          } else {
+            console.log('🌱 GARDEN.FORM: No mode found in settings, defaulting to smart');
+            setZoneSelectionMode('smart');
+            setSystemMode('smart');
           }
+        } else {
+          console.log('🌱 GARDEN.FORM: Settings fetch failed, defaulting to smart mode');
+          setZoneSelectionMode('smart');
+          setSystemMode('smart');
         }
 
         // Auto-select best match in smart mode after all data is loaded
         const recommendationsData = analysis.recommendations || [];
+        console.log('🌱 GARDEN.FORM: Auto-selection check:', { 
+          recommendationsLength: recommendationsData.length, 
+          locationsLength: locationsArray.length,
+          systemMode,
+          zoneSelectionMode 
+        });
+        
         if (recommendationsData.length > 0 && locationsArray.length > 0) {
           const bestMatch = recommendationsData[0]; // First recommendation is best match
-          console.log('Auto-selecting best match after data load:', bestMatch);
+          console.log('🌱 GARDEN.FORM: Auto-selecting best match after data load:', bestMatch);
+          
+          // Set the smart recommended emitter from the analysis
+          if (bestMatch.emitter_analysis?.recommended_emitter) {
+            const recommendedEmitter = bestMatch.emitter_analysis.recommended_emitter.toString();
+            console.log('🌱 GARDEN.FORM: Setting smart recommended emitter from analysis:', recommendedEmitter);
+            setSmartRecommendedEmitter(recommendedEmitter);
+          }
+          
           // Find locations that have this zone
           const locationsWithZone = locationsArray.filter((loc: any) => loc.zones.includes(bestMatch.zone_id));
+          console.log('🌱 GARDEN.FORM: Locations with best match zone:', locationsWithZone);
+          
           if (locationsWithZone.length > 0) {
-            setModalData(prev => ({
-              ...prev,
+            const newModalData = {
               zoneId: bestMatch.zone_id.toString(),
               locationId: locationsWithZone[0].location_id.toString() // Auto-select first location
-            }));
-          } else {
+            };
+            console.log('🌱 GARDEN.FORM: Setting modal data with auto-selected location:', newModalData);
             setModalData(prev => ({
               ...prev,
+              ...newModalData
+            }));
+          } else {
+            const newModalData = {
               zoneId: bestMatch.zone_id.toString(),
               locationId: '' // Clear location since none support this zone
+            };
+            console.log('🌱 GARDEN.FORM: Setting modal data without location (no locations support zone):', newModalData);
+            setModalData(prev => ({
+              ...prev,
+              ...newModalData
             }));
           }
           
@@ -401,14 +465,30 @@ export default function SmartPlacementForm({
           }
         }
 
+        console.log('🌱 GARDEN.FORM: Data fetch completed successfully');
+        if (!isMounted) return;
         setLoading(false);
       } catch (err) {
+        // Don't treat AbortError as a real error - it's just cleanup
+        if (err instanceof Error && err.name === 'AbortError') {
+          console.log('🌱 GARDEN.FORM: Data fetch aborted (component cleanup)');
+          return; // Don't set error state for aborted requests
+        }
+        
+        console.error('🌱 GARDEN.FORM: Data fetch failed:', err);
+        if (!isMounted) return; // Don't update state if unmounted
         setError(err instanceof Error ? err.message : 'Failed to load data');
         setLoading(false);
       }
     };
 
+    console.log('🌱 GARDEN.FORM: Starting data fetch...');
     fetchData();
+    
+    return () => {
+      isMounted = false;
+      abortController.abort();
+    };
   }, [plant_id, library_book]);
 
   // Form is now managed by the layer system - no manual registration needed
@@ -454,11 +534,17 @@ export default function SmartPlacementForm({
 
   // Handle click outside to close
   useClickOutside(formRef, () => {
-    console.log('🔴 Garden form click-outside triggered!');
-    console.log('🔴 isTopLayer:', isTopLayer, 'isAnyFormAbove:', isAnyFormAbove(FORM_ID));
+    console.log('🌱 GARDEN.FORM: Click-outside triggered!');
+    console.log('🌱 GARDEN.FORM: Layer state check:', { 
+      isTopLayer, 
+      isAnyFormAbove: isAnyFormAbove(FORM_ID),
+      shouldClose: isTopLayer && !isAnyFormAbove(FORM_ID)
+    });
     if (onCancel) {
-      console.log('🔴 Calling garden form onCancel!');
+      console.log('🌱 GARDEN.FORM: Calling onCancel callback');
       onCancel();
+    } else {
+      console.log('🌱 GARDEN.FORM: No onCancel callback provided');
     }
   }, isTopLayer && !isAnyFormAbove(FORM_ID)); // Disable when any form is above this one
 
@@ -587,23 +673,31 @@ export default function SmartPlacementForm({
                       
                       // Calculate emitter size for the selected zone
                       const calculateEmitterForZone = async () => {
+                        console.log('🌱 GARDEN.FORM: Calculating emitter for zone:', zoneId);
                         try {
+                          const requestData = {
+                            plant_id: plant_id,
+                            library_book: library_book,
+                            zone_id: zoneId
+                          };
+                          console.log('🌱 GARDEN.FORM: Sending emitter calculation request:', requestData);
+                          
                           const response = await fetch(`${getApiBaseUrl()}/api/smart/validate-compatibility`, {
                             method: 'POST',
                             headers: {
                               'Content-Type': 'application/json',
                             },
-                            body: JSON.stringify({
-                              plant_id: plant_id,
-                              library_book: library_book,
-                              zone_id: zoneId
-                            }),
+                            body: JSON.stringify(requestData),
                           });
+                          
+                          console.log('🌱 GARDEN.FORM: Emitter calculation response status:', response.status);
                           
                           if (response.ok) {
                             const result = await response.json();
+                            console.log('🌱 GARDEN.FORM: Emitter calculation result:', result);
+                            
                             if (result.status === 'success') {
-                              console.log('Emitter calculation for zone', zoneId, ':', result.data.emitter_validation);
+                              console.log('🌱 GARDEN.FORM: Emitter calculation for zone', zoneId, ':', result.data.emitter_validation);
                               
                               // Update the recommendation with the new emitter calculation
                               const updatedRecommendations = recommendations.map(rec => {
@@ -618,14 +712,23 @@ export default function SmartPlacementForm({
                               setRecommendations(updatedRecommendations);
                               
                               // CRITICAL: Update modalData.emitterSize with the recommended emitter
+                              const recommendedEmitter = result.data.emitter_validation.emitter_calculation.recommended_emitter.toString();
+                              console.log('🌱 GARDEN.FORM: Setting recommended emitter size:', recommendedEmitter);
+                              setSmartRecommendedEmitter(recommendedEmitter);
                               setModalData(prev => ({
                                 ...prev,
-                                emitterSize: result.data.emitter_validation.emitter_calculation.recommended_emitter.toString()
+                                emitterSize: recommendedEmitter
                               }));
+                            } else {
+                              console.error('🌱 GARDEN.FORM: Emitter calculation failed with status:', result.status);
                             }
+                          } else {
+                            console.error('🌱 GARDEN.FORM: Emitter calculation API failed with status:', response.status);
+                            const errorText = await response.text();
+                            console.error('🌱 GARDEN.FORM: Emitter calculation error response:', errorText);
                           }
                         } catch (error) {
-                          console.error('Failed to calculate emitter for zone', zoneId, ':', error);
+                          console.error('🌱 GARDEN.FORM: Failed to calculate emitter for zone', zoneId, ':', error);
                         }
                       };
                       
@@ -635,18 +738,22 @@ export default function SmartPlacementForm({
                       }
                       
                       if (locationsWithZone.length > 0) {
-                        setModalData({
+                        const newModalData = {
                           ...modalData,
                           zoneId: zoneId.toString(),
                           locationId: locationsWithZone[0].location_id.toString() // Auto-select first location
-                        });
+                        };
+                        console.log('🌱 GARDEN.FORM: Setting modal data with location:', newModalData);
+                        setModalData(newModalData);
                       } else {
                         // Just set the zone if no locations support it
-                        setModalData({
+                        const newModalData = {
                           ...modalData,
                           zoneId: zoneId.toString(),
                           locationId: '' // Clear location since none support this zone
-                        });
+                        };
+                        console.log('🌱 GARDEN.FORM: Setting modal data without location:', newModalData);
+                        setModalData(newModalData);
                       }
                     }}
                   >
@@ -738,6 +845,15 @@ export default function SmartPlacementForm({
 
           <form className="form-flex form-flex-column form-gap-16" onSubmit={async (e) => { 
             e.preventDefault(); 
+            console.log('🌱 GARDEN.FORM: Form submission started');
+            console.log('🌱 GARDEN.FORM: Modal data validation:', {
+              zoneId: modalData.zoneId,
+              locationId: modalData.locationId,
+              quantity: modalData.quantity,
+              emitterSize: modalData.emitterSize,
+              allRequired: !!(modalData.zoneId && modalData.locationId && modalData.quantity && modalData.emitterSize)
+            });
+            
             if (modalData.zoneId && modalData.locationId && modalData.quantity && modalData.emitterSize) {
               // Handle form submission
               const formData = {
@@ -754,9 +870,12 @@ export default function SmartPlacementForm({
                 }
               };
               
+              console.log('🌱 GARDEN.FORM: Form data prepared for submission:', formData);
+              
               try {
                 setSaveStatus('saving');
                 setSaveMessage('Placing plant...');
+                console.log('🌱 GARDEN.FORM: Sending plant placement request to /api/map/save');
                 
                 // Send to plant manager API to update map.json
                 const response = await fetch('/api/map/save', {
@@ -765,32 +884,40 @@ export default function SmartPlacementForm({
                   body: JSON.stringify(formData)
                 });
                 
+                console.log('🌱 GARDEN.FORM: Plant placement response status:', response.status);
+                
                 if (response.ok) {
                   const result = await response.json();
+                  console.log('🌱 GARDEN.FORM: Plant placement successful:', result);
                   setSaveStatus('success');
                   setSaveMessage('Plant placed successfully!');
                   
                   // Auto-hide success message and close form after 2 seconds
                   setTimeout(() => {
+                    console.log('🌱 GARDEN.FORM: Auto-closing form after successful placement');
                     setSaveStatus('idle');
                     setSaveMessage('');
                     onSuccess?.(formData);
                   }, 2000);
                 } else {
                   const errorData = await response.json().catch(() => ({}));
+                  console.error('🌱 GARDEN.FORM: Plant placement failed:', errorData);
                   throw new Error(errorData.message || 'Failed to place plant');
                 }
               } catch (err) {
-                console.error('Error placing plant:', err);
+                console.error('🌱 GARDEN.FORM: Error placing plant:', err);
                 setSaveStatus('error');
                 setSaveMessage(err instanceof Error ? err.message : 'Failed to place plant');
                 
                 // Auto-hide error message after 4 seconds
                 setTimeout(() => {
+                  console.log('🌱 GARDEN.FORM: Auto-hiding error message');
                   setSaveStatus('idle');
                   setSaveMessage('');
                 }, 4000);
               }
+            } else {
+              console.error('🌱 GARDEN.FORM: Form submission blocked - missing required fields:', modalData);
             }
           }}>
             <div className="form-section">
@@ -802,6 +929,7 @@ export default function SmartPlacementForm({
                   <div
                     key={num}
                     onClick={() => {
+                      console.log('🌱 GARDEN.FORM: Quantity selected:', num);
                       setModalData({ ...modalData, quantity: num.toString() });
                       setCustomQuantity(''); // Clear custom value when selecting predefined
                     }}
@@ -874,7 +1002,7 @@ export default function SmartPlacementForm({
                   // Normalize the size to match the format used in modalData
                   const normalizedSize = size % 1 === 0 ? size.toString() : size.toFixed(1);
                   const isSelected = modalData.emitterSize === normalizedSize;
-                  const isSmartRecommended = size === 4.0; // Placeholder for smart analysis
+                  const isSmartRecommended = smartRecommendedEmitter === normalizedSize;
                   const isSmartMode = emitterSizingMode === 'smart';
                   const isSmartRecommendedAndSelected = isSmartRecommended && isSmartMode && isSelected;
                   
@@ -882,19 +1010,25 @@ export default function SmartPlacementForm({
                     <div
                       key={size}
                       onClick={() => {
+                        console.log('🌱 GARDEN.FORM: Emitter size selected:', size, 'normalized:', normalizedSize);
                         setModalData({ ...modalData, emitterSize: normalizedSize });
                         setCustomEmitterSize(''); // Clear custom value when selecting predefined
                         
                         // If user manually selects something other than smart recommendation, switch to manual mode
                         if (isSmartMode && !isSmartRecommended) {
+                          console.log('🌱 GARDEN.FORM: Switching to manual emitter mode due to non-smart selection');
                           setEmitterSizingMode('manual');
                         }
                       }}
                       className={`form-select-button form-emitter-button ${isSelected ? 'form-select-button--selected' : ''} ${isSmartRecommendedAndSelected ? 'form-emitter-button--smart-recommended' : ''}`}
                     >
                       {size} GPH
-                      {isSmartRecommendedAndSelected && (
-                        <div className="form-emitter-button--smart-recommended-indicator">
+                      {isSmartRecommended && isSmartMode && (
+                        <div className="form-emitter-button--smart-recommended-indicator" style={{
+                          color: isSelected ? '#ffffff' : '#28a745',
+                          fontWeight: 'bold',
+                          marginLeft: '4px'
+                        }}>
                           ✓
                         </div>
                       )}
@@ -947,7 +1081,10 @@ export default function SmartPlacementForm({
                   .map(loc => (
                     <div
                       key={loc.location_id}
-                      onClick={() => setModalData({ ...modalData, locationId: loc.location_id.toString() })}
+                      onClick={() => {
+                        console.log('🌱 GARDEN.FORM: Location selected:', loc.location_id, loc.name);
+                        setModalData({ ...modalData, locationId: loc.location_id.toString() });
+                      }}
                       className={`form-zone-button ${modalData.locationId === loc.location_id.toString() ? 'form-zone-button--selected' : 'form-zone-button--active'}`}
                     >
                       <div className="form-flex form-justify-between form-items-center">
@@ -1008,6 +1145,7 @@ export default function SmartPlacementForm({
               <button
                 type="button"
                 onClick={() => { 
+                  console.log('🌱 GARDEN.FORM: Cancel button clicked');
                   onCancel?.();
                   setModalData({ quantity: '', emitterSize: '', zoneId: '', locationId: '', comments: '' });
                 }}
@@ -1112,10 +1250,15 @@ export default function SmartPlacementForm({
                   
                   // Refresh smart placement analysis to detect the new compatible zone
                   console.log('Refreshing smart placement analysis after zone creation...');
+                  const refreshAnalysisData = {
+                    plant_id,
+                    library_book: library_book.replace('.json', ''), // Remove .json extension if present
+                    common_name: plantData?.common_name || 'Unknown Plant'
+                  };
                   const analysisResponse = await fetch('/api/smart/analyze-placement', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ plant_id, library_book })
+                    body: JSON.stringify(refreshAnalysisData)
                   });
                   if (analysisResponse.ok) {
                     const analysis = await analysisResponse.json();

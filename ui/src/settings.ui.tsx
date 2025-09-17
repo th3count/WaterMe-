@@ -23,6 +23,7 @@ interface GardenSettings {
   timer_multiplier: number;
   mode: string;
   simulate?: boolean;
+  max_duration_threshold?: string;
 }
 
 interface GpioConfig {
@@ -50,7 +51,8 @@ export default function Settings() {
     timezone: 'UTC',
     timer_multiplier: 1.0,
     mode: 'manual',
-    simulate: false
+    simulate: false,
+    max_duration_threshold: '02:00'
   });
   const [gpioConfig, setGpioConfig] = useState<GpioConfig>({
     channels: {},
@@ -763,6 +765,43 @@ export default function Settings() {
                   fontStyle: 'italic'
                 }}>
                   Adjusts smart duration calculations when flow rates differ from expected values
+                </div>
+              </div>
+
+              <div style={{ display: gardenSettings.mode === 'smart' ? 'block' : 'none' }}>
+                <label style={{
+                  color: '#f4f4f4',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  marginBottom: '8px',
+                  display: 'block'
+                }}>
+                  Max Duration Threshold:
+                </label>
+                <input
+                  type="text"
+                  value={gardenSettings.max_duration_threshold || '02:00'}
+                  onChange={(e) => setGardenSettings({...gardenSettings, max_duration_threshold: e.target.value})}
+                  style={{
+                    width: '100%',
+                    background: '#2d3748',
+                    color: '#f4f4f4',
+                    border: '1px solid #4a5568',
+                    borderRadius: '4px',
+                    padding: '10px 12px',
+                    fontSize: '14px'
+                  }}
+                  placeholder="02:00"
+                  pattern="[0-9]{2}:[0-9]{2}"
+                  title="Format: HH:MM (e.g., 02:00 for 2 hours)"
+                />
+                <div style={{
+                  color: '#888',
+                  fontSize: '12px',
+                  marginTop: '4px',
+                  fontStyle: 'italic'
+                }}>
+                  Maximum duration for smart emitter sizing. Zones requiring longer durations will use larger emitters or show warnings (HH:MM format)
                 </div>
               </div>
             </div>

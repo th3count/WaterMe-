@@ -1114,28 +1114,44 @@ codes = [zone.time.start_time];
 
   // When a plant is selected from a dropdown
   const handlePlantSelect = async (file: string, plantId: number | '') => {
-    setSelectedPlants(prev => ({ ...prev, [file]: plantId }));
+    console.log('🌱 GARDEN.UI: handlePlantSelect called with:', { file, plantId, plantIdType: typeof plantId });
+    
+    setSelectedPlants(prev => {
+      const newState = { ...prev, [file]: plantId };
+      console.log('🌱 GARDEN.UI: selectedPlants state updated:', newState);
+      return newState;
+    });
+    
     const plant = plantBooks[file]?.plants.find(p => p.plant_id === plantId) || null;
-    setHeldPlant(plantId && plant ? { plant, bookFile: file } : null);
+    console.log('🌱 GARDEN.UI: plant found:', { plant, plantBooksKeys: Object.keys(plantBooks), file });
+    
+    const newHeldPlant = plantId && plant ? { plant, bookFile: file } : null;
+    console.log('🌱 GARDEN.UI: setting heldPlant to:', newHeldPlant);
+    setHeldPlant(newHeldPlant);
     
     // Clear error when selecting a new plant
     setError('');
     
     // Clear smart recommendations if no plant is selected
     if (!plantId) {
+      console.log('🌱 GARDEN.UI: No plant selected, clearing smart recommendations');
       setSmartRecommendations(null);
       return;
     }
 
     // If a plant is selected and smart mode is enabled, show smart recommendations
     if (plantId && typeof plantId === 'number' && plant && globalSmartMode) {
+      console.log('🌱 GARDEN.UI: Smart mode enabled, starting analysis for plant:', plant.common_name);
       try {
         // Refresh zones data before analysis to ensure we have the latest state
+        console.log('🌱 GARDEN.UI: Refreshing zones data before analysis...');
         const zonesResponse = await fetch(`${getApiBaseUrl()}/api/schedule`);
         if (zonesResponse.ok) {
           const zonesData = await zonesResponse.json();
           setZones(zonesData);
-          console.log('Refreshed zones data before smart analysis:', zonesData);
+          console.log('🌱 GARDEN.UI: Refreshed zones data before smart analysis:', zonesData);
+        } else {
+          console.error('🌱 GARDEN.UI: Failed to refresh zones data:', zonesResponse.status);
         }
 
         const plantData = {
@@ -1150,6 +1166,7 @@ codes = [zone.time.start_time];
           planted_date: new Date().toISOString().split('T')[0]
         };
 
+        console.log('🌱 GARDEN.UI: Sending plant data for analysis:', plantData);
         const analysisResponse = await fetch(`${getApiBaseUrl()}/api/smart/analyze-placement`, {
           method: 'POST',
           headers: {
@@ -1158,94 +1175,126 @@ codes = [zone.time.start_time];
           body: JSON.stringify(plantData)
         });
 
+        console.log('🌱 GARDEN.UI: Analysis response status:', analysisResponse.status);
         if (analysisResponse.ok) {
           const analysis = await analysisResponse.json();
+          console.log('🌱 GARDEN.UI: Analysis data received:', analysis);
           
           // Store recommendations in state for UI display
-          setSmartRecommendations({
+          const smartRecs = {
             plantName: analysis.plant_data.common_name,
             recommendations: analysis.recommendations || [],
             hasCompatibleZones: analysis.has_compatible_zones
-          });
+          };
+          console.log('🌱 GARDEN.UI: Setting smart recommendations:', smartRecs);
+          setSmartRecommendations(smartRecs);
           
           if (analysis.has_compatible_zones && analysis.recommendations.length > 0) {
             const topRecommendations = analysis.recommendations.slice(0, 3);
             const recommendationText = topRecommendations.map((rec: any, index: number) => 
               `${index + 1}. Zone ${rec.zone_id} (${rec.period}): ${Math.round(rec.score * 100)}% compatibility - ${rec.comment}`
             ).join('\n');
+            console.log('🌱 GARDEN.UI: Compatible zones found, showing smart placement modal');
             
             // Show smart placement modal with recommendations
-            setSmartPlacementModal({
+            const modalData = {
               plant: plant,
               bookFile: file,
               recommendations: analysis.recommendations || [],
               optimal_emitter_analysis: analysis.optimal_emitter_analysis,
-              emitterSizingMode: 'smart',
-              zoneSelectionMode: 'smart'
-            });
+              emitterSizingMode: 'smart' as const,
+              zoneSelectionMode: 'smart' as const
+            };
+            console.log('🌱 GARDEN.UI: Setting smart placement modal with data:', modalData);
+            setSmartPlacementModal(modalData);
             
             // Smart placement modal will handle its own state internally
           } else if (!analysis.has_compatible_zones) {
-            console.log(`No compatible zones found for ${analysis.plant_data.common_name}. Consider creating a new zone or adjusting watering requirements.`);
+            console.log(`🌱 GARDEN.UI: No compatible zones found for ${analysis.plant_data.common_name}. Consider creating a new zone or adjusting watering requirements.`);
             // Show smart placement modal with deactivated zones even when no compatible zones found
-            setSmartPlacementModal({
+            const modalData = {
               plant: plant,
               bookFile: file,
               recommendations: [], // Empty recommendations since no compatible zones
               optimal_emitter_analysis: undefined,
-              emitterSizingMode: 'smart',
-              zoneSelectionMode: 'smart'
-            });
+              emitterSizingMode: 'smart' as const,
+              zoneSelectionMode: 'smart' as const
+            };
+            console.log('🌱 GARDEN.UI: Setting smart placement modal for no compatible zones:', modalData);
+            setSmartPlacementModal(modalData);
             
             // Smart placement modal will handle its own state internally
           }
+        } else {
+          console.error('🌱 GARDEN.UI: Analysis API failed with status:', analysisResponse.status);
+          const errorText = await analysisResponse.text();
+          console.error('🌱 GARDEN.UI: Analysis API error response:', errorText);
         }
       } catch (error) {
-        console.error('Error getting smart recommendations:', error);
+        console.error('🌱 GARDEN.UI: Error getting smart recommendations:', error);
       }
+    } else {
+      console.log('🌱 GARDEN.UI: Smart mode conditions not met:', { 
+        plantId, 
+        plantIdType: typeof plantId, 
+        plant: !!plant, 
+        globalSmartMode 
+      });
     }
   };
 
   // When a location is clicked
   const handleLocationClick = (idx: number) => {
+    console.log('🌱 GARDEN.UI: handleLocationClick called with idx:', idx, 'heldPlant:', heldPlant);
+    
     if (heldPlant) {
+      console.log('🌱 GARDEN.UI: Plant is held, opening smart placement modal in manual mode');
       // Use the unified SmartPlacementForm for all plant placement
-      setSmartPlacementModal({
+      const modalData = {
         plant: heldPlant.plant,
         bookFile: heldPlant.bookFile,
         recommendations: [],
-        emitterSizingMode: 'manual',
-        zoneSelectionMode: 'manual'
-      });
+        emitterSizingMode: 'manual' as const,
+        zoneSelectionMode: 'manual' as const
+      };
+      console.log('🌱 GARDEN.UI: Setting smart placement modal for manual placement:', modalData);
+      setSmartPlacementModal(modalData);
     } else {
+      console.log('🌱 GARDEN.UI: No plant held, opening location editor');
       // Open location item for editing
       const location = locations[idx];
       if (location) {
+        console.log('🌱 GARDEN.UI: Opening location editor for:', location);
         setEditingLocationId(location.location_id);
         const layerId = `location-edit-${location.location_id}`;
+        console.log('🌱 GARDEN.UI: Adding location edit layer with ID:', layerId);
         addLayer(layerId, 'form', LocationItem, {
           location_id: location.location_id,
           onSave: (updatedLocation: any) => {
-            console.log('Location updated:', updatedLocation);
+            console.log('🌱 GARDEN.UI: Location updated:', updatedLocation);
             // Refresh locations data by reloading from API
             fetch(`${getApiBaseUrl()}/api/locations`)
               .then(response => response.json())
               .then(data => {
+                console.log('🌱 GARDEN.UI: Locations refreshed after update:', data);
                 setLocations(data);
                 removeLayer(layerId);
                 setEditingLocationId(null);
               })
               .catch(error => {
-                console.error('Error refreshing locations:', error);
+                console.error('🌱 GARDEN.UI: Error refreshing locations:', error);
                 removeLayer(layerId);
                 setEditingLocationId(null);
               });
           },
           onCancel: () => {
+            console.log('🌱 GARDEN.UI: Location edit cancelled, removing layer:', layerId);
             removeLayer(layerId);
             setEditingLocationId(null);
           }
         });
+      } else {
+        console.error('🌱 GARDEN.UI: No location found at index:', idx);
       }
     }
   };
@@ -2167,13 +2216,17 @@ codes = [zone.time.start_time];
           <SmartPlacementForm
             plant_id={smartPlacementModal.plant.plant_id}
             library_book={smartPlacementModal.bookFile}
-            onCancel={() => setSmartPlacementModal(null)}
+            onCancel={() => {
+              console.log('🌱 GARDEN.UI: Smart placement modal cancelled');
+              setSmartPlacementModal(null);
+            }}
             onSuccess={(data) => {
               // Handle the form submission data
-              console.log('Smart placement form submitted:', data);
+              console.log('🌱 GARDEN.UI: Smart placement form submitted successfully:', data);
               setSmartPlacementModal(null);
               
               // Force a page refresh to show the newly added plant
+              console.log('🌱 GARDEN.UI: Reloading page to show newly added plant');
               window.location.reload();
             }}
           />
